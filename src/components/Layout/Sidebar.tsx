@@ -1,0 +1,123 @@
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { 
+  Package, 
+  Calculator, 
+  ShoppingCart, 
+  BarChart3, 
+  Warehouse, 
+  FileText, 
+  Users, 
+  CreditCard,
+  TrendingUp,
+  Settings,
+  LogOut,
+  Monitor
+} from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+
+const menuItems = [
+
+  {
+    title: 'Almacén',
+    items: [
+      { name: 'Captura de Inventario', path: '/almacen/inventario', icon: Package },
+      { name: 'Listado de Productos', path: '/almacen/listado-productos', icon: Package },
+      { name: 'Ajustes de Inventario', path: '/almacen/ajustes', icon: Settings },
+      { name: 'Compras', path: '/almacen/compras', icon: ShoppingCart },
+      { name: 'Proveedores', path: '/almacen/proveedores', icon: Users },
+      { name: 'Reporte de Compras', path: '/almacen/reporte-compras', icon: FileText },
+    ]
+  },
+  {
+    title: 'Almacén Reportes',
+    items: [
+      { name: 'Kárdex de Movimientos', path: '/almacen/kardex', icon: FileText },
+      { name: 'Reporte de Ajustes', path: '/almacen/reporte-ajustes', icon: FileText },
+      { name: 'Reporte de Inventario', path: '/almacen/reporte-inventario', icon: Warehouse },
+      { name: 'Reporte con Costos', path: '/almacen/reporte-costos', icon: Calculator },
+    ]
+  },
+  {
+    title: 'Contabilidad - Gastos',
+    items: [
+      { name: 'Control de Catálogos', path: '/contabilidad/catalogos', icon: Settings },
+      { name: 'Registro de Gastos', path: '/contabilidad/gastos', icon: CreditCard },
+      { name: 'Movimientos Bancarios', path: '/contabilidad/bancarios', icon: BarChart3 },
+      { name: 'Reporte de Gastos', path: '/contabilidad/reporte-gastos', icon: FileText },
+    ]
+  },
+  {
+    title: 'Ventas - Clientes',
+    items: [
+      { name: 'CFDI', path: '/ventas/cfdi', icon: FileText },
+      { name: 'Clientes', path: '/ventas/clientes', icon: Users },
+      { name: 'Precios de Ventas', path: '/ventas/precios', icon: CreditCard },
+      { name: 'Reportes de Ventas', path: '/ventas/reportes', icon: BarChart3 },
+    ]
+  },
+  {
+    title: 'Ejecutivo',
+    items: [
+      { name: 'Dashboard', path: '/ejecutivo/dashboard', icon: BarChart3 },
+      { name: 'Análisis de Resultados', path: '/ejecutivo/analisis', icon: TrendingUp },
+      { name: 'Corte de Caja', path: '/ejecutivo/corte-caja', icon: Calculator },
+    ]
+  }
+];
+
+export function Sidebar() {
+  const location = useLocation();
+  const { logout } = useAuth();
+
+  return (
+    <div className="w-64 bg-white h-screen fixed left-0 top-0 border-r border-gray-200 overflow-y-auto">
+      <div className="p-6 border-b border-gray-200">
+        <h1 className="text-2xl font-bold text-gray-800">DURAN ERP</h1>
+        <p className="text-sm text-gray-600">Sistema de Gestión</p>
+      </div>
+
+      <nav className="p-4">
+        {menuItems.map((section, index) => (
+          <div key={index} className="mb-6">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              {section.title}
+            </h3>
+            <ul className="space-y-1">
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                
+                return (
+                  <li key={item.path}>
+                    <Link
+                      to={item.path}
+                      className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isActive
+                          ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      <Icon size={16} />
+                      <span>{item.name}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+        
+        <div className="border-t border-gray-200 pt-4 mt-6">
+          <button
+            onClick={logout}
+            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 w-full transition-colors"
+          >
+            <LogOut size={16} />
+            <span>Cerrar Sesión</span>
+          </button>
+        </div>
+      </nav>
+    </div>
+  );
+}

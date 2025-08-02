@@ -1,0 +1,476 @@
+export interface Database {
+  public: {
+    Tables: {
+      users: {
+        Row: {
+          id: string;
+          auth_id: string | null;
+          name: string;
+          email: string;
+          role: 'Admin' | 'Gerente' | 'Empleado';
+          avatar: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          auth_id?: string | null;
+          name: string;
+          email: string;
+          role: 'Admin' | 'Gerente' | 'Empleado';
+          avatar?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          auth_id?: string | null;
+          name?: string;
+          email?: string;
+          role?: 'Admin' | 'Gerente' | 'Empleado';
+          avatar?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      products: {
+        Row: {
+          id: string;
+          name: string;
+          code: string;
+          line: string;
+          subline: string;
+          unit: string;
+          stock: number;
+          cost: number;
+          price: number;
+          status: 'active' | 'disabled';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          code: string;
+          line: string;
+          subline?: string;
+          unit?: string;
+          stock?: number;
+          cost?: number;
+          price?: number;
+          status?: 'active' | 'disabled';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          code?: string;
+          line?: string;
+          subline?: string;
+          unit?: string;
+          stock?: number;
+          cost?: number;
+          price?: number;
+          status?: 'active' | 'disabled';
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      suppliers: {
+        Row: {
+          id: string;
+          name: string;
+          rfc: string;
+          address: string;
+          phone: string;
+          email: string;
+          contact: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          rfc: string;
+          address?: string;
+          phone?: string;
+          email?: string;
+          contact?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          rfc?: string;
+          address?: string;
+          phone?: string;
+          email?: string;
+          contact?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      clients: {
+        Row: {
+          id: string;
+          name: string;
+          rfc: string;
+          address: string;
+          phone: string;
+          email: string;
+          zone: string;
+          credit_limit: number;
+          balance: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          rfc: string;
+          address?: string;
+          phone?: string;
+          email?: string;
+          zone?: string;
+          credit_limit?: number;
+          balance?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          rfc?: string;
+          address?: string;
+          phone?: string;
+          email?: string;
+          zone?: string;
+          credit_limit?: number;
+          balance?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      sales: {
+        Row: {
+          id: string;
+          client_id: string;
+          client_name: string;
+          date: string;
+          total: number;
+          status: 'pending' | 'paid' | 'overdue';
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          client_name: string;
+          date?: string;
+          total?: number;
+          status?: 'pending' | 'paid' | 'overdue';
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          client_name?: string;
+          date?: string;
+          total?: number;
+          status?: 'pending' | 'paid' | 'overdue';
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      sale_items: {
+        Row: {
+          id: string;
+          sale_id: string;
+          product_id: string;
+          product_name: string;
+          quantity: number;
+          price: number;
+          total: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          sale_id: string;
+          product_id: string;
+          product_name: string;
+          quantity?: number;
+          price?: number;
+          total?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          sale_id?: string;
+          product_id?: string;
+          product_name?: string;
+          quantity?: number;
+          price?: number;
+          total?: number;
+          created_at?: string;
+        };
+      };
+      expenses: {
+        Row: {
+          id: string;
+          concept: string;
+          amount: number;
+          date: string;
+          category: string;
+          bank_account: string;
+          description: string;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          concept: string;
+          amount?: number;
+          date?: string;
+          category: string;
+          bank_account?: string;
+          description?: string;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          concept?: string;
+          amount?: number;
+          date?: string;
+          category?: string;
+          bank_account?: string;
+          description?: string;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      inventory_movements: {
+        Row: {
+          id: string;
+          product_id: string;
+          product_name: string;
+          type: 'entrada' | 'salida' | 'ajuste' | 'merma';
+          quantity: number;
+          date: string;
+          reference: string;
+          user_name: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          product_id: string;
+          product_name: string;
+          type: 'entrada' | 'salida' | 'ajuste' | 'merma';
+          quantity?: number;
+          date?: string;
+          reference?: string;
+          user_name: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          product_id?: string;
+          product_name?: string;
+          type?: 'entrada' | 'salida' | 'ajuste' | 'merma';
+          quantity?: number;
+          date?: string;
+          reference?: string;
+          user_name?: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+      };
+    };
+    purchase_orders: {
+      Row: {
+        id: string;
+        supplier_id: string | null;
+        supplier_name: string;
+        date: string;
+        total: number;
+        status: 'pending' | 'approved' | 'received' | 'cancelled';
+        created_at: string;
+        updated_at: string;
+      };
+      Insert: {
+        id?: string;
+        supplier_id?: string | null;
+        supplier_name: string;
+        date?: string;
+        total?: number;
+        status?: 'pending' | 'approved' | 'received' | 'cancelled';
+        created_at?: string;
+        updated_at?: string;
+      };
+      Update: {
+        id?: string;
+        supplier_id?: string | null;
+        supplier_name?: string;
+        date?: string;
+        total?: number;
+        status?: 'pending' | 'approved' | 'received' | 'cancelled';
+        created_at?: string;
+        updated_at?: string;
+      };
+    };
+    purchase_order_items: {
+      Row: {
+        id: string;
+        purchase_order_id: string | null;
+        product_id: string | null;
+        product_name: string;
+        quantity: number | null;
+        cost: number | null;
+        total: number | null;
+        created_at: string;
+      };
+      Insert: {
+        id?: string;
+        purchase_order_id?: string | null;
+        product_id?: string | null;
+        product_name: string;
+        quantity?: number | null;
+        cost?: number | null;
+        total?: number | null;
+        created_at?: string;
+      };
+      Update: {
+        id?: string;
+        purchase_order_id?: string | null;
+        product_id?: string | null;
+        product_name?: string;
+        quantity?: number | null;
+        cost?: number | null;
+        total?: number | null;
+        created_at?: string;
+      };
+    };
+    bank_movements: {
+      Row: {
+        id: string;
+        fecha: string;
+        banco: string;
+        cuenta: string;
+        tipo: 'deposito' | 'retiro' | 'transferencia' | 'comision';
+        concepto: string;
+        monto: number;
+        saldo_anterior: number;
+        saldo_nuevo: number;
+        referencia: string;
+        created_at: string;
+      };
+      Insert: {
+        id?: string;
+        fecha?: string;
+        banco: string;
+        cuenta: string;
+        tipo: 'deposito' | 'retiro' | 'transferencia' | 'comision';
+        concepto: string;
+        monto: number;
+        saldo_anterior?: number;
+        saldo_nuevo?: number;
+        referencia?: string;
+        created_at?: string;
+      };
+      Update: {
+        id?: string;
+        fecha?: string;
+        banco?: string;
+        cuenta?: string;
+        tipo?: 'deposito' | 'retiro' | 'transferencia' | 'comision';
+        concepto?: string;
+        monto?: number;
+        saldo_anterior?: number;
+        saldo_nuevo?: number;
+        referencia?: string;
+        created_at?: string;
+      };
+    };
+    expense_concepts: {
+      Row: {
+        id: string;
+        nombre: string;
+        categoria: string;
+        descripcion: string | null;
+        activo: boolean | null;
+        created_at: string;
+        updated_at: string;
+      };
+      Insert: {
+        id?: string;
+        nombre: string;
+        categoria: string;
+        descripcion?: string | null;
+        activo?: boolean | null;
+        created_at?: string;
+        updated_at?: string;
+      };
+      Update: {
+        id?: string;
+        nombre?: string;
+        categoria?: string;
+        descripcion?: string | null;
+        activo?: boolean | null;
+        created_at?: string;
+        updated_at?: string;
+      };
+    };
+    bank_accounts: {
+      Row: {
+        id: string;
+        banco: string;
+        numero_cuenta: string;
+        tipo: string;
+        saldo: number | null;
+        activa: boolean | null;
+        created_at: string;
+        updated_at: string;
+      };
+      Insert: {
+        id?: string;
+        banco: string;
+        numero_cuenta: string;
+        tipo: string;
+        saldo?: number | null;
+        activa?: boolean | null;
+        created_at?: string;
+        updated_at?: string;
+      };
+      Update: {
+        id?: string;
+        banco?: string;
+        numero_cuenta?: string;
+        tipo?: string;
+        saldo?: number | null;
+        activa?: boolean | null;
+        created_at?: string;
+        updated_at?: string;
+      };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      [_ in never]: never;
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+  };
+}

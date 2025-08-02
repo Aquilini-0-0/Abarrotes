@@ -1,0 +1,81 @@
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'Admin' | 'Gerente' | 'Empleado';
+  avatar?: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  code: string;
+  line: string;
+  subline: string;
+  unit: string;
+  stock: number;
+  cost: number;
+  price: number;
+  status: 'active' | 'disabled';
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  rfc: string;
+  address: string;
+  phone: string;
+  email: string;
+  contact: string;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  rfc: string;
+  address: string;
+  phone: string;
+  email: string;
+  zone: string;
+  credit_limit: number;
+  balance: number;
+}
+
+export interface Sale {
+  id: string;
+  client_id: string;
+  client_name: string;
+  date: string;
+  total: number;
+  status: 'pending' | 'paid' | 'overdue';
+  items: SaleItem[];
+}
+
+export interface SaleItem {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  price: number;
+  total: number;
+}
+
+export interface Expense {
+  id: string;
+  concept: string;
+  amount: number;
+  date: string;
+  category: string;
+  bank_account: string;
+  description: string;
+}
+
+export interface InventoryMovement {
+  id: string;
+  product_id: string;
+  product_name: string;
+  type: 'entrada' | 'salida' | 'ajuste' | 'merma';
+  quantity: number;
+  date: string;
+  reference: string;
+  user: string;
+}

@@ -1,0 +1,224 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+
+export interface ConceptoGasto {
+  id: string;
+  nombre: string;
+  categoria: string;
+  descripcion: string;
+  activo: boolean;
+}
+
+export interface CuentaBancaria {
+  id: string;
+  banco: string;
+  numero_cuenta: string;
+  tipo: string;
+  saldo: number;
+  activa: boolean;
+}
+
+export function useCatalogos() {
+  const [conceptos, setConceptos] = useState<ConceptoGasto[]>([]);
+  const [cuentas, setCuentas] = useState<CuentaBancaria[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCatalogos = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch expense concepts
+      const { data: conceptosData, error: conceptosError } = await supabase
+        .from('expense_concepts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (conceptosError) throw conceptosError;
+
+      // Fetch bank accounts
+      const { data: cuentasData, error: cuentasError } = await supabase
+        .from('bank_accounts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (cuentasError) throw cuentasError;
+
+      const formattedConceptos: ConceptoGasto[] = conceptosData.map(item => ({
+        id: item.id,
+        nombre: item.nombre,
+        categoria: item.categoria,
+        descripcion: item.descripcion,
+        activo: item.activo
+      }));
+
+      const formattedCuentas: CuentaBancaria[] = cuentasData.map(item => ({
+        id: item.id,
+        banco: item.banco,
+        numero_cuenta: item.numero_cuenta,
+        tipo: item.tipo,
+        saldo: item.saldo,
+        activa: item.activa
+      }));
+
+      setConceptos(formattedConceptos);
+      setCuentas(formattedCuentas);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error fetching catalogos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createConcepto = async (conceptoData: Omit<ConceptoGasto, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('expense_concepts')
+        .insert([conceptoData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newConcepto: ConceptoGasto = {
+        id: data.id,
+        nombre: data.nombre,
+        categoria: data.categoria,
+        descripcion: data.descripcion,
+        activo: data.activo
+      };
+
+      setConceptos(prev => [newConcepto, ...prev]);
+      return newConcepto;
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Error creating concepto');
+    }
+  };
+
+  const createCuenta = async (cuentaData: Omit<CuentaBancaria, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('bank_accounts')
+        .insert([cuentaData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newCuenta: CuentaBancaria = {
+        id: data.id,
+        banco: data.banco,
+        numero_cuenta: data.numero_cuenta,
+        tipo: data.tipo,
+        saldo: data.saldo,
+        activa: data.activa
+      };
+
+      setCuentas(prev => [newCuenta, ...prev]);
+      return newCuenta;
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Error creating cuenta');
+    }
+  };
+
+  const updateConcepto = async (id: string, conceptoData: Partial<ConceptoGasto>) => {
+    try {
+      const { data, error } = await supabase
+        .from('expense_concepts')
+        .update(conceptoData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedConcepto: ConceptoGasto = {
+        id: data.id,
+        nombre: data.nombre,
+        categoria: data.categoria,
+        descripcion: data.descripcion,
+        activo: data.activo
+      };
+
+      setConceptos(prev => prev.map(c => c.id === id ? updatedConcepto : c));
+      return updatedConcepto;
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Error updating concepto');
+    }
+  };
+
+  const updateCuenta = async (id: string, cuentaData: Partial<CuentaBancaria>) => {
+    try {
+      const { data, error } = await supabase
+        .from('bank_accounts')
+        .update(cuentaData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedCuenta: CuentaBancaria = {
+        id: data.id,
+        banco: data.banco,
+        numero_cuenta: data.numero_cuenta,
+        tipo: data.tipo,
+        saldo: data.saldo,
+        activa: data.activa
+      };
+
+      setCuentas(prev => prev.map(c => c.id === id ? updatedCuenta : c));
+      return updatedCuenta;
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Error updating cuenta');
+    }
+  };
+
+  const deleteConcepto = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('expense_concepts')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setConceptos(prev => prev.filter(c => c.id !== id));
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Error deleting concepto');
+    }
+  };
+
+  const deleteCuenta = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('bank_accounts')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setCuentas(prev => prev.filter(c => c.id !== id));
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Error deleting cuenta');
+    }
+  };
+
+  useEffect(() => {
+    fetchCatalogos();
+  }, []);
+
+  return {
+    conceptos,
+    cuentas,
+    loading,
+    error,
+    createConcepto,
+    createCuenta,
+    updateConcepto,
+    updateCuenta,
+    deleteConcepto,
+    deleteCuenta,
+    refetch: fetchCatalogos
+  };
+}
