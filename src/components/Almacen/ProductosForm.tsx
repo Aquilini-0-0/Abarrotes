@@ -196,93 +196,255 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Sección de 5 Precios */}
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-gray-900 mb-4">Precios de Venta (5 Niveles)</h3>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Precio 1 *
+          {/* Sección de 5 Precios - Mejorada */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Precios de Venta (5 Niveles)</h3>
+              <div className="bg-blue-100 px-3 py-1 rounded-full">
+                <span className="text-blue-800 text-sm font-medium">Configuración de Precios</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Precio 1 - Principal */}
+              <div className="bg-white p-4 rounded-lg border-2 border-blue-300 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-bold text-blue-700">
+                    Precio 1 (Principal) *
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.price1}
-                    onChange={(e) => handleChange('price1', parseFloat(e.target.value) || 0)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.price1 ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    min="0"
-                    placeholder="0.00"
-                  />
-                  {errors.price1 && <p className="text-red-500 text-xs mt-1">{errors.price1}</p>}
+                  <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold">
+                    BASE
+                  </span>
                 </div>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.price1}
+                  onChange={(e) => handleChange('price1', parseFloat(e.target.value) || 0)}
+                  className={`w-full px-4 py-3 text-lg font-bold border-2 rounded-lg focus:outline-none focus:ring-3 focus:ring-blue-300 transition-all ${
+                    errors.price1 ? 'border-red-400 bg-red-50' : 'border-blue-200 bg-blue-50'
+                  }`}
+                  min="0"
+                  placeholder="0.00"
+                />
+                {errors.price1 && <p className="text-red-500 text-xs mt-2 font-medium">{errors.price1}</p>}
+                <p className="text-xs text-blue-600 mt-2 font-medium">Precio para clientes generales</p>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Precio 2
+              {/* Precio 2 */}
+              <div className="bg-white p-4 rounded-lg border-2 border-green-300 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-bold text-green-700">
+                    Precio 2 (Mayoreo)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.price2}
-                    onChange={(e) => handleChange('price2', parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min="0"
-                    placeholder="0.00"
-                  />
+                  <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">
+                    NIVEL 2
+                  </span>
                 </div>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.price2}
+                  onChange={(e) => handleChange('price2', parseFloat(e.target.value) || 0)}
+                  className="w-full px-4 py-3 text-lg font-bold border-2 border-green-200 bg-green-50 rounded-lg focus:outline-none focus:ring-3 focus:ring-green-300 transition-all"
+                  min="0"
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-green-600 mt-2 font-medium">Precio para mayoristas</p>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Precio 3
+              {/* Precio 3 */}
+              <div className="bg-white p-4 rounded-lg border-2 border-yellow-300 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-bold text-yellow-700">
+                    Precio 3 (Distribuidor)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.price3}
-                    onChange={(e) => handleChange('price3', parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min="0"
-                    placeholder="0.00"
-                  />
+                  <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-semibold">
+                    NIVEL 3
+                  </span>
                 </div>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.price3}
+                  onChange={(e) => handleChange('price3', parseFloat(e.target.value) || 0)}
+                  className="w-full px-4 py-3 text-lg font-bold border-2 border-yellow-200 bg-yellow-50 rounded-lg focus:outline-none focus:ring-3 focus:ring-yellow-300 transition-all"
+                  min="0"
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-yellow-600 mt-2 font-medium">Precio para distribuidores</p>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Precio 4
+              {/* Precio 4 */}
+              <div className="bg-white p-4 rounded-lg border-2 border-purple-300 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-bold text-purple-700">
+                    Precio 4 (VIP)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.price4}
-                    onChange={(e) => handleChange('price4', parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min="0"
-                    placeholder="0.00"
-                  />
+                  <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-semibold">
+                    NIVEL 4
+                  </span>
                 </div>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.price4}
+                  onChange={(e) => handleChange('price4', parseFloat(e.target.value) || 0)}
+                  className="w-full px-4 py-3 text-lg font-bold border-2 border-purple-200 bg-purple-50 rounded-lg focus:outline-none focus:ring-3 focus:ring-purple-300 transition-all"
+                  min="0"
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-purple-600 mt-2 font-medium">Precio para clientes VIP</p>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Precio 5
+              {/* Precio 5 */}
+              <div className="bg-white p-4 rounded-lg border-2 border-red-300 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-bold text-red-700">
+                    Precio 5 (Especial)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.price5}
-                    onChange={(e) => handleChange('price5', parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min="0"
-                    placeholder="0.00"
-                  />
+                  <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">
+                    NIVEL 5
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.price5}
+                  onChange={(e) => handleChange('price5', parseFloat(e.target.value) || 0)}
+                  className="w-full px-4 py-3 text-lg font-bold border-2 border-red-200 bg-red-50 rounded-lg focus:outline-none focus:ring-3 focus:ring-red-300 transition-all"
+                  min="0"
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-red-600 mt-2 font-medium">Precio especial/promocional</p>
+              </div>
+
+              {/* Calculadora de Márgenes */}
+              <div className="bg-white p-4 rounded-lg border-2 border-gray-300 shadow-sm">
+                <div className="mb-3">
+                  <label className="text-sm font-bold text-gray-700">
+                    Calculadora de Márgenes
+                  </label>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Costo base:</span>
+                    <span className="font-mono font-bold">${formData.cost.toFixed(2)}</span>
+                  </div>
+                  {formData.cost > 0 && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-blue-600">Margen P1:</span>
+                        <span className="font-mono text-blue-600">
+                          {(((formData.price1 - formData.cost) / formData.cost) * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-green-600">Margen P2:</span>
+                        <span className="font-mono text-green-600">
+                          {formData.price2 > 0 ? (((formData.price2 - formData.cost) / formData.cost) * 100).toFixed(1) : '0.0'}%
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
-              
-              <div className="mt-3 text-xs text-gray-600">
-                <p>• Precio 1: Precio base para clientes generales</p>
-                <p>• Precios 2-5: Niveles especiales para diferentes tipos de clientes</p>
+            </div>
+            
+            {/* Botones de Cálculo Rápido */}
+            <div className="mt-6 bg-white p-4 rounded-lg border border-gray-200">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Cálculo Rápido de Precios</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (formData.cost > 0) {
+                      const basePrice = formData.cost * 1.3; // 30% margen
+                      handleChange('price1', basePrice);
+                      handleChange('price2', basePrice * 1.1);
+                      handleChange('price3', basePrice * 1.2);
+                      handleChange('price4', basePrice * 1.3);
+                      handleChange('price5', basePrice * 1.4);
+                    }
+                  }}
+                  className="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Margen 30%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (formData.cost > 0) {
+                      const basePrice = formData.cost * 1.5; // 50% margen
+                      handleChange('price1', basePrice);
+                      handleChange('price2', basePrice * 1.1);
+                      handleChange('price3', basePrice * 1.2);
+                      handleChange('price4', basePrice * 1.3);
+                      handleChange('price5', basePrice * 1.4);
+                    }
+                  }}
+                  className="px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Margen 50%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (formData.cost > 0) {
+                      const basePrice = formData.cost * 2; // 100% margen
+                      handleChange('price1', basePrice);
+                      handleChange('price2', basePrice * 1.1);
+                      handleChange('price3', basePrice * 1.2);
+                      handleChange('price4', basePrice * 1.3);
+                      handleChange('price5', basePrice * 1.4);
+                    }
+                  }}
+                  className="px-3 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Margen 100%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleChange('price1', 0);
+                    handleChange('price2', 0);
+                    handleChange('price3', 0);
+                    handleChange('price4', 0);
+                    handleChange('price5', 0);
+                  }}
+                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Limpiar
+                </button>
+              </div>
+            </div>
+            
+            {/* Información de Ayuda */}
+            <div className="mt-4 bg-blue-100 p-4 rounded-lg border border-blue-200">
+              <h5 className="text-sm font-semibold text-blue-800 mb-2">Guía de Niveles de Precio:</h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-700">
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                  <span><strong>Precio 1:</strong> Clientes generales y menudeo</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                  <span><strong>Precio 2:</strong> Mayoristas y volumen medio</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+                  <span><strong>Precio 3:</strong> Distribuidores y alto volumen</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                  <span><strong>Precio 4:</strong> Clientes VIP y preferenciales</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                  <span><strong>Precio 5:</strong> Promociones y ofertas especiales</span>
+                </div>
               </div>
             </div>
           </div>
