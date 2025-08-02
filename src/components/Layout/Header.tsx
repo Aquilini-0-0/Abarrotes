@@ -1,10 +1,127 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Bell, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
+
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  date: string;
+  read: boolean;
+}
 
 export function Header() {
   const { user } = useAuth();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      // Obtener productos con stock bajo
+      const { data: products, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .lt('stock', 20)
+        .eq('status', 'active');
+
+      if (productsError) throw productsError;
+
+      // Obtener ventas pendientes
+      const { data: sales, error: salesError } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('status', 'pending');
+
+      if (salesError) throw salesError;
+
+      // Crear notificaciones basadas en los datos
+      const newNotifications: Notification[] = [];
+
+      // Notificaciones de stock bajo
+      if (products && products.length > 0) {
+        newNotifications.push({
+          id: 'stock-low',
+          title: 'Stock Bajo',
+          message: `${products.length} productos con stock menor a 20 unidades`,
+          type: 'warning',
+          date: new Date().toISOString(),
+          read: false
+        });
+      }
+
+      // Notificaciones de ventas pendientes
+      if (sales && sales.length > 0) {
+        const totalPendiente = sales.reduce((sum, sale) => sum + sale.total, 0);
+        newNotifications.push({
+          id: 'sales-pending',
+          title: 'Ventas Pendientes',
+          message: `${sales.length} ventas por cobrar - Total: $${totalPendiente.toLocaleString('es-MX')}`,
+          type: 'info',
+          date: new Date().toISOString(),
+          read: false
+        });
+      }
+
+      // Notificación de sistema
+      newNotifications.push({
+        id: 'system-status',
+        title: 'Sistema Operativo',
+        message: 'Todos los módulos funcionando correctamente',
+        type: 'success',
+        date: new Date().toISOString(),
+        read: false
+      });
+
+      setNotifications(newNotifications);
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+      setNotifications([{
+        id: 'error',
+        title: 'Error de Conexión',
+        message: 'No se pudieron cargar las notificaciones',
+        type: 'error',
+        date: new Date().toISOString(),
+        read: false
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markAsRead = (notificationId: string) => {
+    setNotifications(prev => prev.map(notif => 
+      notif.id === notificationId ? { ...notif, read: true } : notif
+    ));
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'warning': return '⚠️';
+      case 'error': return '❌';
+      case 'success': return '✅';
+      default: return 'ℹ️';
+    }
+  };
+
+  const getNotificationColor = (type: string) => {
+    switch (type) {
+      case 'warning': return 'border-l-yellow-500 bg-yellow-50';
+      case 'error': return 'border-l-red-500 bg-red-50';
+      case 'success': return 'border-l-green-500 bg-green-50';
+      default: return 'border-l-blue-500 bg-blue-50';
+    }
+  };
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4 ml-64">
@@ -23,10 +140,92 @@ export function Header() {
         </div>
 
         <div className="flex items-center space-x-4">
-          <button className="p-2 text-gray-400 hover:text-gray-600 relative">
-            <Bell size={20} />
-            <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400"></span>
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="p-2 text-gray-400 hover:text-gray-600 relative transition-colors"
+            >
+              <Bell size={20} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex items-center justify-center h-5 w-5 text-xs font-bold text-white bg-red-500 rounded-full">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Dropdown de Notificaciones */}
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
+                <div className="p-4 border-b border-gray-200 bg-blue-600 rounded-t-lg">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-white font-semibold">Notificaciones</h3>
+                    <button
+                      onClick={() => setShowNotifications(false)}
+                      className="text-blue-100 hover:text-white"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="max-h-96 overflow-y-auto">
+                  {loading ? (
+                    <div className="p-4 text-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="text-gray-500 text-sm mt-2">Cargando notificaciones...</p>
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div className="p-6 text-center">
+                      <Bell className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500 font-medium">No hay notificaciones</p>
+                      <p className="text-gray-400 text-sm">Todas las notificaciones aparecerán aquí</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-200">
+                      {notifications.map(notification => (
+                        <div
+                          key={notification.id}
+                          onClick={() => markAsRead(notification.id)}
+                          className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors border-l-4 ${getNotificationColor(notification.type)} ${
+                            !notification.read ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <span className="text-lg">{getNotificationIcon(notification.type)}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <p className={`text-sm font-medium text-gray-900 ${!notification.read ? 'font-bold' : ''}`}>
+                                  {notification.title}
+                                </p>
+                                {!notification.read && (
+                                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                              <p className="text-xs text-gray-400 mt-2">
+                                {new Date(notification.date).toLocaleString('es-MX')}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="p-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+                  <button
+                    onClick={() => {
+                      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                    }}
+                    className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Marcar todas como leídas
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           
           <div className="flex items-center space-x-3">
             <div className="text-right">

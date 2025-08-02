@@ -2,14 +2,35 @@ import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useSales } from '../../hooks/useSales';
-import { BarChart3, TrendingUp, DollarSign, ShoppingCart, Eye, X } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, ShoppingCart, Eye, X, User } from 'lucide-react';
 
 export function ReportesVentas() {
   const { sales, loading, error } = useSales();
   const [selectedSale, setSelectedSale] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [viewMode, setViewMode] = useState<'detailed' | 'summary'>('detailed');
 
-  const columns = [
+  // Agrupar ventas por cliente para vista resumen
+  const salesSummary = sales.reduce((acc, sale) => {
+    const existingClient = acc.find(item => item.client_id === sale.client_id);
+    if (existingClient) {
+      existingClient.total += sale.total;
+      existingClient.sales_count += 1;
+      existingClient.last_sale_date = sale.date > existingClient.last_sale_date ? sale.date : existingClient.last_sale_date;
+    } else {
+      acc.push({
+        client_id: sale.client_id,
+        client_name: sale.client_name,
+        total: sale.total,
+        sales_count: 1,
+        last_sale_date: sale.date,
+        status: sale.status
+      });
+    }
+    return acc;
+  }, [] as any[]);
+
+  const detailedColumns = [
     { 
       key: 'date', 
       label: 'Fecha', 
@@ -63,9 +84,49 @@ export function ReportesVentas() {
     }
   ];
 
+  const summaryColumns = [
+    { key: 'client_name', label: 'Cliente', sortable: true },
+    { 
+      key: 'sales_count', 
+      label: 'Ventas', 
+      sortable: true,
+      render: (value: number) => (
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+          {value} ventas
+        </span>
+      )
+    },
+    { 
+      key: 'total', 
+      label: 'Total Acumulado', 
+      sortable: true,
+      render: (value: number) => (
+        <span className="font-semibold text-green-600 text-lg">
+          ${value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+        </span>
+      )
+    },
+    { 
+      key: 'last_sale_date', 
+      label: 'Última Venta', 
+      sortable: true,
+      render: (value: string) => new Date(value).toLocaleDateString('es-MX')
+    },
+    {
+      key: 'average',
+      label: 'Promedio por Venta',
+      render: (_, row: any) => (
+        <span className="font-mono text-purple-600">
+          ${(row.total / row.sales_count).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+        </span>
+      )
+    }
+  ];
+
   const totalVentas = sales.reduce((sum, sale) => sum + sale.total, 0);
   const ventasPagadas = sales.filter(s => s.status === 'paid').reduce((sum, sale) => sum + sale.total, 0);
   const ventasPendientes = sales.filter(s => s.status === 'pending').reduce((sum, sale) => sum + sale.total, 0);
+  const clientesUnicos = salesSummary.length;
 
   if (loading) {
     return (
@@ -93,7 +154,31 @@ export function ReportesVentas() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Reportes de Ventas</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Reportes de Ventas</h1>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setViewMode('detailed')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              viewMode === 'detailed'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Vista Detallada
+          </button>
+          <button
+            onClick={() => setViewMode('summary')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              viewMode === 'summary'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Resumen por Cliente
+          </button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card title="Ventas Totales">
@@ -138,16 +223,27 @@ export function ReportesVentas() {
           </div>
         </Card>
 
-        <Card title="Promedio Venta">
+        <Card title={viewMode === 'summary' ? "Clientes Únicos" : "Promedio Venta"}>
           <div className="flex items-center">
-            <div className="p-3 bg-purple-100 rounded-lg mr-4">
-              <BarChart3 className="h-6 w-6 text-purple-600" />
-            </div>
+            {viewMode === 'summary' ? (
+              <div className="p-3 bg-purple-100 rounded-lg mr-4">
+                <User className="h-6 w-6 text-purple-600" />
+              </div>
+            ) : (
+              <div className="p-3 bg-purple-100 rounded-lg mr-4">
+                <BarChart3 className="h-6 w-6 text-purple-600" />
+              </div>
+            )}
             <div>
               <div className="text-2xl font-bold text-purple-600">
-                ${(totalVentas / sales.length).toLocaleString('es-MX')}
+                {viewMode === 'summary' 
+                  ? clientesUnicos
+                  : `$${(totalVentas / sales.length).toLocaleString('es-MX')}`
+                }
               </div>
-              <div className="text-sm text-gray-500">Por venta</div>
+              <div className="text-sm text-gray-500">
+                {viewMode === 'summary' ? 'Clientes' : 'Por venta'}
+              </div>
             </div>
           </div>
         </Card>
@@ -155,7 +251,7 @@ export function ReportesVentas() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <Card title="Reporte de Ventas">
+          <Card title={viewMode === 'summary' ? "Resumen por Cliente" : "Reporte de Ventas"}>
             <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -188,47 +284,94 @@ export function ReportesVentas() {
             </div>
 
             <DataTable
-              data={sales}
-              columns={columns}
-              title="Historial de Ventas"
+              data={viewMode === 'summary' ? salesSummary : sales}
+              columns={viewMode === 'summary' ? summaryColumns : detailedColumns}
+              title={viewMode === 'summary' ? "Resumen por Cliente" : "Historial de Ventas"}
             />
           </Card>
         </div>
 
         <div className="space-y-6">
-          <Card title="Productos Más Vendidos">
+          <Card title={viewMode === 'summary' ? "Top Clientes" : "Productos Más Vendidos"}>
             <div className="space-y-4">
-              {['Aceite Comestible 1L', 'Arroz Blanco 1Kg', 'Leche Entera 1L'].map((producto, index) => (
-                <div key={producto} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium text-gray-900">{producto}</div>
-                    <div className="text-sm text-gray-500">#{index + 1} más vendido</div>
+              {viewMode === 'summary' ? (
+                salesSummary
+                  .sort((a, b) => b.total - a.total)
+                  .slice(0, 5)
+                  .map((client, index) => (
+                    <div key={client.client_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <div className="font-medium text-gray-900">{client.client_name}</div>
+                        <div className="text-sm text-gray-500">#{index + 1} en ventas • {client.sales_count} compras</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-green-600">
+                          ${client.total.toLocaleString('es-MX')}
+                        </div>
+                        <div className="text-xs text-gray-500">total</div>
+                      </div>
+                    </div>
+                  ))
+              ) : (
+                ['Aceite Comestible 1L', 'Arroz Blanco 1Kg', 'Leche Entera 1L'].map((producto, index) => (
+                  <div key={producto} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-medium text-gray-900">{producto}</div>
+                      <div className="text-sm text-gray-500">#{index + 1} más vendido</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-blue-600">{50 - index * 10}</div>
+                      <div className="text-xs text-gray-500">unidades</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold text-blue-600">{50 - index * 10}</div>
-                    <div className="text-xs text-gray-500">unidades</div>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </Card>
 
-          <Card title="Clientes Top">
+          <Card title={viewMode === 'summary' ? "Estadísticas de Clientes" : "Clientes Top"}>
             <div className="space-y-4">
-              {sales.map((sale, index) => (
-                <div key={sale.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium text-gray-900">{sale.client_name}</div>
-                    <div className="text-sm text-gray-500">#{index + 1} en ventas</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-green-600">
-                      ${sale.total.toLocaleString('es-MX')}
+              {viewMode === 'summary' ? (
+                <>
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700">Clientes Activos:</span>
+                      <span className="font-bold text-blue-600">{clientesUnicos}</span>
                     </div>
-                    <div className="text-xs text-gray-500">total</div>
                   </div>
-                </div>
-              ))}
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700">Promedio por Cliente:</span>
+                      <span className="font-bold text-green-600">
+                        ${(totalVentas / clientesUnicos).toLocaleString('es-MX')}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-yellow-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700">Cliente Más Activo:</span>
+                      <span className="font-bold text-yellow-600">
+                        {salesSummary.sort((a, b) => b.sales_count - a.sales_count)[0]?.client_name || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                sales.slice(0, 3).map((sale, index) => (
+                  <div key={sale.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-medium text-gray-900">{sale.client_name}</div>
+                      <div className="text-sm text-gray-500">#{index + 1} en ventas</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-green-600">
+                        ${sale.total.toLocaleString('es-MX')}
+                      </div>
+                      <div className="text-xs text-gray-500">total</div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </Card>
         </div>
