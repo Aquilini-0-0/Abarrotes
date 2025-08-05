@@ -8,6 +8,7 @@ import { POSCashModal } from './POSCashModal';
 import { POSTaraModal } from './POSTaraModal';
 import { POSCreditPaymentsModal } from './POSCreditPaymentsModal';
 import { POSAdvancesModal } from './POSAdvancesModal';
+import { POSCashCutsModal } from './POSCashCutsModal';
 import { usePOS } from '../../hooks/usePOS';
 import { POSProduct, POSClient } from '../../types/pos';
 
