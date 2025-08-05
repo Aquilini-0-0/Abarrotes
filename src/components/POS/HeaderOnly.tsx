@@ -1,11 +1,70 @@
 import React, { useEffect, useState } from 'react';
 import { FileText, User, ShoppingCart, DollarSign, Clock, Package } from 'lucide-react';
-import { usePOS } from '../../hooks/usePOS';
+import { supabase } from '../../lib/supabase';
 
 export function HeaderOnly() {
-  const { orders, loading } = usePOS();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [lastOrder, setLastOrder] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Fetch orders directly without authentication dependency
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('sales')
+        .select(`
+          *,
+          sale_items (
+            id,
+            product_id,
+            product_name,
+            quantity,
+            price,
+            total
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('Error fetching orders:', error);
+        // If there's an error, show a placeholder
+        setOrders([]);
+        setLastOrder(null);
+        return;
+      }
+
+      setOrders(data || []);
+      
+      if (data && data.length > 0) {
+        const latest = data[0];
+        const products = latest.sale_items?.map((item: any) => ({
+          name: item.product_name,
+          quantity: item.quantity
+        })) || [];
+        
+        setLastOrder({
+          id: latest.id,
+          client_name: latest.client_name,
+          total: latest.total,
+          items_count: latest.sale_items?.length || 0,
+          products: products,
+          date: latest.created_at,
+          status: latest.status
+        });
+      } else {
+        setLastOrder(null);
+      }
+    } catch (err) {
+      console.error('Error in fetchOrders:', err);
+      setOrders([]);
+      setLastOrder(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Update time every second
   useEffect(() => {
@@ -16,27 +75,15 @@ export function HeaderOnly() {
     return () => clearInterval(timer);
   }, []);
 
-  // Update last order when orders change
+  // Initial fetch and periodic refresh
   useEffect(() => {
-    if (orders.length > 0) {
-      const latest = orders[0];
-      
-      const products = latest.items.map(item => ({
-        name: item.product_name,
-        quantity: item.quantity
-      }));
-      
-      setLastOrder({
-        id: latest.id,
-        client_name: latest.client_name,
-        total: latest.total,
-        items_count: latest.items.length,
-        products: products,
-        date: latest.created_at,
-        status: latest.status
-      });
-    }
-  }, [orders]);
+    fetchOrders();
+    
+    // Refresh every 5 seconds to get real-time updates
+    const refreshInterval = setInterval(fetchOrders, 5000);
+    
+    return () => clearInterval(refreshInterval);
+  }, []);
 
   if (loading) {
     return (
