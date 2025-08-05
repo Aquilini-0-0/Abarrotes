@@ -194,7 +194,6 @@ export function POSMenuBar({
         </div>
       </div>
     </div>
-  </div>
 
 
       {/* Last Order Information Bar */}
