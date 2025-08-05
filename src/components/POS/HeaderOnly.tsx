@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, User, ShoppingCart, DollarSign, Clock, Package, Calendar } from 'lucide-react';
+import { FileText, User, ShoppingCart, DollarSign, Clock, Package } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export function HeaderOnly() {
@@ -87,7 +87,7 @@ export function HeaderOnly() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-blue-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-8 border-orange-400 mx-auto mb-12 shadow-2xl"></div>
           <p className="text-white text-4xl font-bold tracking-wide">Cargando información...</p>
@@ -103,7 +103,7 @@ export function HeaderOnly() {
 
   if (!lastOrder) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-blue-900 flex items-center justify-center p-8">
         <div className="text-center bg-gradient-to-br from-white via-gray-50 to-blue-50 rounded-3xl shadow-2xl p-20 border border-gray-300 max-w-4xl">
           <div className="relative mb-12">
             <Package size={160} className="mx-auto text-gray-400 mb-8 drop-shadow-lg" />
@@ -332,6 +332,139 @@ export function HeaderOnly() {
             <div className="text-blue-200 text-lg font-medium">
               Actualización automática cada 5 segundos
             </div>
+          </h1>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+        {/* Main Card */}
+        <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+          {/* Card Header */}
+          <div className="bg-gradient-to-r from-orange-400 via-red-500 to-red-400 p-8">
+            <div className="flex items-center justify-center space-x-4">
+              <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
+              <h2 className="text-white font-bold text-4xl">ÚLTIMO PEDIDO REALIZADO</h2>
+              <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Card Content */}
+          <div className="p-12">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+              
+              {/* Left Column - Order Info */}
+              <div className="space-y-8">
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-4">
+                    <FileText size={48} className="text-orange-600" />
+                  </div>
+                  <div className="text-gray-600 text-xl font-medium mb-2">FOLIO</div>
+                  <div className="text-4xl font-bold text-orange-600 font-mono">
+                    #{lastOrder.id.slice(-6).toUpperCase()}
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-4">
+                    <User size={48} className="text-blue-600" />
+                  </div>
+                  <div className="text-gray-600 text-xl font-medium mb-2">CLIENTE</div>
+                  <div className="text-3xl font-bold text-gray-800">
+                    {lastOrder.client_name}
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-4">
+                    <Clock size={48} className="text-purple-600" />
+                  </div>
+                  <div className="text-gray-600 text-xl font-medium mb-2">HORA</div>
+                  <div className="text-2xl font-bold text-gray-800">
+                    {new Date(lastOrder.date).toLocaleTimeString('es-MX', { 
+                      hour: '2-digit', 
+                      minute: '2-digit',
+                      second: '2-digit'
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Center Column - Products */}
+              <div className="space-y-6">
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-6">
+                    <ShoppingCart size={48} className="text-green-600" />
+                  </div>
+                  <div className="text-gray-600 text-xl font-medium mb-4">PRODUCTOS VENDIDOS</div>
+                  <div className="text-3xl font-bold text-green-600 mb-8">
+                    {lastOrder.items_count} ARTÍCULOS
+                  </div>
+                </div>
+
+                <div className="space-y-4 max-h-80 overflow-y-auto">
+                  {lastOrder.products && lastOrder.products.map((product: any, index: number) => (
+                    <div 
+                      key={index} 
+                      className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-2xl p-4 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-lg font-bold text-gray-800 truncate">
+                            {product.name}
+                          </div>
+                        </div>
+                        <div className="ml-4 flex-shrink-0">
+                          <span className="bg-orange-500 text-white px-4 py-2 rounded-full font-bold text-lg">
+                            {product.quantity}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Column - Total & Status */}
+              <div className="space-y-8">
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-4">
+                    <DollarSign size={64} className="text-green-600" />
+                  </div>
+                  <div className="text-gray-600 text-xl font-medium mb-2">TOTAL</div>
+                  <div className="text-6xl font-bold text-green-600 font-mono">
+                    ${lastOrder.total.toLocaleString('es-MX')}
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="text-gray-600 text-xl font-medium mb-4">ESTADO</div>
+                  <div className={`inline-flex items-center px-8 py-4 rounded-2xl text-2xl font-bold ${getStatusColor(lastOrder.status)}`}>
+                    <div className="w-4 h-4 rounded-full bg-current mr-4 animate-pulse"></div>
+                    {getStatusText(lastOrder.status)}
+                  </div>
+                </div>
+
+                <div className="text-center bg-gray-50 rounded-2xl p-6">
+                  <div className="text-gray-600 text-lg font-medium mb-2">FECHA</div>
+                  <div className="text-xl font-bold text-gray-800">
+                    {new Date(lastOrder.date).toLocaleDateString('es-MX', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long'
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8">
+          <div className="text-gray-500 text-lg">
+            Actualización automática en tiempo real
           </div>
         </div>
       </div>
