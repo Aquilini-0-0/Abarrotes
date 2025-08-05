@@ -39,6 +39,7 @@ export function POSOrderPanel({
   const [isQuote, setIsQuote] = useState(false);
   const [isExternal, setIsExternal] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [showObservations, setShowObservations] = useState(false);
 
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(searchClient.toLowerCase()) ||
@@ -199,52 +200,79 @@ export function POSOrderPanel({
 )}
 
 
-<div className="bg-gradient-to-r from-orange-25 to-red-25 py-1 sm:py-2 px-2 sm:px-3 border-t border-orange-100">
-  {/* Observaciones + Chofer/Ruta */}
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-2 mb-1 sm:mb-2">
-    <div>
-      <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Observaciones</label>
-      <input
-        type="text"
-        value={observations}
-        onChange={(e) => setObservations(e.target.value)}
-        className="w-full bg-white border border-orange-200 text-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
-        placeholder="Observaciones del pedido..."
-      />
-    </div>
-    <div className="grid grid-cols-2 gap-1 sm:gap-2">
-      <div>
-        <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Chofer</label>
-        <select
-          value={driver}
-          onChange={(e) => setDriver(e.target.value)}
-          className="w-full bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
-        >
-          <option value="">Sin chofer</option>
-          <option value="Juan Pérez">Juan Pérez</option>
-          <option value="María García">María García</option>
-          <option value="Carlos López">Carlos López</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Ruta</label>
-        <select
-          value={route}
-          onChange={(e) => setRoute(e.target.value)}
-          className="w-full bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
-        >
-          <option value="">Sin ruta</option>
-          <option value="Centro">Centro</option>
-          <option value="Norte">Norte</option>
-          <option value="Sur">Sur</option>
-          <option value="Foránea">Foránea</option>
-        </select>
-      </div>
-    </div>
-  </div>
+{/* Observaciones Colapsables */}
+<div className="bg-gradient-to-r from-orange-25 to-red-25 border-t border-orange-100">
+  {/* Toggle Button */}
+  <button
+    onClick={() => setShowObservations(!showObservations)}
+    className="w-full py-1 sm:py-2 px-2 sm:px-3 text-left flex items-center justify-between hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-colors"
+  >
+    <span className="text-gray-700 font-medium text-[10px] sm:text-xs lg:text-sm">
+      Observaciones y Detalles
+    </span>
+    <svg
+      className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-500 transition-transform ${
+        showObservations ? 'rotate-180' : ''
+      }`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
 
-  {/* Opciones de Venta */}
-  <div className="grid grid-cols-2 sm:grid-cols-4 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
+  {/* Collapsible Content */}
+  {showObservations && (
+    <div className="px-2 sm:px-3 pb-1 sm:pb-2 space-y-1 sm:space-y-2">
+      {/* Observaciones */}
+      <div>
+        <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Observaciones</label>
+        <input
+          type="text"
+          value={observations}
+          onChange={(e) => setObservations(e.target.value)}
+          className="w-full bg-white border border-orange-200 text-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+          placeholder="Observaciones del pedido..."
+        />
+      </div>
+      
+      {/* Chofer y Ruta */}
+      <div className="grid grid-cols-2 gap-1 sm:gap-2">
+        <div>
+          <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Chofer</label>
+          <select
+            value={driver}
+            onChange={(e) => setDriver(e.target.value)}
+            className="w-full bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+          >
+            <option value="">Sin chofer</option>
+            <option value="Juan Pérez">Juan Pérez</option>
+            <option value="María García">María García</option>
+            <option value="Carlos López">Carlos López</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Ruta</label>
+          <select
+            value={route}
+            onChange={(e) => setRoute(e.target.value)}
+            className="w-full bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+          >
+            <option value="">Sin ruta</option>
+            <option value="Centro">Centro</option>
+            <option value="Norte">Norte</option>
+            <option value="Sur">Sur</option>
+            <option value="Foránea">Foránea</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* Opciones de Venta - Siempre visibles */}
+  <div className="px-2 sm:px-3 py-1 sm:py-2 border-t border-orange-200">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
     {[
       { label: 'Crédito', checked: isCredit, set: setIsCredit },
       { label: 'Factura', checked: isInvoice, set: setIsInvoice },
@@ -261,25 +289,26 @@ export function POSOrderPanel({
         <span className="text-gray-700 text-[10px] sm:text-xs lg:text-sm">{opt.label}</span>
       </label>
     ))}
-  </div>
+    </div>
 
-  {/* Descuento */}
-  <div className="flex items-center space-x-1 sm:space-x-2 mb-1 sm:mb-2">
-    <label className="text-gray-600 text-[10px] sm:text-xs font-medium">Desc:</label>
-    <input
-      type="number"
-      step="0.01"
-      value={discountAmount}
-      onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
-      className="bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs w-12 sm:w-16 lg:w-20 focus:outline-none focus:ring-1 focus:ring-orange-500"
-      placeholder="0.00"
-    />
-    <button
-      onClick={handleApplyDiscount}
-      className="bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 text-orange-700 px-1 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium border border-orange-300 shadow-sm"
-    >
-      Aplicar
-    </button>
+    {/* Descuento */}
+    <div className="flex items-center space-x-1 sm:space-x-2">
+      <label className="text-gray-600 text-[10px] sm:text-xs font-medium">Desc:</label>
+      <input
+        type="number"
+        step="0.01"
+        value={discountAmount}
+        onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
+        className="bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs w-12 sm:w-16 lg:w-20 focus:outline-none focus:ring-1 focus:ring-orange-500"
+        placeholder="0.00"
+      />
+      <button
+        onClick={handleApplyDiscount}
+        className="bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 text-orange-700 px-1 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium border border-orange-300 shadow-sm"
+      >
+        Aplicar
+      </button>
+    </div>
   </div>
 </div>
 
