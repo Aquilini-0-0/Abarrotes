@@ -40,9 +40,9 @@ export function POSOrdersModal({ orders, onClose, onSelectOrder }: POSOrdersModa
   };
 return ( 
   <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-2 sm:p-4">
-    <div className="bg-white rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-6xl max-h-[95vh] overflow-hidden">
+    <div className="bg-white rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
       {/* Header sin degradado, fondo blanco */}
-      <div className="bg-white p-2 sm:p-4 border-b border-gray-200 rounded-t-lg">
+      <div className="bg-white p-2 sm:p-4 border-b border-gray-200 rounded-t-lg flex-shrink-0">
         <div className="flex items-center justify-between mb-2 sm:mb-4">
           <h2 className="text-gray-900 font-bold text-sm sm:text-lg lg:text-xl">Mis Pedidos</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-800 flex-shrink-0">
@@ -90,7 +90,8 @@ return (
       </div>
 
       {/* Orders Table */}
-      <div className="overflow-y-auto max-h-[calc(95vh-200px)] overflow-x-auto">
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full overflow-y-auto overflow-x-auto">
         <table className="w-full text-xs sm:text-sm min-w-[600px]">
           <thead className="bg-gray-100 sticky top-0 border-b border-gray-200">
             <tr>
@@ -188,16 +189,17 @@ return (
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Summary con degradado naranja a rojo */}
       <div
-        className="p-2 sm:p-4 border-t border-gray-200 rounded-b-lg text-white"
+        className="p-2 sm:p-4 border-t border-gray-200 rounded-b-lg text-white flex-shrink-0"
         style={{
           background: 'linear-gradient(90deg, #ff7f50, #d32f2f)', // naranja a rojo
         }}
       >
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm font-semibold">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm font-semibold">
           <div className="text-center">
             <div className="text-[10px] sm:text-xs lg:text-sm">Total Pedidos</div>
             <div className="text-sm sm:text-base lg:text-lg font-bold">{filteredOrders.length}</div>
@@ -208,17 +210,22 @@ return (
               {filteredOrders.filter(o => o.status === 'pending').length}
             </div>
           </div>
-          <div className="text-center">
+          <div className="text-center lg:block hidden">
             <div className="text-[10px] sm:text-xs lg:text-sm">Pagados</div>
             <div className="text-green-200 text-sm sm:text-base lg:text-lg font-bold">
               {filteredOrders.filter(o => o.status === 'paid').length}
             </div>
           </div>
-          <div className="text-center font-mono col-span-2 sm:col-span-1">
+          <div className="text-center font-mono col-span-2 lg:col-span-1">
             <div className="text-[10px] sm:text-xs lg:text-sm">Importe Total</div>
             <div className="text-sm sm:text-base lg:text-lg font-bold">
               ${filteredOrders.reduce((sum, o) => sum + o.total, 0).toLocaleString('es-MX')}
             </div>
+          </div>
+          
+          {/* Mostrar "Pagados" en móviles/tabletas como overlay o información adicional */}
+          <div className="lg:hidden col-span-2 text-center text-[10px] sm:text-xs opacity-75 mt-1">
+            Pagados: {filteredOrders.filter(o => o.status === 'paid').length}
           </div>
         </div>
       </div>
