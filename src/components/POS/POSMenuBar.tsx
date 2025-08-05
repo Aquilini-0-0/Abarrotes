@@ -272,6 +272,17 @@ export function POSMenuBar({
                 {lastOrder.status === 'paid' ? 'Pagado' : 
                  lastOrder.status === 'pending' ? 'Pendiente' : 'Guardado'}
               </span>
+             
+             <button
+               onClick={() => window.open('/header-only', '_blank')}
+               className="flex items-center space-x-1 bg-white hover:bg-gray-50 text-orange-600 border border-orange-300 px-3 py-1 rounded-lg text-xs font-medium transition-colors shadow-sm"
+               title="Abrir vista para proyectar en TV"
+             >
+               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V4a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z" />
+               </svg>
+               <span>Proyectar en TV</span>
+             </button>
             </div>
           </div>
         </div>
