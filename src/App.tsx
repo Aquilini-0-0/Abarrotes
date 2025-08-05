@@ -39,6 +39,13 @@ function POSRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? <div className="min-h-screen">{children}</div> : <Navigate to="/login" replace />;
 }
 
+function HeaderOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+  // Allow access to header-only if user was authenticated in main window
+  const wasAuthenticated = localStorage.getItem('loginSystem');
+  return (isAuthenticated || wasAuthenticated) ? <div className="min-h-screen">{children}</div> : <Navigate to="/login" replace />;
+}
+
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   const loginSystem = localStorage.getItem('loginSystem'); // POS o ERP
@@ -72,9 +79,9 @@ function AppRoutes() {
       
       {/* Header Only Route for TV Display */}
       <Route path="/header-only" element={
-        <POSRoute>
+        <HeaderOnlyRoute>
           <HeaderOnly />
-        </POSRoute>
+        </HeaderOnlyRoute>
       } />
       
       {/* Executive Routes */}
