@@ -103,7 +103,7 @@ export function HeaderOnly() {
 
   if (!lastOrder) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-blue-900 flex items-center justify-center p-8">
+      <div className="min-h-screen bg-white flex items-center justify-center p-8">
         <div className="text-center bg-gradient-to-br from-white via-gray-50 to-blue-50 rounded-3xl shadow-2xl p-20 border border-gray-300 max-w-4xl">
           <div className="relative mb-12">
             <Package size={160} className="mx-auto text-gray-400 mb-8 drop-shadow-lg" />
