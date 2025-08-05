@@ -188,7 +188,7 @@ export function POSMenuBar({
             
             {/* Mobile Dropdown Menu */}
             {showMobileMenu && (
-              <div className="absolute top-full right-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-w-[calc(100vw-2rem)]">
                 {/* Pedidos Section */}
                 <div className="p-2 border-b border-gray-100">
                   <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Pedidos</div>
