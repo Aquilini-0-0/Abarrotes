@@ -172,9 +172,9 @@ export function POSLayout() {
       />
 
       {/* Main Content - Responsive Layout */}
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-60px)] bg-white shadow-sm">
+      <div className="flex flex-col md:flex-row h-[calc(100vh-60px)] bg-white shadow-sm">
         {/* Left Panel - Order Details */}
-        <div className="w-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-gray-200 bg-white h-1/2 lg:h-full">
+        <div className="w-full md:w-2/5 lg:w-1/2 border-b md:border-b-0 md:border-r border-gray-200 bg-white h-1/2 md:h-full">
           <POSOrderPanel
             order={currentOrder}
             client={selectedClient}
@@ -200,7 +200,7 @@ export function POSLayout() {
         </div>
 
         {/* Right Panel - Product Catalog */}
-        <div className="w-full lg:w-1/2 bg-gray-50 h-1/2 lg:h-full">
+        <div className="w-full md:w-3/5 lg:w-1/2 bg-gray-50 h-1/2 md:h-full">
           <POSProductPanel
             products={products}
             searchTerm={searchTerm}
