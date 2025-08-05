@@ -50,21 +50,21 @@ export function POSMenuBar({
   return (
   <div className="bg-white border-b border-gray-200 shadow-sm">
     {/* Main Menu Bar */}
-    <div className="px-4 py-1"> {/* Antes era py-3 */}
+    <div className="px-2 lg:px-4 py-1">
       <div className="flex items-center justify-between">
         
         {/* Left - Menu Items */}
-        <div className="flex items-center space-x-4"> {/* Menos espacio entre elementos */}
+        <div className="flex items-center space-x-2 lg:space-x-4">
           
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <span className="text-black font-bold text-base">
+            <span className="text-black font-bold text-sm lg:text-base">
               DURAN-PUNTO DE VENTA
             </span>
           </div>
 
           {/* Menu Items */}
-          <div className="flex items-center space-x-1">
+          <div className="hidden md:flex items-center space-x-1">
             
             {/* Pedidos */}
             <div className="relative group">
@@ -172,13 +172,22 @@ export function POSMenuBar({
               </button>
             </div>
           </div>
+          
+          {/* Mobile Menu Button */}
+          <div className="md:hidden">
+            <button className="p-2 text-gray-500 hover:text-gray-700">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Right - Status Info */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-1 lg:space-x-3">
           {/* Cash Register Status */}
           {cashRegister && (
-            <div className="flex items-center space-x-2 bg-green-50 border border-green-200 px-2 py-1 rounded">
+            <div className="hidden lg:flex items-center space-x-2 bg-green-50 border border-green-200 px-2 py-1 rounded">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-green-700 text-xs font-medium">
                 Caja Abierta: ${cashRegister.opening_amount.toLocaleString('es-MX')}
@@ -188,8 +197,8 @@ export function POSMenuBar({
 
           {/* User Info */}
           <div className="text-right">
-            <div className="text-gray-500 text-xs font-medium">{user?.name}</div>
-            <div className="text-gray-600 text-[10px]">{user?.role}</div>
+            <div className="text-gray-500 text-xs lg:text-sm font-medium">{user?.name}</div>
+            <div className="text-gray-600 text-[10px] lg:text-xs">{user?.role}</div>
           </div>
         </div>
       </div>
@@ -198,43 +207,43 @@ export function POSMenuBar({
 
       {/* Last Order Information Bar */}
       {lastOrder && (
-        <div className="bg-gradient-to-r from-orange-50 to-red-50 border-t border-orange-200 px-4 py-2 overflow-x-auto">
+        <div className="bg-gradient-to-r from-orange-50 to-red-50 border-t border-orange-200 px-2 lg:px-4 py-2 overflow-x-auto">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 min-w-0 flex-1">
+            <div className="flex items-center space-x-2 lg:space-x-4 min-w-0 flex-1">
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-orange-700 font-semibold text-sm">Último Pedido:</span>
+                <span className="text-orange-700 font-semibold text-xs lg:text-sm">Último Pedido:</span>
               </div>
               
               <div className="flex items-center space-x-1">
                 <FileText size={14} className="text-orange-600" />
-                <span className="text-gray-700 font-mono text-sm">
+                <span className="text-gray-700 font-mono text-xs lg:text-sm">
                   #{lastOrder.id.slice(-6).toUpperCase()}
                 </span>
               </div>
               
               <div className="flex items-center space-x-1">
                 <User size={14} className="text-orange-600" />
-                <span className="text-gray-700 text-sm font-medium">
-                  {lastOrder.client_name}
+                <span className="text-gray-700 text-xs lg:text-sm font-medium">
+                  {lastOrder.client_name.length > 15 ? `${lastOrder.client_name.substring(0, 15)}...` : lastOrder.client_name}
                 </span>
               </div>
               
               <div className="flex items-center space-x-1">
                 <ShoppingCart size={14} className="text-orange-600" />
-                <span className="text-gray-700 text-sm">
+                <span className="text-gray-700 text-xs lg:text-sm">
                   {lastOrder.items_count} productos
                 </span>
               </div>
               
               {/* Products List */}
-              <div className="flex items-center space-x-1">
-                <span className="text-orange-600 text-sm font-medium">Productos:</span>
-                <div className="flex items-center space-x-2 max-w-md overflow-x-auto">
+              <div className="hidden lg:flex items-center space-x-1">
+                <span className="text-orange-600 text-xs lg:text-sm font-medium">Productos:</span>
+                <div className="flex items-center space-x-2 max-w-md lg:max-w-lg overflow-x-auto">
                   {lastOrder.products && lastOrder.products.slice(0, 3).map((product, index) => (
                     <span
                       key={index}
-                      className="bg-white px-2 py-1 rounded border border-orange-200 text-xs text-gray-700 whitespace-nowrap"
+                      className="bg-white px-2 py-1 rounded border border-orange-200 text-xs lg:text-sm text-gray-700 whitespace-nowrap"
                       title={`${product.name} - Cant: ${product.quantity}`}
                     >
                       {product.name.length > 15 ? `${product.name.substring(0, 15)}...` : product.name}
@@ -242,7 +251,7 @@ export function POSMenuBar({
                     </span>
                   ))}
                   {lastOrder.products && lastOrder.products.length > 3 && (
-                    <span className="bg-gray-100 px-2 py-1 rounded border border-gray-300 text-xs text-gray-600">
+                    <span className="bg-gray-100 px-2 py-1 rounded border border-gray-300 text-xs lg:text-sm text-gray-600">
                       +{lastOrder.products.length - 3} más
                     </span>
                   )}
@@ -251,16 +260,16 @@ export function POSMenuBar({
               
               <div className="flex items-center space-x-1">
                 <DollarSign size={14} className="text-orange-600" />
-                <span className="text-green-600 font-bold text-sm">
+                <span className="text-green-600 font-bold text-xs lg:text-sm">
                   ${lastOrder.total.toLocaleString('es-MX')}
                 </span>
               </div>
             </div>
             
-            <div className="flex items-center space-x-3 flex-shrink-0">
+            <div className="flex items-center space-x-1 lg:space-x-3 flex-shrink-0">
               <div className="flex items-center space-x-1">
                 <Clock size={14} className="text-gray-500" />
-                <span className="text-gray-500 text-xs">
+                <span className="text-gray-500 text-xs lg:text-sm">
                   {new Date(lastOrder.date).toLocaleTimeString('es-MX', { 
                     hour: '2-digit', 
                     minute: '2-digit' 
@@ -268,7 +277,7 @@ export function POSMenuBar({
                 </span>
               </div>
               
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              <span className={`px-2 py-1 rounded-full text-xs lg:text-sm font-medium ${
                 lastOrder.status === 'paid' ? 'bg-green-100 text-green-700' :
                 lastOrder.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                 'bg-blue-100 text-blue-700'
@@ -279,13 +288,14 @@ export function POSMenuBar({
              
              <button
                onClick={() => window.open('/header-only', '_blank')}
-               className="flex items-center space-x-1 bg-white hover:bg-gray-50 text-orange-600 border border-orange-300 px-3 py-1 rounded-lg text-xs font-medium transition-colors shadow-sm"
+               className="flex items-center space-x-1 bg-white hover:bg-gray-50 text-orange-600 border border-orange-300 px-2 lg:px-3 py-1 rounded-lg text-xs lg:text-sm font-medium transition-colors shadow-sm"
                title="Abrir vista para proyectar en TV"
              >
                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V4a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z" />
                </svg>
-               <span>Proyectar en TV</span>
+               <span className="hidden lg:inline">Proyectar en TV</span>
+               <span className="lg:hidden">TV</span>
              </button>
             </div>
           </div>
