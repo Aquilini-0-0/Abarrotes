@@ -27,6 +27,7 @@ import { ReportesVentas } from './pages/Ventas/Reportes';
 import { AnalisisResultados } from './pages/Ejecutivo/Analisis';
 import { CorteCaja } from './pages/Ejecutivo/CorteCaja';
 import { POSLayout } from './components/POS/POSLayout';
+import { HeaderOnly } from './components/POS/HeaderOnly';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -66,6 +67,13 @@ function AppRoutes() {
       <Route path="/pos" element={
         <POSRoute>
           <POSLayout />
+        </POSRoute>
+      } />
+      
+      {/* Header Only Route for TV Display */}
+      <Route path="/header-only" element={
+        <POSRoute>
+          <HeaderOnly />
         </POSRoute>
       } />
       
