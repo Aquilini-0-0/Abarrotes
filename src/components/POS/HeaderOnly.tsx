@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, User, ShoppingCart, DollarSign, Clock, Package } from 'lucide-react';
+import { FileText, User, ShoppingCart, DollarSign, Clock, Package, Calendar } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export function HeaderOnly() {
