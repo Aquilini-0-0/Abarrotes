@@ -99,20 +99,22 @@ export function DataTable({
               </div>
             )}
             {exportable && (
-              <button
-                onClick={exportToCSV}
-                className="hidden lg:flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-              >
-                <Download size={16} />
-                <span>Exportar CSV</span>
-              </button>
-              <button
-                onClick={exportToCSV}
-                className="lg:hidden p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                title="Exportar CSV"
-              >
-                <Download size={16} />
-              </button>
+              <>
+                <button
+                  onClick={exportToCSV}
+                  className="hidden lg:flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                >
+                  <Download size={16} />
+                  <span>Exportar CSV</span>
+                </button>
+                <button
+                  onClick={exportToCSV}
+                  className="lg:hidden p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  title="Exportar CSV"
+                >
+                  <Download size={16} />
+                </button>
+              </>
             )}
           </div>
         </div>
