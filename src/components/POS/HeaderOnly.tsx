@@ -87,7 +87,7 @@ export function HeaderOnly() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-blue-900 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-8 border-orange-400 mx-auto mb-12 shadow-2xl"></div>
           <p className="text-white text-4xl font-bold tracking-wide">Cargando información...</p>
