@@ -80,10 +80,10 @@ export function DataTable({
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="px-6 py-4 border-b border-gray-200">
+      <div className="px-4 lg:px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          <div className="flex items-center space-x-4">
+          <h3 className="text-base lg:text-lg font-semibold text-gray-900">{title}</h3>
+          <div className="flex items-center space-x-2 lg:space-x-4">
             {searchable && (
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -93,7 +93,7 @@ export function DataTable({
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-32 lg:w-auto pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Buscar..."
                 />
               </div>
@@ -101,10 +101,17 @@ export function DataTable({
             {exportable && (
               <button
                 onClick={exportToCSV}
-                className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                className="hidden lg:flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
               >
                 <Download size={16} />
                 <span>Exportar CSV</span>
+              </button>
+              <button
+                onClick={exportToCSV}
+                className="lg:hidden p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                title="Exportar CSV"
+              >
+                <Download size={16} />
               </button>
             )}
           </div>
@@ -118,7 +125,7 @@ export function DataTable({
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  className={`px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
                     column.sortable ? 'cursor-pointer hover:bg-gray-100' : ''
                   }`}
                   onClick={() => column.sortable && handleSort(column.key)}
@@ -137,7 +144,7 @@ export function DataTable({
             {paginatedData.map((item, index) => (
               <tr key={index} className="hover:bg-gray-50">
                 {columns.map((column) => (
-                  <td key={column.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td key={column.key} className="px-3 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {column.render ? column.render(item[column.key], item) : item[column.key]}
                   </td>
                 ))}
@@ -148,11 +155,11 @@ export function DataTable({
       </div>
 
       {totalPages > 1 && (
-        <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-          <div className="text-sm text-gray-700">
+        <div className="px-4 lg:px-6 py-3 border-t border-gray-200 flex flex-col lg:flex-row items-center justify-between space-y-2 lg:space-y-0">
+          <div className="text-sm text-gray-700 order-2 lg:order-1">
             Mostrando {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredData.length)} de {filteredData.length} registros
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 order-1 lg:order-2">
             <button
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}

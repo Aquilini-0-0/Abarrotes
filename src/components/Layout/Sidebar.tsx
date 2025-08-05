@@ -12,7 +12,9 @@ import {
   TrendingUp,
   Settings,
   LogOut,
-  Monitor
+  Monitor,
+  Menu,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -69,9 +71,38 @@ const menuItems = [
 export function Sidebar() {
   const location = useLocation();
   const { logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   return (
-    <div className="w-64 bg-white h-screen fixed left-0 top-0 border-r border-gray-200 overflow-y-auto">
+    <>
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setIsMobileMenuOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-blue-600 text-white rounded-lg shadow-lg"
+      >
+        <Menu size={20} />
+      </button>
+
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`w-64 bg-white h-screen fixed left-0 top-0 border-r border-gray-200 overflow-y-auto z-40 transform transition-transform duration-300 ease-in-out ${
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
+        {/* Mobile Close Button */}
+        <button
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="lg:hidden absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700"
+        >
+          <X size={20} />
+        </button>
+
       <div className="p-6 border-b border-gray-200">
         <h1 className="text-2xl font-bold text-gray-800">DURAN ERP</h1>
         <p className="text-sm text-gray-600">Sistema de Gestión</p>
@@ -81,6 +112,7 @@ export function Sidebar() {
         {menuItems.map((section, index) => (
           <div key={index} className="mb-6">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                        onClick={() => setIsMobileMenuOpen(false)}
               {section.title}
             </h3>
             <ul className="space-y-1">
@@ -119,5 +151,6 @@ export function Sidebar() {
         </div>
       </nav>
     </div>
+    </>
   );
 }

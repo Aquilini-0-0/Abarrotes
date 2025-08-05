@@ -42,6 +42,7 @@ export function POSLayout() {
   const [selectedProduct, setSelectedProduct] = useState<POSProduct | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [lastOrder, setLastOrder] = useState<any>(null);
 
   // Initialize order on component mount
   useEffect(() => {
@@ -50,6 +51,20 @@ export function POSLayout() {
     }
   }, [currentOrder, initializeOrder]);
 
+  // Update last order when orders change
+  useEffect(() => {
+    if (orders.length > 0) {
+      const latest = orders[0];
+      setLastOrder({
+        id: latest.id,
+        client_name: latest.client_name,
+        total: latest.total,
+        items_count: latest.items.length,
+        date: latest.created_at,
+        status: latest.status
+      });
+    }
+  }, [orders]);
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -103,7 +118,18 @@ export function POSLayout() {
         status: paymentData.method === 'credit' ? 'pending' : 'paid'
       } as any;
 
-      await saveOrder(orderToSave);
+      const savedOrder = await saveOrder(orderToSave);
+      
+      // Update last order immediately
+      setLastOrder({
+        id: savedOrder.id,
+        client_name: orderToSave.client_name,
+        total: orderToSave.total,
+        items_count: orderToSave.items.length,
+        date: new Date().toISOString(),
+        status: orderToSave.status
+      });
+      
       initializeOrder(selectedClient?.name || 'Cliente General', selectedClient?.id);
       setShowPaymentModal(false);
       alert('Pedido procesado exitosamente');
@@ -134,6 +160,7 @@ export function POSLayout() {
         onOpenAdvances={() => setShowAdvancesModal(true)}
         onOpenCashCuts={() => setShowCashCutsModal(true)}
         cashRegister={cashRegister}
+        lastOrder={lastOrder}
       />
 
       {/* Main Content */}

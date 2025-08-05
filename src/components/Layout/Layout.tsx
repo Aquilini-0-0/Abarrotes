@@ -8,10 +8,10 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 lg:ml-64">
       <Sidebar />
       <Header />
-      <main className="ml-64 pt-20 p-6">
+      <main className="pt-16 lg:pt-20 p-4 lg:p-6">
         {children}
       </main>
     </div>

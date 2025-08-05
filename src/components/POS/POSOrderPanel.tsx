@@ -51,6 +51,10 @@ export function POSOrderPanel({
   const creditExceeded = client && isCredit && (creditUsed + orderTotal) > client.credit_limit;
 
   const handleApplyDiscount = () => {
+      // Trigger parent update for last order
+      if (onRefreshData) {
+        onRefreshData();
+      }
     onApplyDiscount(discountAmount);
   };
 

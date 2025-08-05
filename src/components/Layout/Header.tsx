@@ -124,9 +124,9 @@ export function Header() {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4 ml-64">
+    <header className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4 fixed top-0 left-0 right-0 z-30 lg:ml-64">
       <div className="flex items-center justify-between">
-        <div className="flex items-center flex-1 max-w-md">
+        <div className="flex items-center flex-1 max-w-md ml-12 lg:ml-0">
           <div className="relative w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
@@ -139,7 +139,7 @@ export function Header() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 lg:space-x-4">
           <div className="relative">
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
@@ -155,7 +155,7 @@ export function Header() {
 
             {/* Dropdown de Notificaciones */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
+              <div className="absolute right-0 mt-2 w-80 lg:w-96 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
                 <div className="p-4 border-b border-gray-200 bg-blue-600 rounded-t-lg">
                   <div className="flex items-center justify-between">
                     <h3 className="text-white font-semibold">Notificaciones</h3>
@@ -227,11 +227,18 @@ export function Header() {
             )}
           </div>
           
-          <div className="flex items-center space-x-3">
+          <div className="hidden lg:flex items-center space-x-3">
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900">{user?.name}</p>
               <p className="text-xs text-gray-500">{user?.role}</p>
             </div>
+            <div className="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center">
+              <User size={16} className="text-white" />
+            </div>
+          </div>
+          
+          {/* Mobile User Info */}
+          <div className="lg:hidden">
             <div className="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center">
               <User size={16} className="text-white" />
             </div>

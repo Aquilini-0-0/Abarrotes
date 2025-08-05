@@ -42,24 +42,24 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard Ejecutivo</h1>
-        <div className="text-sm text-gray-500">
+        <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Dashboard Ejecutivo</h1>
+        <div className="text-xs lg:text-sm text-gray-500">
           Última actualización: {new Date().toLocaleString('es-MX')}
         </div>
       </div>
 
       {/* KPIs Principales */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <Card title="Ventas Totales">
           <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg mr-4">
+            <div className="p-2 lg:p-3 bg-green-100 rounded-lg mr-3 lg:mr-4">
               <DollarSign className="h-8 w-8 text-green-600" />
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900">
+              <div className="text-xl lg:text-3xl font-bold text-gray-900">
                 ${totalVentas.toLocaleString('es-MX')}
               </div>
-              <div className="text-sm text-green-600 flex items-center">
+              <div className="text-xs lg:text-sm text-green-600 flex items-center">
                 <TrendingUp size={16} className="mr-1" />
                 +12.5% vs mes anterior
               </div>
@@ -69,14 +69,14 @@ export function Dashboard() {
 
         <Card title="Gastos Totales">
           <div className="flex items-center">
-            <div className="p-3 bg-red-100 rounded-lg mr-4">
+            <div className="p-2 lg:p-3 bg-red-100 rounded-lg mr-3 lg:mr-4">
               <TrendingDown className="h-8 w-8 text-red-600" />
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900">
+              <div className="text-xl lg:text-3xl font-bold text-gray-900">
                 ${totalGastos.toLocaleString('es-MX')}
               </div>
-              <div className="text-sm text-red-600 flex items-center">
+              <div className="text-xs lg:text-sm text-red-600 flex items-center">
                 <TrendingUp size={16} className="mr-1" />
                 +5.2% vs mes anterior
               </div>
@@ -86,14 +86,14 @@ export function Dashboard() {
 
         <Card title="Utilidad Neta">
           <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg mr-4">
+            <div className="p-2 lg:p-3 bg-blue-100 rounded-lg mr-3 lg:mr-4">
               <TrendingUp className="h-8 w-8 text-blue-600" />
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900">
+              <div className="text-xl lg:text-3xl font-bold text-gray-900">
                 ${utilidad.toLocaleString('es-MX')}
               </div>
-              <div className="text-sm text-blue-600 flex items-center">
+              <div className="text-xs lg:text-sm text-blue-600 flex items-center">
                 <TrendingUp size={16} className="mr-1" />
                 Margen: {margenUtilidad.toFixed(1)}%
               </div>
@@ -103,14 +103,14 @@ export function Dashboard() {
 
         <Card title="Productos Activos">
           <div className="flex items-center">
-            <div className="p-3 bg-purple-100 rounded-lg mr-4">
+            <div className="p-2 lg:p-3 bg-purple-100 rounded-lg mr-3 lg:mr-4">
               <Package className="h-8 w-8 text-purple-600" />
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900">
+              <div className="text-xl lg:text-3xl font-bold text-gray-900">
                 {products.filter(p => p.status === 'active').length}
               </div>
-              <div className="text-sm text-gray-600">
+              <div className="text-xs lg:text-sm text-gray-600">
                 Total de {products.length}
               </div>
             </div>
@@ -119,13 +119,13 @@ export function Dashboard() {
       </div>
 
       {/* Gráficos y Alertas */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         <div className="lg:col-span-2">
           <Card title="Análisis de Ventas vs Gastos">
-            <div className="h-64 bg-gray-50 rounded-lg p-4">
+            <div className="h-48 lg:h-64 bg-gray-50 rounded-lg p-3 lg:p-4">
               <div className="h-full flex flex-col">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-medium text-gray-900">Tendencia Mensual</h4>
+                  <h4 className="text-sm lg:text-base font-medium text-gray-900">Tendencia Mensual</h4>
                   <div className="flex items-center space-x-4 text-xs">
                     <div className="flex items-center">
                       <div className="w-3 h-3 bg-green-500 rounded mr-1"></div>
@@ -149,17 +149,17 @@ export function Dashboard() {
                     
                     return (
                       <div key={mes} className="flex-1 flex flex-col items-center">
-                        <div className="w-full flex justify-center space-x-1 mb-2" style={{ height: '120px' }}>
+                        <div className="w-full flex justify-center space-x-1 mb-2" style={{ height: '80px' }}>
                           <div className="flex flex-col justify-end">
                             <div 
-                              className="bg-green-500 rounded-t w-4"
+                              className="bg-green-500 rounded-t w-3 lg:w-4"
                               style={{ height: `${ventasHeight}%` }}
                               title={`Ventas: $${ventasMes.toLocaleString('es-MX')}`}
                             ></div>
                           </div>
                           <div className="flex flex-col justify-end">
                             <div 
-                              className="bg-red-500 rounded-t w-4"
+                              className="bg-red-500 rounded-t w-3 lg:w-4"
                               style={{ height: `${gastosHeight}%` }}
                               title={`Gastos: $${gastosMes.toLocaleString('es-MX')}`}
                             ></div>
@@ -173,28 +173,28 @@ export function Dashboard() {
               </div>
             </div>
             
-            <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="mt-4 lg:mt-6 grid grid-cols-2 gap-3 lg:gap-4">
               <div className="bg-green-50 p-4 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Ingresos</p>
-                    <p className="text-xl font-bold text-green-600">
+                    <p className="text-xs lg:text-sm text-gray-600">Ingresos</p>
+                    <p className="text-lg lg:text-xl font-bold text-green-600">
                       ${totalVentas.toLocaleString('es-MX')}
                     </p>
                   </div>
-                  <TrendingUp className="h-8 w-8 text-green-600" />
+                  <TrendingUp className="h-6 w-6 lg:h-8 lg:w-8 text-green-600" />
                 </div>
               </div>
               
               <div className="bg-red-50 p-4 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Egresos</p>
-                    <p className="text-xl font-bold text-red-600">
+                    <p className="text-xs lg:text-sm text-gray-600">Egresos</p>
+                    <p className="text-lg lg:text-xl font-bold text-red-600">
                       ${totalGastos.toLocaleString('es-MX')}
                     </p>
                   </div>
-                  <TrendingDown className="h-8 w-8 text-red-600" />
+                  <TrendingDown className="h-6 w-6 lg:h-8 lg:w-8 text-red-600" />
                 </div>
               </div>
             </div>
@@ -246,17 +246,17 @@ export function Dashboard() {
 
           <Card title="Acciones Rápidas">
             <div className="space-y-3">
-              <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <button className="w-full text-left px-3 lg:px-4 py-2 lg:py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                 <div className="font-medium text-gray-900">Corte de Caja</div>
-                <div className="text-sm text-gray-500">Generar reporte diario</div>
+                <div className="text-xs lg:text-sm text-gray-500">Generar reporte diario</div>
               </button>
-              <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <button className="w-full text-left px-3 lg:px-4 py-2 lg:py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                 <div className="font-medium text-gray-900">Backup de Datos</div>
-                <div className="text-sm text-gray-500">Respaldar información</div>
+                <div className="text-xs lg:text-sm text-gray-500">Respaldar información</div>
               </button>
-              <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <button className="w-full text-left px-3 lg:px-4 py-2 lg:py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                 <div className="font-medium text-gray-900">Reporte Ejecutivo</div>
-                <div className="text-sm text-gray-500">Generar PDF mensual</div>
+                <div className="text-xs lg:text-sm text-gray-500">Generar PDF mensual</div>
               </button>
             </div>
           </Card>
@@ -264,7 +264,7 @@ export function Dashboard() {
       </div>
 
       {/* Resumen de Operaciones */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         <Card title="Ventas Recientes">
           <div className="space-y-3">
             {sales.slice(0, 3).map((sale) => (
