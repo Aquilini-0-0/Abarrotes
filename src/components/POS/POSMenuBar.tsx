@@ -27,6 +27,10 @@ interface POSMenuBarProps {
     client_name: string;
     total: number;
     items_count: number;
+    products?: Array<{
+      name: string;
+      quantity: number;
+    }>;
     date: string;
     status: string;
   } | null;
@@ -190,9 +194,9 @@ export function POSMenuBar({
 
       {/* Last Order Information Bar */}
       {lastOrder && (
-        <div className="bg-gradient-to-r from-orange-50 to-red-50 border-t border-orange-200 px-4 py-2">
+        <div className="bg-gradient-to-r from-orange-50 to-red-50 border-t border-orange-200 px-4 py-2 overflow-x-auto">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 min-w-0 flex-1">
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="text-orange-700 font-semibold text-sm">Último Pedido:</span>
@@ -219,6 +223,28 @@ export function POSMenuBar({
                 </span>
               </div>
               
+              {/* Products List */}
+              <div className="flex items-center space-x-1">
+                <span className="text-orange-600 text-sm font-medium">Productos:</span>
+                <div className="flex items-center space-x-2 max-w-md overflow-x-auto">
+                  {lastOrder.products && lastOrder.products.slice(0, 3).map((product, index) => (
+                    <span
+                      key={index}
+                      className="bg-white px-2 py-1 rounded border border-orange-200 text-xs text-gray-700 whitespace-nowrap"
+                      title={`${product.name} - Cant: ${product.quantity}`}
+                    >
+                      {product.name.length > 15 ? `${product.name.substring(0, 15)}...` : product.name}
+                      <span className="text-orange-600 font-semibold ml-1">({product.quantity})</span>
+                    </span>
+                  ))}
+                  {lastOrder.products && lastOrder.products.length > 3 && (
+                    <span className="bg-gray-100 px-2 py-1 rounded border border-gray-300 text-xs text-gray-600">
+                      +{lastOrder.products.length - 3} más
+                    </span>
+                  )}
+                </div>
+              </div>
+              
               <div className="flex items-center space-x-1">
                 <DollarSign size={14} className="text-orange-600" />
                 <span className="text-green-600 font-bold text-sm">
@@ -227,7 +253,7 @@ export function POSMenuBar({
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 flex-shrink-0">
               <div className="flex items-center space-x-1">
                 <Clock size={14} className="text-gray-500" />
                 <span className="text-gray-500 text-xs">

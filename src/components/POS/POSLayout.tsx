@@ -55,11 +55,19 @@ export function POSLayout() {
   useEffect(() => {
     if (orders.length > 0) {
       const latest = orders[0];
+      
+      // Get products from the latest order
+      const products = latest.items.map(item => ({
+        name: item.product_name,
+        quantity: item.quantity
+      }));
+      
       setLastOrder({
         id: latest.id,
         client_name: latest.client_name,
         total: latest.total,
         items_count: latest.items.length,
+        products: products,
         date: latest.created_at,
         status: latest.status
       });
