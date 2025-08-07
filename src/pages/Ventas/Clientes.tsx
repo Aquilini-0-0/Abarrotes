@@ -90,13 +90,11 @@ export function Clientes() {
           <p className="text-red-600 mb-4">Error: {error}</p>
           <button 
             onClick={() => handleEdit(client)}
-            onClick={() => window.location.reload()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Reintentar
           </button>
         </div>
-            onClick={() => handleDelete(client.id)}
       </div>
     );
   }
