@@ -9,7 +9,6 @@ import { Dashboard } from './pages/Ejecutivo/Dashboard';
 import { Inventario } from './pages/Almacen/Inventario';
 import { ListadoProductos } from './pages/Almacen/ListadoProductos';
 import { AjustesInventario } from './pages/Almacen/Ajustes';
-import { Compras } from './pages/Almacen/Compras';
 import { ReporteCompras } from './pages/Almacen/ReporteCompras';
 import { ReporteAjustes } from './pages/Almacen/ReporteAjustes';
 import { ReporteInventario } from './pages/Almacen/ReporteInventario';
