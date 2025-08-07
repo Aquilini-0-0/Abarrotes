@@ -233,9 +233,9 @@ export function ModalNuevoDetalle({ isOpen, onClose, onSave }: ModalNuevoDetalle
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   </div>
                   
-                  {showProductList && searchTerm && (
+                  {showProductList && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredProducts.map(product => (
+                      {(searchTerm ? filteredProducts : products.slice(0, 10)).map(product => (
                         <div
                           key={product.id}
                           onClick={() => handleProductSelect(product)}
@@ -247,6 +247,11 @@ export function ModalNuevoDetalle({ isOpen, onClose, onSave }: ModalNuevoDetalle
                           </div>
                         </div>
                       ))}
+                      {searchTerm && filteredProducts.length === 0 && (
+                        <div className="px-4 py-2 text-gray-500 text-center">
+                          No se encontraron productos
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

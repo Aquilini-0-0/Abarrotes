@@ -9,6 +9,8 @@ export function Proveedores() {
   const { suppliers, loading, error, createSupplier, updateSupplier, deleteSupplier } = useSuppliers();
   const [showForm, setShowForm] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSupplierList, setShowSupplierList] = useState(false);
   const [newSupplier, setNewSupplier] = useState({
     name: '',
     rfc: '',
