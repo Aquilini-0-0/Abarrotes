@@ -421,6 +421,43 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
               </div>
             </div>
             
+            {/* Sección Añadir al Precio */}
+            <div className="mt-4 bg-yellow-100 p-4 rounded-lg border border-yellow-200">
+              <h5 className="text-sm font-semibold text-yellow-800 mb-3">Añadir Monto a Todos los Precios:</h5>
+              <div className="flex items-center space-x-3">
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Monto a añadir..."
+                    className="w-full px-3 py-2 border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                    id="add-price-amount"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const input = document.getElementById('add-price-amount') as HTMLInputElement;
+                    const amount = parseFloat(input.value) || 0;
+                    if (amount !== 0) {
+                      handleChange('price1', formData.price1 + amount);
+                      handleChange('price2', formData.price2 + amount);
+                      handleChange('price3', formData.price3 + amount);
+                      handleChange('price4', formData.price4 + amount);
+                      handleChange('price5', formData.price5 + amount);
+                      input.value = '';
+                    }
+                  }}
+                  className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Añadir a Precios
+                </button>
+              </div>
+              <p className="text-xs text-yellow-700 mt-2">
+                Este monto se sumará a todos los 5 niveles de precio. Use valores negativos para restar.
+              </p>
+            </div>
+            
             {/* Información de Ayuda */}
             <div className="mt-4 bg-blue-100 p-4 rounded-lg border border-blue-200">
               <h5 className="text-sm font-semibold text-blue-800 mb-2">Guía de Niveles de Precio:</h5>
