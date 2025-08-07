@@ -4,7 +4,7 @@ import { DataTable } from '../../components/Common/DataTable';
 import { usePurchaseOrders } from '../../hooks/usePurchaseOrders';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { useProducts } from '../../hooks/useProducts';
-import { Plus, Edit, FileText, Trash2, ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
+import { Plus, Edit, FileText, Trash2, ChevronLeft, ChevronRight, SkipForward, Search } from 'lucide-react';
 
 interface CompraDetallada {
   id: string;
@@ -59,6 +59,23 @@ export function ListadoCompras() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedCompra, setSelectedCompra] = useState<CompraDetallada | null>(null);
 
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.product-search-container')) {
+        setShowProductDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+
   const [newDetalle, setNewDetalle] = useState<DetalleCompra>({
     producto: '',
     codigo_barras: '',
@@ -79,6 +96,33 @@ export function ListadoCompras() {
     precio4: 0,
     precio5: 0
   });
+
+  // Filtrar productos basado en la búsqueda
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+    product.code.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+    product.line.toLowerCase().includes(productSearchTerm.toLowerCase())
+  );
+
+  const handleProductSelect = (product: any) => {
+    setSelectedProduct(product);
+    setProductSearchTerm(product.name);
+    setShowProductDropdown(false);
+    
+    // Auto-llenar campos relacionados
+    handleInputChange('producto', product.name);
+    handleInputChange('codigo_barras', product.code);
+    handleInputChange('marca', product.line);
+    handleInputChange('unidad_medida', product.unit);
+    
+    // Sugerir precio basado en el costo actual + margen
+    const precioSugerido = product.cost * 1.3; // 30% de margen
+    handleInputChange('precio1', precioSugerido);
+    handleInputChange('precio2', precioSugerido * 1.1);
+    handleInputChange('precio3', precioSugerido * 1.2);
+    handleInputChange('precio4', precioSugerido * 1.3);
+    handleInputChange('precio5', precioSugerido * 1.4);
+  };
 
   // Convertir órdenes de compra a formato de compras detalladas
   const comprasDetalladas: CompraDetallada[] = orders.map((order, index) => ({
@@ -463,14 +507,58 @@ export function ListadoCompras() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Producto *
                     </label>
-                    <input
-                      type="text"
-                      value={newDetalle.producto}
-                      onChange={(e) => handleInputChange('producto', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Nombre del producto"
-                      required
-                    />
+                    <div className="relative product-search-container">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={productSearchTerm}
+                          onChange={(e) => {
+                            setProductSearchTerm(e.target.value);
+                            setShowProductDropdown(true);
+                            if (!e.target.value) {
+                              setSelectedProduct(null);
+                              handleInputChange('producto', '');
+                            }
+                          }}
+                          onFocus={() => setShowProductDropdown(true)}
+                          className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Buscar producto por nombre, código o línea..."
+                          required
+                        />
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                      </div>
+                      
+                      {showProductDropdown && (
+                        <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {filteredProducts.length > 0 ? (
+                            filteredProducts.slice(0, 10).map(product => (
+                              <div
+                                key={product.id}
+                                onClick={() => handleProductSelect(product)}
+                                className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                              >
+                                <div className="font-medium text-gray-900">{product.name}</div>
+                                <div className="text-sm text-gray-500 flex items-center justify-between">
+                                  <span>Código: {product.code} | Línea: {product.line}</span>
+                                  <span className="text-blue-600">Stock: {product.stock}</span>
+                                </div>
+                                <div className="text-xs text-green-600">
+                                  Costo: ${product.cost.toFixed(2)} | Precio: ${product.price.toFixed(2)}
+                                </div>
+                              </div>
+                            ))
+                          ) : productSearchTerm ? (
+                            <div className="px-4 py-3 text-gray-500 text-center">
+                              No se encontraron productos
+                            </div>
+                          ) : (
+                            <div className="px-4 py-3 text-gray-500 text-center">
+                              Escribe para buscar productos...
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div>
@@ -480,8 +568,8 @@ export function ListadoCompras() {
                     <input
                       type="text"
                       value={newDetalle.codigo_barras}
-                      onChange={(e) => handleInputChange('codigo_barras', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
                       placeholder="Código de barras"
                     />
                   </div>
@@ -493,8 +581,8 @@ export function ListadoCompras() {
                     <input
                       type="text"
                       value={newDetalle.marca}
-                      onChange={(e) => handleInputChange('marca', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
                       placeholder="Marca del producto"
                     />
                   </div>
