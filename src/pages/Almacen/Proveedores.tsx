@@ -3,7 +3,7 @@ import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { Supplier } from '../../types';
-import { Plus, Edit, Trash2, Phone, Mail } from 'lucide-react';
+import { Plus, Edit, Trash2, Phone, Mail, Search } from 'lucide-react';
 
 export function Proveedores() {
   const { suppliers, loading, error, createSupplier, updateSupplier, deleteSupplier } = useSuppliers();

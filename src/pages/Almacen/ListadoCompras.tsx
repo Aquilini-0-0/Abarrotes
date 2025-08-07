@@ -463,28 +463,14 @@ export function ListadoCompras() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Producto *
                     </label>
-                    <select
+                    <input
+                      type="text"
                       value={newDetalle.producto}
-                      onChange={(e) => {
-                        const product = products.find(p => p.name === e.target.value);
-                        if (product) {
-                          handleInputChange('producto', e.target.value);
-                          handleInputChange('codigo_barras', product.code);
-                          handleInputChange('marca', product.line);
-                          handleInputChange('unidad_medida', product.unit);
-                          handleInputChange('costo_unitario', product.cost);
-                        }
-                      }}
+                      onChange={(e) => handleInputChange('producto', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Nombre del producto"
                       required
-                    >
-                      <option value="">Seleccionar producto</option>
-                      {products.map(product => (
-                        <option key={product.id} value={product.name}>
-                          {product.name}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
                   <div>

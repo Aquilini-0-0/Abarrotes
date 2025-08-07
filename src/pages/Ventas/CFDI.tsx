@@ -334,16 +334,6 @@ export function CFDI() {
                             handleItemChange(index, 'precio_unitario', producto.price);
                           }
                         }}
-                        className="col-span-6 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        required
-                      >
-                        <option value="">Producto</option>
-                        {products.map(producto => (
-                          <option key={producto.id} value={producto.id}>
-                            {producto.name}
-                          </option>
-                        ))}
-                      </select>
                       <input
                         type="number"
                         value={item.cantidad}
