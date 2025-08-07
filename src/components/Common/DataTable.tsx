@@ -184,7 +184,8 @@ export function DataTable({
               </div>
             )}
             {exportable && (
-              <div className="flex items-center space-x-2">
+              <>
+                <div className="flex items-center space-x-2">
                 <button
                   onClick={exportToCSV}
                   className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
@@ -200,7 +201,8 @@ export function DataTable({
                   <span>Exportar PDF</span>
                 </button>
               </div>
-                <button
+                <div className="flex items-center space-x-2 lg:hidden">
+                  <button
                   onClick={exportToCSV}
                   className="lg:hidden p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                   title="Exportar CSV"
@@ -214,7 +216,8 @@ export function DataTable({
                 >
                   <Download size={16} />
                 </button>
-              </div>
+                </div>
+              </>
             )}
           </div>
         </div>
