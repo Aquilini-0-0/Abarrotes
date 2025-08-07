@@ -314,7 +314,7 @@ export function ListadoCompras() {
         </button>
       </div>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       {/* Sección de Búsqueda y Filtrado */}
       <Card title="Búsqueda y Filtrado">
@@ -421,7 +421,7 @@ export function ListadoCompras() {
         </div>
       </Card>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       {/* Listado de Registros */}
       <Card title="Listado de Compras">
@@ -673,7 +673,7 @@ export function ListadoCompras() {
                 </div>
               </div>
 
-              <hr className="border-gray-300 my-6" />
+              <div className="border-b-2 border-blue-500 w-full my-6"></div>
 
               {/* Sección de 5 Precios */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">

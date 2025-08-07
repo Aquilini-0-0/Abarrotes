@@ -76,44 +76,102 @@ export function ReporteVentasCaja() {
   });
 
   const handleExportPDF = () => {
-    const content = `
-REPORTE DE VENTAS POR CAJA
-==========================
-
-Fecha de generación: ${new Date().toLocaleString('es-MX')}
-Total de cajas: ${ventasFiltradas.length}
-
-${ventasFiltradas.map(venta => `
-Caja: ${venta.caja}
-Usuario: ${venta.usuario}
-Fecha: ${new Date(venta.fecha).toLocaleDateString('es-MX')}
-
-VENTAS POR MÉTODO DE PAGO:
-- Efectivo: $${venta.ventas_efectivo.toLocaleString('es-MX')}
-- Tarjeta: $${venta.ventas_tarjeta.toLocaleString('es-MX')}
-- Transferencia: $${venta.ventas_transferencia.toLocaleString('es-MX')}
-- Crédito: $${venta.ventas_credito.toLocaleString('es-MX')}
-
-Total Ventas: $${venta.total_ventas.toLocaleString('es-MX')}
-Número de Tickets: ${venta.numero_tickets}
-Ticket Promedio: $${venta.ticket_promedio.toFixed(2)}
----
-`).join('')}
-
-RESUMEN GENERAL:
-================
-Total Ventas: $${ventasFiltradas.reduce((sum, v) => sum + v.total_ventas, 0).toLocaleString('es-MX')}
-Total Tickets: ${ventasFiltradas.reduce((sum, v) => sum + v.numero_tickets, 0)}
-Ticket Promedio General: $${(ventasFiltradas.reduce((sum, v) => sum + v.total_ventas, 0) / ventasFiltradas.reduce((sum, v) => sum + v.numero_tickets, 0)).toFixed(2)}
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Reporte de Ventas por Caja</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3B82F6; padding-bottom: 15px; }
+          .title { font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
+          .subtitle { font-size: 16px; color: #6B7280; margin-bottom: 10px; }
+          .date { font-size: 12px; color: #6B7280; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th { background-color: #3B82F6; color: white; padding: 12px 8px; text-align: left; font-weight: bold; font-size: 12px; }
+          td { padding: 8px; border-bottom: 1px solid #E5E7EB; font-size: 11px; }
+          tr:nth-child(even) { background-color: #F9FAFB; }
+          .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #6B7280; border-top: 2px solid #3B82F6; padding-top: 15px; }
+          .summary { background-color: #EFF6FF; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3B82F6; }
+          .total { font-weight: bold; color: #059669; text-align: right; }
+          .number { font-weight: bold; color: #3B82F6; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">REPORTE DE VENTAS POR CAJA</div>
+          <div class="subtitle">Sistema ERP DURAN</div>
+          <div class="date">Generado el ${new Date().toLocaleString('es-MX')}</div>
+        </div>
+        
+        <div class="summary">
+          <strong>Resumen General:</strong><br>
+          • Total de cajas: ${ventasFiltradas.length}<br>
+          • Total ventas: $${ventasFiltradas.reduce((sum, v) => sum + v.total_ventas, 0).toLocaleString('es-MX')}<br>
+          • Total tickets: ${ventasFiltradas.reduce((sum, v) => sum + v.numero_tickets, 0)}<br>
+          • Ticket promedio: $${(ventasFiltradas.reduce((sum, v) => sum + v.total_ventas, 0) / ventasFiltradas.reduce((sum, v) => sum + v.numero_tickets, 0)).toFixed(2)}
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Caja</th>
+              <th>Usuario</th>
+              <th>Fecha</th>
+              <th>Efectivo</th>
+              <th>Tarjeta</th>
+              <th>Transferencia</th>
+              <th>Crédito</th>
+              <th>Total Ventas</th>
+              <th>Núm. Tickets</th>
+              <th>Ticket Promedio</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${ventasFiltradas.map(venta => `
+              <tr>
+                <td>${venta.caja}</td>
+                <td>${venta.usuario}</td>
+                <td>${new Date(venta.fecha).toLocaleDateString('es-MX')}</td>
+                <td class="total">$${venta.ventas_efectivo.toLocaleString('es-MX')}</td>
+                <td class="total">$${venta.ventas_tarjeta.toLocaleString('es-MX')}</td>
+                <td class="total">$${venta.ventas_transferencia.toLocaleString('es-MX')}</td>
+                <td class="total">$${venta.ventas_credito.toLocaleString('es-MX')}</td>
+                <td class="total">$${venta.total_ventas.toLocaleString('es-MX')}</td>
+                <td class="number">${venta.numero_tickets}</td>
+                <td class="total">$${venta.ticket_promedio.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          <p><strong>Sistema ERP DURAN</strong> - Reporte de Ventas por Caja</p>
+          <p>Total de registros: ${ventasFiltradas.length} | Generado automáticamente</p>
+        </div>
+      </body>
+      </html>
     `;
 
-    const blob = new Blob([content], { type: 'text/plain' });
+    const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `reporte_ventas_caja_${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `reporte_ventas_caja_${new Date().toISOString().split('T')[0]}.html`;
     a.click();
     window.URL.revokeObjectURL(url);
+    
+    // Also open print dialog
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
   };
 
   const columns = [
@@ -222,7 +280,7 @@ Ticket Promedio General: $${(ventasFiltradas.reduce((sum, v) => sum + v.total_ve
         </button>
       </div>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card title="Total Ventas">
@@ -278,7 +336,7 @@ Ticket Promedio General: $${(ventasFiltradas.reduce((sum, v) => sum + v.total_ve
         </Card>
       </div>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       {/* Filtros */}
       <Card title="Filtros de Búsqueda">
@@ -338,7 +396,7 @@ Ticket Promedio General: $${(ventasFiltradas.reduce((sum, v) => sum + v.total_ve
         </div>
       </Card>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       {/* Reporte de Ventas por Caja */}
       <Card title="Ventas por Punto de Venta">

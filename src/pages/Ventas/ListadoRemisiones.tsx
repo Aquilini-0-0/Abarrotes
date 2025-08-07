@@ -68,32 +68,99 @@ export function ListadoRemisiones() {
   };
 
   const handlePrintPDF = () => {
-    // Generar PDF de todas las remisiones
-    const content = `
-LISTADO DE REMISIONES
-=====================
-
-Total de registros: ${remisionesFiltradas.length}
-Fecha de generación: ${new Date().toLocaleString('es-MX')}
-
-${remisionesFiltradas.map(remision => `
-Folio: ${remision.folio}
-Cliente: ${remision.cliente}
-Fecha: ${new Date(remision.fecha_emision).toLocaleDateString('es-MX')}
-Total: $${remision.total.toLocaleString('es-MX')}
-Tipo: ${remision.tipo}
-Estatus: ${remision.estatus}
----
-`).join('')}
+    // Generar PDF real de todas las remisiones
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Listado de Remisiones</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3B82F6; padding-bottom: 15px; }
+          .title { font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
+          .subtitle { font-size: 16px; color: #6B7280; margin-bottom: 10px; }
+          .date { font-size: 12px; color: #6B7280; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th { background-color: #3B82F6; color: white; padding: 12px 8px; text-align: left; font-weight: bold; font-size: 12px; }
+          td { padding: 8px; border-bottom: 1px solid #E5E7EB; font-size: 11px; }
+          tr:nth-child(even) { background-color: #F9FAFB; }
+          .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #6B7280; border-top: 2px solid #3B82F6; padding-top: 15px; }
+          .summary { background-color: #EFF6FF; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3B82F6; }
+          .total { font-weight: bold; color: #059669; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">LISTADO DE REMISIONES</div>
+          <div class="subtitle">Sistema ERP DURAN</div>
+          <div class="date">Generado el ${new Date().toLocaleString('es-MX')}</div>
+        </div>
+        
+        <div class="summary">
+          <strong>Resumen del Reporte:</strong><br>
+          • Total de remisiones: ${remisionesFiltradas.length}<br>
+          • Monto total: $${remisionesFiltradas.reduce((sum, r) => sum + r.total, 0).toLocaleString('es-MX')}<br>
+          • Período: ${remisionesFiltradas.length > 0 ? `${new Date(Math.min(...remisionesFiltradas.map(r => new Date(r.fecha_emision).getTime()))).toLocaleDateString('es-MX')} - ${new Date(Math.max(...remisionesFiltradas.map(r => new Date(r.fecha_emision).getTime()))).toLocaleDateString('es-MX')}` : 'N/A'}
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Folio</th>
+              <th>Sucursal</th>
+              <th>Cliente</th>
+              <th>Fecha Emisión</th>
+              <th>Total</th>
+              <th>Factura</th>
+              <th>Tipo</th>
+              <th>Capturista</th>
+              <th>Estatus</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${remisionesFiltradas.map(remision => `
+              <tr>
+                <td>${remision.folio}</td>
+                <td>${remision.sucursal}</td>
+                <td>${remision.cliente}</td>
+                <td>${new Date(remision.fecha_emision).toLocaleDateString('es-MX')}</td>
+                <td class="total">$${remision.total.toLocaleString('es-MX')}</td>
+                <td>${remision.factura}</td>
+                <td>${remision.tipo}</td>
+                <td>${remision.capturista}</td>
+                <td>${remision.estatus}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          <p><strong>Sistema ERP DURAN</strong> - Listado de Remisiones</p>
+          <p>Total de registros: ${remisionesFiltradas.length} | Generado automáticamente</p>
+        </div>
+      </body>
+      </html>
     `;
 
-    const blob = new Blob([content], { type: 'text/plain' });
+    const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `listado_remisiones_${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `listado_remisiones_${new Date().toISOString().split('T')[0]}.html`;
     a.click();
     window.URL.revokeObjectURL(url);
+    
+    // Also open print dialog
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
   };
 
   const columns = [
@@ -188,7 +255,7 @@ Estatus: ${remision.estatus}
         </button>
       </div>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       {/* Sección de Búsqueda y Filtrado */}
       <Card title="Búsqueda y Filtrado">
@@ -310,7 +377,7 @@ Estatus: ${remision.estatus}
         </div>
       </Card>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       {/* Listado de Remisiones */}
       <Card title="Listado de Remisiones">

@@ -78,6 +78,91 @@ export function DataTable({
     window.URL.revokeObjectURL(url);
   };
 
+  const exportToPDF = () => {
+    // Create HTML content for PDF
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>${title}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #3B82F6; padding-bottom: 10px; }
+          .title { font-size: 24px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
+          .date { font-size: 12px; color: #6B7280; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th { background-color: #3B82F6; color: white; padding: 12px 8px; text-align: left; font-weight: bold; }
+          td { padding: 8px; border-bottom: 1px solid #E5E7EB; }
+          tr:nth-child(even) { background-color: #F9FAFB; }
+          .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #6B7280; border-top: 1px solid #E5E7EB; padding-top: 10px; }
+          .summary { background-color: #EFF6FF; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">${title}</div>
+          <div class="date">Generado el ${new Date().toLocaleString('es-MX')}</div>
+        </div>
+        
+        <div class="summary">
+          <strong>Resumen:</strong> ${filteredData.length} registros encontrados
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              ${columns.map(col => `<th>${col.label}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredData.map(item => `
+              <tr>
+                ${columns.map(col => {
+                  let value = item[col.key] || '';
+                  if (col.render && typeof value !== 'object') {
+                    // For simple renders, try to extract text content
+                    if (typeof value === 'number' && col.key.includes('amount') || col.key.includes('total') || col.key.includes('price') || col.key.includes('cost')) {
+                      value = `$${value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+                    } else if (col.key.includes('date') && value) {
+                      value = new Date(value).toLocaleDateString('es-MX');
+                    }
+                  }
+                  return `<td>${value}</td>`;
+                }).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          <p>Sistema ERP DURAN - Reporte generado automáticamente</p>
+          <p>Total de registros: ${filteredData.length}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Create blob and download
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.toLowerCase().replace(/\s+/g, '_')}.html`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    // Also create a print-friendly version
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
+  };
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="px-4 lg:px-6 py-4 border-b border-gray-200">
@@ -99,13 +184,22 @@ export function DataTable({
               </div>
             )}
             {exportable && (
-              <>
+              <div className="flex items-center space-x-2">
                 <button
                   onClick={exportToCSV}
-                  className="hidden lg:flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                  className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
                 >
                   <Download size={16} />
                   <span>Exportar CSV</span>
+                </button>
+                <button
+                  onClick={exportToPDF}
+                  className="flex items-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                >
+                  <Download size={16} />
+                  <span>Exportar PDF</span>
+                </button>
+              </div>
                 </button>
                 <button
                   onClick={exportToCSV}
@@ -114,7 +208,14 @@ export function DataTable({
                 >
                   <Download size={16} />
                 </button>
-              </>
+                <button
+                  onClick={exportToPDF}
+                  className="lg:hidden p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  title="Exportar PDF"
+                >
+                  <Download size={16} />
+                </button>
+              </div>
             )}
           </div>
         </div>

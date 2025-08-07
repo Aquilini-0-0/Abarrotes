@@ -31,40 +31,103 @@ export function ReporteInventarioVentas() {
   });
 
   const handleExportPDF = () => {
-    const content = `
-REPORTE DE INVENTARIO - VENTAS
-==============================
-
-Fecha de generación: ${new Date().toLocaleString('es-MX')}
-Total de productos: ${productosFiltrados.length}
-
-${productosFiltrados.map(product => `
-Código: ${product.code}
-Producto: ${product.name}
-Línea: ${product.line}
-Stock: ${product.stock}
-Costo: $${product.cost.toFixed(2)}
-Precio: $${product.price.toFixed(2)}
-Valor Total: $${(product.stock * product.cost).toFixed(2)}
-Estado: ${product.status}
----
-`).join('')}
-
-RESUMEN:
-========
-Total productos: ${productosFiltrados.length}
-Productos activos: ${productosFiltrados.filter(p => p.status === 'active').length}
-Stock bajo: ${productosFiltrados.filter(p => p.stock < 20).length}
-Valor total inventario: $${productosFiltrados.reduce((sum, p) => sum + (p.stock * p.cost), 0).toLocaleString('es-MX')}
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Reporte de Inventario - Ventas</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3B82F6; padding-bottom: 15px; }
+          .title { font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
+          .subtitle { font-size: 16px; color: #6B7280; margin-bottom: 10px; }
+          .date { font-size: 12px; color: #6B7280; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th { background-color: #3B82F6; color: white; padding: 12px 8px; text-align: left; font-weight: bold; font-size: 12px; }
+          td { padding: 8px; border-bottom: 1px solid #E5E7EB; font-size: 11px; }
+          tr:nth-child(even) { background-color: #F9FAFB; }
+          .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #6B7280; border-top: 2px solid #3B82F6; padding-top: 15px; }
+          .summary { background-color: #EFF6FF; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3B82F6; }
+          .total { font-weight: bold; color: #059669; }
+          .stock-low { color: #DC2626; font-weight: bold; }
+          .stock-good { color: #059669; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">REPORTE DE INVENTARIO</div>
+          <div class="subtitle">Módulo de Ventas - Sistema ERP DURAN</div>
+          <div class="date">Generado el ${new Date().toLocaleString('es-MX')}</div>
+        </div>
+        
+        <div class="summary">
+          <strong>Resumen Ejecutivo:</strong><br>
+          • Total de productos: ${productosFiltrados.length}<br>
+          • Productos activos: ${productosFiltrados.filter(p => p.status === 'active').length}<br>
+          • Productos con stock bajo: ${productosFiltrados.filter(p => p.stock < 20).length}<br>
+          • Valor total del inventario: $${productosFiltrados.reduce((sum, p) => sum + (p.stock * p.cost), 0).toLocaleString('es-MX')}
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Producto</th>
+              <th>Línea</th>
+              <th>Sublínea</th>
+              <th>Unidad</th>
+              <th>Stock</th>
+              <th>Costo Unit.</th>
+              <th>Precio Venta</th>
+              <th>Valor Total</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${productosFiltrados.map(product => `
+              <tr>
+                <td>${product.code}</td>
+                <td>${product.name}</td>
+                <td>${product.line}</td>
+                <td>${product.subline}</td>
+                <td>${product.unit}</td>
+                <td class="${product.stock < 20 ? 'stock-low' : 'stock-good'}">${product.stock}</td>
+                <td>$${product.cost.toFixed(2)}</td>
+                <td>$${product.price.toFixed(2)}</td>
+                <td class="total">$${(product.stock * product.cost).toFixed(2)}</td>
+                <td>${product.status === 'active' ? 'Activo' : 'Inactivo'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          <p><strong>Sistema ERP DURAN</strong> - Reporte de Inventario</p>
+          <p>Total de registros: ${productosFiltrados.length} | Valor total: $${productosFiltrados.reduce((sum, p) => sum + (p.stock * p.cost), 0).toLocaleString('es-MX')}</p>
+        </div>
+      </body>
+      </html>
     `;
 
-    const blob = new Blob([content], { type: 'text/plain' });
+    const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `reporte_inventario_ventas_${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `reporte_inventario_ventas_${new Date().toISOString().split('T')[0]}.html`;
     a.click();
     window.URL.revokeObjectURL(url);
+    
+    // Also open print dialog for immediate PDF generation
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
   };
 
   const columns = [
@@ -141,7 +204,7 @@ Valor total inventario: $${productosFiltrados.reduce((sum, p) => sum + (p.stock 
         </button>
       </div>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card title="Total Productos">
@@ -195,7 +258,7 @@ Valor total inventario: $${productosFiltrados.reduce((sum, p) => sum + (p.stock 
         </Card>
       </div>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">

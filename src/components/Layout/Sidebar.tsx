@@ -133,6 +133,7 @@ export function Sidebar() {
                   <li key={item.path}>
                     <Link
                       to={item.path}
+                      onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                         isActive
                           ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
@@ -146,6 +147,9 @@ export function Sidebar() {
                 );
               })}
             </ul>
+            {index < menuItems.length - 1 && (
+              <div className="border-b border-blue-200 mx-2 my-2"></div>
+            )}
           </div>
         ))}
         
