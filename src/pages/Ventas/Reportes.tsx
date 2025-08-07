@@ -284,7 +284,7 @@ export function ReportesVentas() {
         </div>
       </div>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       {/* Opciones de Reportes Adicionales */}
       <Card title="Opciones de Reportes">
@@ -324,7 +324,7 @@ export function ReportesVentas() {
         </div>
       </Card>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card title="Ventas Totales">
@@ -401,7 +401,7 @@ export function ReportesVentas() {
         </Card>
       </div>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
