@@ -41,7 +41,7 @@ const menuItems = [
     ]
   },
   {
-    title: 'MContabilidad - Gastos',
+    title: 'Contabilidad - Gastos',
     items: [
       { name: 'Control de Catálogos', path: '/contabilidad/catalogos', icon: Settings },
       { name: 'Registro de Gastos', path: '/contabilidad/gastos', icon: CreditCard },
