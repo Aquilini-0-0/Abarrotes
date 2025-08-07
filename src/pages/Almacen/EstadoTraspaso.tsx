@@ -202,7 +202,7 @@ export function EstadoTraspaso() {
         </button>
       </div>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -257,7 +257,7 @@ export function EstadoTraspaso() {
         </Card>
       </div>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       {/* Filtros */}
       <Card title="Filtros de Búsqueda">

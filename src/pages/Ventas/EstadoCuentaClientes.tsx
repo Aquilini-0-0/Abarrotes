@@ -70,41 +70,105 @@ export function EstadoCuentaClientes() {
   };
 
   const handleExportPDF = () => {
-    const content = `
-ESTADO DE CUENTA DE CLIENTES
-============================
-
-Fecha de generación: ${new Date().toLocaleString('es-MX')}
-Total de clientes: ${estadosFiltrados.length}
-
-${estadosFiltrados.map(estado => `
-Cliente: ${estado.cliente_nombre}
-RFC: ${estado.rfc}
-Límite de Crédito: $${estado.limite_credito.toLocaleString('es-MX')}
-Saldo Actual: $${estado.saldo_actual.toLocaleString('es-MX')}
-Crédito Disponible: $${estado.credito_disponible.toLocaleString('es-MX')}
-Última Compra: ${estado.ultima_compra ? new Date(estado.ultima_compra).toLocaleDateString('es-MX') : 'N/A'}
-Días de Vencimiento: ${estado.dias_vencimiento}
-Estatus: ${estado.estatus === 'al_corriente' ? 'Al Corriente' : estado.estatus === 'vencido' ? 'Vencido' : 'Límite Excedido'}
----
-`).join('')}
-
-RESUMEN:
-========
-Total Límites de Crédito: $${estadosFiltrados.reduce((sum, e) => sum + e.limite_credito, 0).toLocaleString('es-MX')}
-Total Saldos Pendientes: $${estadosFiltrados.reduce((sum, e) => sum + e.saldo_actual, 0).toLocaleString('es-MX')}
-Total Crédito Disponible: $${estadosFiltrados.reduce((sum, e) => sum + e.credito_disponible, 0).toLocaleString('es-MX')}
-Clientes al Corriente: ${estadosFiltrados.filter(e => e.estatus === 'al_corriente').length}
-Clientes Vencidos: ${estadosFiltrados.filter(e => e.estatus === 'vencido').length}
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Estado de Cuenta de Clientes</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3B82F6; padding-bottom: 15px; }
+          .title { font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
+          .subtitle { font-size: 16px; color: #6B7280; margin-bottom: 10px; }
+          .date { font-size: 12px; color: #6B7280; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th { background-color: #3B82F6; color: white; padding: 12px 8px; text-align: left; font-weight: bold; font-size: 12px; }
+          td { padding: 8px; border-bottom: 1px solid #E5E7EB; font-size: 11px; }
+          tr:nth-child(even) { background-color: #F9FAFB; }
+          .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #6B7280; border-top: 2px solid #3B82F6; padding-top: 15px; }
+          .summary { background-color: #EFF6FF; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3B82F6; }
+          .total { font-weight: bold; color: #059669; text-align: right; }
+          .debt { font-weight: bold; color: #DC2626; text-align: right; }
+          .status-good { color: #059669; font-weight: bold; }
+          .status-warning { color: #D97706; font-weight: bold; }
+          .status-danger { color: #DC2626; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">ESTADO DE CUENTA DE CLIENTES</div>
+          <div class="subtitle">Sistema ERP DURAN</div>
+          <div class="date">Generado el ${new Date().toLocaleString('es-MX')}</div>
+        </div>
+        
+        <div class="summary">
+          <strong>Resumen Crediticio:</strong><br>
+          • Total de clientes: ${estadosFiltrados.length}<br>
+          • Total límites de crédito: $${estadosFiltrados.reduce((sum, e) => sum + e.limite_credito, 0).toLocaleString('es-MX')}<br>
+          • Total saldos pendientes: $${estadosFiltrados.reduce((sum, e) => sum + e.saldo_actual, 0).toLocaleString('es-MX')}<br>
+          • Total crédito disponible: $${estadosFiltrados.reduce((sum, e) => sum + e.credito_disponible, 0).toLocaleString('es-MX')}<br>
+          • Clientes al corriente: ${estadosFiltrados.filter(e => e.estatus === 'al_corriente').length}<br>
+          • Clientes vencidos: ${estadosFiltrados.filter(e => e.estatus === 'vencido').length}
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>RFC</th>
+              <th>Límite Crédito</th>
+              <th>Saldo Actual</th>
+              <th>Crédito Disponible</th>
+              <th>Última Compra</th>
+              <th>Días Vencimiento</th>
+              <th>Estatus</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${estadosFiltrados.map(estado => `
+              <tr>
+                <td>${estado.cliente_nombre}</td>
+                <td>${estado.rfc}</td>
+                <td class="total">$${estado.limite_credito.toLocaleString('es-MX')}</td>
+                <td class="${estado.saldo_actual > 0 ? 'debt' : 'total'}">$${estado.saldo_actual.toLocaleString('es-MX')}</td>
+                <td class="${estado.credito_disponible > 0 ? 'total' : 'debt'}">$${estado.credito_disponible.toLocaleString('es-MX')}</td>
+                <td>${estado.ultima_compra ? new Date(estado.ultima_compra).toLocaleDateString('es-MX') : 'N/A'}</td>
+                <td class="number">${estado.dias_vencimiento}</td>
+                <td class="${estado.estatus === 'al_corriente' ? 'status-good' : estado.estatus === 'vencido' ? 'status-warning' : 'status-danger'}">
+                  ${estado.estatus === 'al_corriente' ? 'Al Corriente' : estado.estatus === 'vencido' ? 'Vencido' : 'Límite Excedido'}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          <p><strong>Sistema ERP DURAN</strong> - Estado de Cuenta de Clientes</p>
+          <p>Total de registros: ${estadosFiltrados.length} | Generado automáticamente</p>
+        </div>
+      </body>
+      </html>
     `;
 
-    const blob = new Blob([content], { type: 'text/plain' });
+    const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `estado_cuenta_clientes_${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `estado_cuenta_clientes_${new Date().toISOString().split('T')[0]}.html`;
     a.click();
     window.URL.revokeObjectURL(url);
+    
+    // Also open print dialog
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
   };
 
   const columns = [
@@ -210,7 +274,7 @@ Clientes Vencidos: ${estadosFiltrados.filter(e => e.estatus === 'vencido').lengt
         </button>
       </div>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card title="Total Límite Crédito">
@@ -268,7 +332,7 @@ Clientes Vencidos: ${estadosFiltrados.filter(e => e.estatus === 'vencido').lengt
         </Card>
       </div>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       {/* Filtros */}
       <Card title="Filtros de Búsqueda">
@@ -322,7 +386,7 @@ Clientes Vencidos: ${estadosFiltrados.filter(e => e.estatus === 'vencido').lengt
         </div>
       </Card>
 
-      <hr className="border-gray-300" />
+      <div className="border-b-2 border-blue-500 w-full"></div>
 
       {/* Estado de Cuenta */}
       <Card title="Estado de Cuenta por Cliente">
