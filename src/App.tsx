@@ -29,6 +29,14 @@ import { CorteCaja } from './pages/Ejecutivo/CorteCaja';
 import { POSLayout } from './components/POS/POSLayout';
 import { HeaderOnly } from './components/POS/HeaderOnly';
 
+// New imports for modified pages
+import { ListadoCompras } from './pages/Almacen/ListadoCompras';
+import { EstadoTraspaso } from './pages/Almacen/EstadoTraspaso';
+import { ListadoRemisiones } from './pages/Ventas/ListadoRemisiones';
+import { ReporteInventarioVentas } from './pages/Ventas/ReporteInventarioVentas';
+import { ReporteVentasCaja } from './pages/Ventas/ReporteVentasCaja';
+import { EstadoCuentaClientes } from './pages/Ventas/EstadoCuentaClientes';
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <Layout>{children}</Layout> : <Navigate to="/login" replace />;
@@ -107,14 +115,14 @@ function AppRoutes() {
           <AjustesInventario />
         </PrivateRoute>
       } />
-      <Route path="/almacen/compras" element={
+      <Route path="/almacen/listado-compras" element={
         <PrivateRoute>
-          <Compras />
+          <ListadoCompras />
         </PrivateRoute>
       } />
-      <Route path="/almacen/reporte-compras" element={
+      <Route path="/almacen/reporte-inventario" element={
         <PrivateRoute>
-          <ReporteCompras />
+          <ReporteInventario />
         </PrivateRoute>
       } />
       <Route path="/almacen/reporte-ajustes" element={
@@ -122,9 +130,9 @@ function AppRoutes() {
           <ReporteAjustes />
         </PrivateRoute>
       } />
-      <Route path="/almacen/reporte-inventario" element={
+      <Route path="/almacen/estado-traspaso" element={
         <PrivateRoute>
-          <ReporteInventario />
+          <EstadoTraspaso />
         </PrivateRoute>
       } />
       <Route path="/almacen/reporte-costos" element={
@@ -184,6 +192,26 @@ function AppRoutes() {
       <Route path="/ventas/reportes" element={
         <PrivateRoute>
           <ReportesVentas />
+        </PrivateRoute>
+      } />
+      <Route path="/ventas/listado-remisiones" element={
+        <PrivateRoute>
+          <ListadoRemisiones />
+        </PrivateRoute>
+      } />
+      <Route path="/ventas/reporte-inventario" element={
+        <PrivateRoute>
+          <ReporteInventarioVentas />
+        </PrivateRoute>
+      } />
+      <Route path="/ventas/reporte-ventas-caja" element={
+        <PrivateRoute>
+          <ReporteVentasCaja />
+        </PrivateRoute>
+      } />
+      <Route path="/ventas/estado-cuenta-clientes" element={
+        <PrivateRoute>
+          <EstadoCuentaClientes />
         </PrivateRoute>
       } />
       

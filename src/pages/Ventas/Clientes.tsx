@@ -257,7 +257,7 @@ export function Clientes() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Dirección
+                    Dirección *
                   </label>
                   <input
                     type="text"
@@ -265,6 +265,7 @@ export function Clientes() {
                     onChange={(e) => setNewClient(prev => ({ ...prev, address: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Dirección completa"
+                    required
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -295,20 +296,16 @@ export function Clientes() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Zona
+                    Localidad *
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={newClient.zone}
                     onChange={(e) => setNewClient(prev => ({ ...prev, zone: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Seleccionar zona</option>
-                    <option value="Centro">Centro</option>
-                    <option value="Norte">Norte</option>
-                    <option value="Sur">Sur</option>
-                    <option value="Oriente">Oriente</option>
-                    <option value="Poniente">Poniente</option>
-                  </select>
+                    placeholder="Localidad del cliente"
+                    required
+                  />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -339,6 +336,23 @@ export function Clientes() {
                       placeholder="0.00"
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Precio por Defecto *
+                  </label>
+                  <select
+                    value={newClient.default_price_level || 1}
+                    onChange={(e) => setNewClient(prev => ({ ...prev, default_price_level: parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5 }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value={1}>Precio 1 - General</option>
+                    <option value={2}>Precio 2 - Mayoreo</option>
+                    <option value={3}>Precio 3 - Distribuidor</option>
+                    <option value={4}>Precio 4 - VIP</option>
+                    <option value={5}>Precio 5 - Especial</option>
+                  </select>
                 </div>
                 <div className="flex space-x-3">
                   <button
@@ -372,15 +386,15 @@ export function Clientes() {
             </Card>
           )}
 
-          <Card title="Distribución por Zona">
+          <Card title="Distribución por Localidad">
             <div className="space-y-3">
-              {['Centro', 'Norte', 'Sur', 'Oriente', 'Poniente'].map((zona) => {
-                const clientesZona = clients.filter(c => c.zone === zona).length;
+              {Array.from(new Set(clients.map(c => c.zone).filter(Boolean))).map((localidad) => {
+                const clientesLocalidad = clients.filter(c => c.zone === localidad).length;
                 const porcentaje = totalClientes > 0 ? (clientesZona / totalClientes) * 100 : 0;
                 
                 return (
-                  <div key={zona} className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">{zona}</span>
+                  <div key={localidad} className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">{localidad}</span>
                     <div className="flex items-center space-x-2">
                       <div className="w-20 bg-gray-200 rounded-full h-2">
                         <div 
@@ -388,7 +402,7 @@ export function Clientes() {
                           style={{ width: `${porcentaje}%` }}
                         ></div>
                       </div>
-                      <span className="text-sm text-gray-600">{clientesZona}</span>
+                      <span className="text-sm text-gray-600">{clientesLocalidad}</span>
                     </div>
                   </div>
                 );

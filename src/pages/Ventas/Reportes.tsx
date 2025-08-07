@@ -2,13 +2,36 @@ import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useSales } from '../../hooks/useSales';
-import { BarChart3, TrendingUp, DollarSign, ShoppingCart, Eye, X, User } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, ShoppingCart, Eye, X, User, FileText, Calculator, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function ReportesVentas() {
   const { sales, loading, error } = useSales();
   const [selectedSale, setSelectedSale] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [viewMode, setViewMode] = useState<'detailed' | 'summary'>('detailed');
+  const [viewMode, setViewMode] = useState<'detailed' | 'summary' | 'extended'>('extended');
+
+  // Expandir datos de ventas con información detallada
+  const extendedSales = sales.flatMap(sale => 
+    sale.items.map((item, index) => ({
+      factura: `FAC-${sale.id.slice(-6)}`,
+      ticket: `TKT-${sale.id.slice(-6)}-${index + 1}`,
+      fecha: sale.date,
+      cliente: sale.client_name,
+      razon_social: sale.client_name, // En un sistema real vendría de la tabla de clientes
+      producto: item.product_name,
+      um: 'PZA', // Unidad de medida - vendría del producto
+      num_precio: 'Precio 1', // Número de precio utilizado
+      cantidad: item.quantity,
+      precio_unit: item.price,
+      precio_total: item.total,
+      forma_pago: sale.status === 'paid' ? 'Efectivo' : 'Crédito',
+      costo_compra_unit: item.price * 0.7, // Estimado - vendría del producto
+      costo_total: item.total * 0.7,
+      utilidad: item.total * 0.3,
+      porcentaje_utilidad: 30 // Porcentaje de utilidad
+    }))
+  );
 
   // Agrupar ventas por cliente para vista resumen
   const salesSummary = sales.reduce((acc, sale) => {
@@ -29,6 +52,77 @@ export function ReportesVentas() {
     }
     return acc;
   }, [] as any[]);
+
+  const extendedColumns = [
+    { key: 'factura', label: 'Factura', sortable: true },
+    { key: 'ticket', label: 'Ticket', sortable: true },
+    { 
+      key: 'fecha', 
+      label: 'Fecha', 
+      sortable: true,
+      render: (value: string) => new Date(value).toLocaleDateString('es-MX')
+    },
+    { key: 'cliente', label: 'Cliente', sortable: true },
+    { key: 'razon_social', label: 'Razón Social', sortable: true },
+    { key: 'producto', label: 'Producto', sortable: true },
+    { key: 'um', label: 'UM', sortable: true },
+    { key: 'num_precio', label: 'Núm. Precio', sortable: true },
+    { 
+      key: 'cantidad', 
+      label: 'Cantidad', 
+      sortable: true,
+      render: (value: number) => value.toLocaleString('es-MX')
+    },
+    { 
+      key: 'precio_unit', 
+      label: 'Precio Unit', 
+      sortable: true,
+      render: (value: number) => `$${value.toFixed(2)}`
+    },
+    { 
+      key: 'precio_total', 
+      label: 'Precio Total', 
+      sortable: true,
+      render: (value: number) => (
+        <span className="font-semibold text-green-600">
+          ${value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+        </span>
+      )
+    },
+    { key: 'forma_pago', label: 'Forma de Pago', sortable: true },
+    { 
+      key: 'costo_compra_unit', 
+      label: 'Costo Compra Unit', 
+      sortable: true,
+      render: (value: number) => `$${value.toFixed(2)}`
+    },
+    { 
+      key: 'costo_total', 
+      label: 'Costo Total', 
+      sortable: true,
+      render: (value: number) => `$${value.toFixed(2)}`
+    },
+    { 
+      key: 'utilidad', 
+      label: 'Utilidad', 
+      sortable: true,
+      render: (value: number) => (
+        <span className="font-semibold text-blue-600">
+          ${value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+        </span>
+      )
+    },
+    { 
+      key: 'porcentaje_utilidad', 
+      label: 'Porcentaje Utilidad', 
+      sortable: true,
+      render: (value: number) => (
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          {value.toFixed(1)}%
+        </span>
+      )
+    }
+  ];
 
   const detailedColumns = [
     { 
@@ -158,6 +252,16 @@ export function ReportesVentas() {
         <h1 className="text-2xl font-bold text-gray-900">Reportes de Ventas</h1>
         <div className="flex items-center space-x-2">
           <button
+            onClick={() => setViewMode('extended')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              viewMode === 'extended'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Vista Extendida
+          </button>
+          <button
             onClick={() => setViewMode('detailed')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               viewMode === 'detailed'
@@ -179,6 +283,48 @@ export function ReportesVentas() {
           </button>
         </div>
       </div>
+
+      <hr className="border-gray-300" />
+
+      {/* Opciones de Reportes Adicionales */}
+      <Card title="Opciones de Reportes">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link
+            to="/ventas/reporte-inventario"
+            className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <FileText className="h-6 w-6 text-blue-600" />
+            <div>
+              <div className="font-medium text-gray-900">Reporte de Inventario</div>
+              <div className="text-sm text-gray-500">Estado actual del inventario</div>
+            </div>
+          </Link>
+
+          <Link
+            to="/ventas/reporte-ventas-caja"
+            className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Calculator className="h-6 w-6 text-green-600" />
+            <div>
+              <div className="font-medium text-gray-900">Reporte de Ventas por Caja</div>
+              <div className="text-sm text-gray-500">Ventas por punto de venta</div>
+            </div>
+          </Link>
+
+          <Link
+            to="/ventas/estado-cuenta-clientes"
+            className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Users className="h-6 w-6 text-purple-600" />
+            <div>
+              <div className="font-medium text-gray-900">Estado de Cuenta de Clientes</div>
+              <div className="text-sm text-gray-500">Saldos y movimientos</div>
+            </div>
+          </Link>
+        </div>
+      </Card>
+
+      <hr className="border-gray-300" />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card title="Ventas Totales">
@@ -223,11 +369,15 @@ export function ReportesVentas() {
           </div>
         </Card>
 
-        <Card title={viewMode === 'summary' ? "Clientes Únicos" : "Promedio Venta"}>
+        <Card title={viewMode === 'summary' ? "Clientes Únicos" : viewMode === 'extended' ? "Productos Vendidos" : "Promedio Venta"}>
           <div className="flex items-center">
             {viewMode === 'summary' ? (
               <div className="p-3 bg-purple-100 rounded-lg mr-4">
                 <User className="h-6 w-6 text-purple-600" />
+              </div>
+            ) : viewMode === 'extended' ? (
+              <div className="p-3 bg-orange-100 rounded-lg mr-4">
+                <ShoppingCart className="h-6 w-6 text-orange-600" />
               </div>
             ) : (
               <div className="p-3 bg-purple-100 rounded-lg mr-4">
@@ -238,20 +388,24 @@ export function ReportesVentas() {
               <div className="text-2xl font-bold text-purple-600">
                 {viewMode === 'summary' 
                   ? clientesUnicos
+                  : viewMode === 'extended'
+                  ? extendedSales.length
                   : `$${(totalVentas / sales.length).toLocaleString('es-MX')}`
                 }
               </div>
               <div className="text-sm text-gray-500">
-                {viewMode === 'summary' ? 'Clientes' : 'Por venta'}
+                {viewMode === 'summary' ? 'Clientes' : viewMode === 'extended' ? 'Productos' : 'Por venta'}
               </div>
             </div>
           </div>
         </Card>
       </div>
 
+      <hr className="border-gray-300" />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <Card title={viewMode === 'summary' ? "Resumen por Cliente" : "Reporte de Ventas"}>
+          <Card title={viewMode === 'summary' ? "Resumen por Cliente" : viewMode === 'extended' ? "Reporte Extendido de Ventas" : "Reporte de Ventas"}>
             <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -284,15 +438,15 @@ export function ReportesVentas() {
             </div>
 
             <DataTable
-              data={viewMode === 'summary' ? salesSummary : sales}
-              columns={viewMode === 'summary' ? summaryColumns : detailedColumns}
-              title={viewMode === 'summary' ? "Resumen por Cliente" : "Historial de Ventas"}
+              data={viewMode === 'summary' ? salesSummary : viewMode === 'extended' ? extendedSales : sales}
+              columns={viewMode === 'summary' ? summaryColumns : viewMode === 'extended' ? extendedColumns : detailedColumns}
+              title={viewMode === 'summary' ? "Resumen por Cliente" : viewMode === 'extended' ? "Reporte Extendido" : "Historial de Ventas"}
             />
           </Card>
         </div>
 
         <div className="space-y-6">
-          <Card title={viewMode === 'summary' ? "Top Clientes" : "Productos Más Vendidos"}>
+          <Card title={viewMode === 'summary' ? "Top Clientes" : viewMode === 'extended' ? "Utilidades por Producto" : "Productos Más Vendidos"}>
             <div className="space-y-4">
               {viewMode === 'summary' ? (
                 salesSummary
@@ -309,6 +463,24 @@ export function ReportesVentas() {
                           ${client.total.toLocaleString('es-MX')}
                         </div>
                         <div className="text-xs text-gray-500">total</div>
+                      </div>
+                    </div>
+                  ))
+              ) : viewMode === 'extended' ? (
+                extendedSales
+                  .sort((a, b) => b.utilidad - a.utilidad)
+                  .slice(0, 5)
+                  .map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <div className="font-medium text-gray-900">{item.producto}</div>
+                        <div className="text-sm text-gray-500">#{index + 1} en utilidad • {item.porcentaje_utilidad}%</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-blue-600">
+                          ${item.utilidad.toLocaleString('es-MX')}
+                        </div>
+                        <div className="text-xs text-gray-500">utilidad</div>
                       </div>
                     </div>
                   ))
@@ -329,7 +501,7 @@ export function ReportesVentas() {
             </div>
           </Card>
 
-          <Card title={viewMode === 'summary' ? "Estadísticas de Clientes" : "Clientes Top"}>
+          <Card title={viewMode === 'summary' ? "Estadísticas de Clientes" : viewMode === 'extended' ? "Análisis de Rentabilidad" : "Clientes Top"}>
             <div className="space-y-4">
               {viewMode === 'summary' ? (
                 <>
@@ -352,6 +524,36 @@ export function ReportesVentas() {
                       <span className="text-gray-700">Cliente Más Activo:</span>
                       <span className="font-bold text-yellow-600">
                         {salesSummary.sort((a, b) => b.sales_count - a.sales_count)[0]?.client_name || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : viewMode === 'extended' ? (
+                <>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700">Utilidad Total:</span>
+                      <span className="font-bold text-green-600">
+                        ${extendedSales.reduce((sum, s) => sum + s.utilidad, 0).toLocaleString('es-MX')}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700">Margen Promedio:</span>
+                      <span className="font-bold text-blue-600">
+                        {extendedSales.length > 0 
+                          ? (extendedSales.reduce((sum, s) => sum + s.porcentaje_utilidad, 0) / extendedSales.length).toFixed(1)
+                          : '0.0'
+                        }%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-yellow-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700">Costo Total:</span>
+                      <span className="font-bold text-yellow-600">
+                        ${extendedSales.reduce((sum, s) => sum + s.costo_total, 0).toLocaleString('es-MX')}
                       </span>
                     </div>
                   </div>

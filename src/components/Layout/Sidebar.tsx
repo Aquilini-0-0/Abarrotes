@@ -26,9 +26,8 @@ const menuItems = [
       { name: 'Captura de Inventario', path: '/almacen/inventario', icon: Package },
       { name: 'Listado de Productos', path: '/almacen/listado-productos', icon: Package },
       { name: 'Ajustes de Inventario', path: '/almacen/ajustes', icon: Settings },
-      { name: 'Compras', path: '/almacen/compras', icon: ShoppingCart },
+      { name: 'Listado de Compras', path: '/almacen/listado-compras', icon: ShoppingCart },
       { name: 'Proveedores', path: '/almacen/proveedores', icon: Users },
-      { name: 'Reporte de Compras', path: '/almacen/reporte-compras', icon: FileText },
     ]
   },
   {
@@ -38,6 +37,7 @@ const menuItems = [
       { name: 'Reporte de Ajustes', path: '/almacen/reporte-ajustes', icon: FileText },
       { name: 'Reporte de Inventario', path: '/almacen/reporte-inventario', icon: Warehouse },
       { name: 'Reporte con Costos', path: '/almacen/reporte-costos', icon: Calculator },
+      { name: 'Estado de Traspaso', path: '/almacen/estado-traspaso', icon: BarChart3 },
     ]
   },
   {
@@ -56,6 +56,15 @@ const menuItems = [
       { name: 'Clientes', path: '/ventas/clientes', icon: Users },
       { name: 'Precios de Ventas', path: '/ventas/precios', icon: CreditCard },
       { name: 'Reportes de Ventas', path: '/ventas/reportes', icon: BarChart3 },
+      { name: 'Listado de Remisiones', path: '/ventas/listado-remisiones', icon: FileText },
+    ]
+  },
+  {
+    title: 'Ventas - Reportes',
+    items: [
+      { name: 'Reporte de Inventario', path: '/ventas/reporte-inventario', icon: Warehouse },
+      { name: 'Reporte de Ventas por Caja', path: '/ventas/reporte-ventas-caja', icon: Calculator },
+      { name: 'Estado de Cuenta Clientes', path: '/ventas/estado-cuenta-clientes', icon: Users },
     ]
   },
   {
