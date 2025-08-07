@@ -388,7 +388,7 @@ export function Clientes() {
             <div className="space-y-3">
               {Array.from(new Set(clients.map(c => c.zone).filter(Boolean))).map((localidad) => {
                 const clientesLocalidad = clients.filter(c => c.zone === localidad).length;
-                const porcentaje = totalClientes > 0 ? (clientesZona / totalClientes) * 100 : 0;
+                const porcentaje = totalClientes > 0 ? (clientesLocalidad / totalClientes) * 100 : 0;
                 
                 return (
                   <div key={localidad} className="flex items-center justify-between">
