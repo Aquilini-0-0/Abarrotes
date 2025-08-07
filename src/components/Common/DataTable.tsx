@@ -200,7 +200,6 @@ export function DataTable({
                   <span>Exportar PDF</span>
                 </button>
               </div>
-                </button>
                 <button
                   onClick={exportToCSV}
                   className="lg:hidden p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
