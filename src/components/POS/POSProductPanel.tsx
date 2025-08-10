@@ -150,7 +150,8 @@ export function POSProductPanel({
             <button
               onClick={() => {
                 if (filteredProducts[selectedIndex]) {
-                  handleEditClick(filteredProducts[selectedIndex], {} as React.MouseEvent);
+                  setEditingProduct(filteredProducts[selectedIndex]);
+                  setShowEditModal(true);
                 }
               }}
               disabled={filteredProducts.length === 0}
