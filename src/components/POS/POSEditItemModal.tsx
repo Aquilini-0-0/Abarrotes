@@ -230,7 +230,7 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
             <button
               onClick={handleSave}
               disabled={quantity <= 0 || quantity > product.stock}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold"
+              className="px-6 py-2 bg-gradient-to-r from-orange-50 to-red-50 border-t border-orange-200  disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold"
             >
               Aceptar
             </button>
