@@ -356,8 +356,9 @@ export function POSLayout() {
             setShowTaraModal(false);
             setSelectedProduct(null);
           }}
-          onConfirm={(product, qty, priceLevel) => {
-            addItemToOrder(product, qty, priceLevel);
+          onConfirm={(product, originalQuantity, priceLevelFromModal, finalWeightFromModal) => {
+            const updatedOrder = addItemToOrder(currentOrder!, product, finalWeightFromModal, priceLevelFromModal);
+            updateActiveOrder(updatedOrder);
             setShowTaraModal(false);
             setSelectedProduct(null);
           }}
