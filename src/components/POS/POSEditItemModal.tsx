@@ -1,6 +1,23 @@
 import React, { useState } from 'react';
-import { X, Edit, Lock, AlertTriangle, Package, DollarSign, Calculator, TrendingUp, Info, Scale } from 'lucide-react';
-import { POSProduct, POSOrderItem, TaraOption } from '../../types/pos';
+import {
+  X,
+  Edit,
+  Lock,
+  AlertTriangle,
+  Package,
+  DollarSign,
+  Calculator,
+  TrendingUp,
+  Info,
+  Scale
+} from 'lucide-react';
+import { POSProduct, POSOrderItem } from '../../types/pos';
+
+type TaraOptionLocal = {
+  id: string;
+  name: string;
+  weight: number; // KG
+};
 
 interface POSEditItemModalProps {
   item: POSOrderItem;
@@ -10,50 +27,86 @@ interface POSEditItemModalProps {
 }
 
 export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItemModalProps) {
-  const [quantity, setQuantity] = useState(item.quantity);
+  // --- States (original / new)
+  const [quantity, setQuantity] = useState<number>(item.quantity);
   const [priceLevel, setPriceLevel] = useState<1 | 2 | 3 | 4 | 5>(item.price_level);
-  const [customPrice, setCustomPrice] = useState(item.unit_price);
-  const [useCustomPrice, setUseCustomPrice] = useState(false);
-  const [selectedTara, setSelectedTara] = useState<TaraOption | null>(null);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
+  const [customPrice, setCustomPrice] = useState<number>(item.unit_price);
+  const [useCustomPrice, setUseCustomPrice] = useState<boolean>(false);
 
-const taraOptions: TaraOption[] = [
-  { id: '1', name: 'SIN TARA', weight: 0.0 },
-  { id: '2', name: 'MADERA', weight: 2.5 },
-  { id: '3', name: 'PLÁSTICO GRANDE', weight: 2.0 },
-  { id: '4', name: 'PLÁSTICO CHICO', weight: 1.5 },
-  { id: '5', name: 'PLÁSTICO CHICO', weight: 1.6 }
-];
+  // We'll use a local tara type so we are 100% compatible even if your global type doesn't include weight.
+  const [selectedTara, setSelectedTara] = useState<TaraOptionLocal | null>(null);
 
-const [pesoBruto, setPesoBruto] = useState(0);
-const [cantidadCajas, setCantidadCajas] = useState(1);
-const pesoTaraTotal = selectedTara ? selectedTara.weight * cantidadCajas : 0;
-const pesoNeto = Math.max(pesoBruto - pesoTaraTotal, 0);
+  // Peso flow states
+  const [pesoBruto, setPesoBruto] = useState<number>(0); // KG
+  const [cantidadCajas, setCantidadCajas] = useState<number>(1);
 
+  // Password modal for authorization when price < cost
+  const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
+  const [adminPassword, setAdminPassword] = useState<string>('');
 
+  // --- Tara options (las que indicaste)
+  const taraOptions: TaraOptionLocal[] = [
+    { id: '1', name: 'SIN TARA', weight: 0.0 },
+    { id: '2', name: 'MADERA', weight: 2.5 },
+    { id: '3', name: 'PLÁSTICO GRANDE', weight: 2.0 },
+    { id: '4', name: 'PLÁSTICO CHICO', weight: 1.5 },
+    { id: '5', name: 'PLÁSTICO CHICO', weight: 1.6 }
+  ];
+
+  // --- Derived values
   const currentPrice = useCustomPrice ? customPrice : product.prices[`price${priceLevel}`];
-  const totalAmount = quantity * currentPrice;
-  const productCost = product.stock > 0 ? (product.prices.price1 * 0.7) : 0; // Estimado del costo
-  
-  // Calculate changes summary
-  const originalTotal = item.quantity * item.unit_price;
-  const quantityChange = quantity - item.quantity;
-  const priceChange = currentPrice - item.unit_price;
+
+  // peso flow calculations
+  const pesoTaraTotal = selectedTara ? selectedTara.weight * cantidadCajas : 0;
+  const pesoNeto = Math.max(pesoBruto - pesoTaraTotal, 0); // kg
+  const precioFinal = pesoNeto * currentPrice; // total when using peso flow
+
+  // product cost estimation (same heuristics you had)
+  const productCost = product.prices?.price1 ? product.prices.price1 * 0.7 : 0;
+
+  // Decide which flow is active: if user provided a pesoBruto > 0, we use peso flow
+  const usingWeightFlow = pesoBruto > 0;
+
+  // totals depending on flow
+  const totalAmount = usingWeightFlow ? precioFinal : (quantity * currentPrice);
+
+  // original values for comparison
+  const originalTotal = (item.quantity ?? 0) * (item.unit_price ?? 0);
+  const quantityChange = (usingWeightFlow ? pesoNeto : quantity) - (item.quantity ?? 0);
+  const priceChange = currentPrice - (item.unit_price ?? 0);
   const totalChange = totalAmount - originalTotal;
 
-  const validateAdminPassword = (password: string) => {
-    return password === 'admin123'; // En producción, validar contra la base de datos
-  };
+  // --- Helpers
+  const validateAdminPassword = (password: string) => password === 'admin123';
 
+  // Save flow (unificado)
   const handleSave = () => {
-    // Validación de stock
-    if (quantity > product.stock) {
-      alert(`Stock insuficiente. Disponible: ${product.stock} unidades`);
-      return;
+    // validations depending on flow
+    if (usingWeightFlow) {
+      if (!selectedTara) {
+        alert('Selecciona una tara.');
+        return;
+      }
+      if (pesoNeto <= 0) {
+        alert('El peso neto debe ser mayor a 0.');
+        return;
+      }
+      if (pesoNeto > product.stock) {
+        alert(`Stock insuficiente. Disponible: ${product.stock} kg`);
+        return;
+      }
+    } else {
+      if (quantity <= 0) {
+        alert('La cantidad debe ser mayor a 0.');
+        return;
+      }
+      if (quantity > product.stock) {
+        alert(`Stock insuficiente. Disponible: ${product.stock} unidades`);
+        return;
+      }
     }
 
-    // Validación de precio menor al costo
+    // price below cost authorization
     if (useCustomPrice && customPrice < productCost) {
       setShowPasswordModal(true);
       return;
@@ -63,13 +116,20 @@ const pesoNeto = Math.max(pesoBruto - pesoTaraTotal, 0);
   };
 
   const processSave = () => {
+    const finalQuantity = usingWeightFlow ? pesoNeto : quantity;
+    const finalUnitPrice = currentPrice;
+    const finalTotal = totalAmount;
+
+    // Build updated item — adapt to your POSOrderItem shape (we keep fields you already use)
     const updatedItem: POSOrderItem = {
       ...item,
-      quantity,
+      quantity: finalQuantity,
       price_level: priceLevel,
-      unit_price: currentPrice,
-      total: totalAmount,
-      tara_option: selectedTara || undefined
+      unit_price: finalUnitPrice,
+      total: finalTotal,
+      // attach tara info — aquí incluyo weight por si lo usas luego
+      // si tu tipo POSOrderItem espera un objeto distinto, ajusta esto a lo que uses.
+      tara_option: selectedTara ? { id: selectedTara.id, name: selectedTara.name, weight: selectedTara.weight } as any : undefined
     };
 
     onSave(updatedItem);
@@ -82,17 +142,22 @@ const pesoNeto = Math.max(pesoBruto - pesoTaraTotal, 0);
       setAdminPassword('');
       return;
     }
-
     setShowPasswordModal(false);
     setAdminPassword('');
     processSave();
   };
 
+  // compute button enabled state (legible)
+  const canSave = usingWeightFlow
+    ? selectedTara !== null && pesoNeto > 0 && pesoNeto <= product.stock
+    : quantity > 0 && quantity <= product.stock;
+
+  // --- JSX
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto mx-4">
         {/* Header */}
-        <div className=" bg-gradient-to-br from-orange-400 via-red-500 to-red-400 rounded-t-xl flex items-center justify-between sticky top-0 z-10">
+        <div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 rounded-t-xl flex items-center justify-between sticky top-0 z-10 p-4">
           <div className="flex items-center space-x-2">
             <Edit className="text-white" size={24} />
             <h2 className="text-white font-bold text-lg">Editar Producto</h2>
@@ -104,15 +169,15 @@ const pesoNeto = Math.max(pesoBruto - pesoTaraTotal, 0);
 
         <div className="p-6 space-y-6">
           {/* Product Info */}
-          <div className="bg-gradient-to-r from-orange-50 to-red-50 border-t border-orange-200 rounded-lg p-4 border border-blue-200">
-            <div className="flex items-center space-x-3 mb-3">
+          <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3 mb-2">
               <Package className="h-6 w-6 text-blue-600" />
               <div>
                 <div className="text-gray-800 font-semibold text-lg">{product.name}</div>
                 <div className="text-gray-500 text-sm">Código: {product.code} | Línea: {product.line}</div>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-3 gap-4 text-sm mt-2">
               <div className="text-center">
                 <div className="text-gray-600">Stock Disponible</div>
                 <div className={`font-bold text-lg ${product.stock < 10 ? 'text-red-600' : 'text-green-600'}`}>
@@ -122,25 +187,21 @@ const pesoNeto = Math.max(pesoBruto - pesoTaraTotal, 0);
               </div>
               <div className="text-center">
                 <div className="text-gray-600">Precio Actual</div>
-                <div className="font-bold text-lg text-blue-600">
-                  ${item.unit_price.toFixed(2)}
-                </div>
+                <div className="font-bold text-lg text-blue-600">${item.unit_price.toFixed(2)}</div>
                 <div className="text-xs text-gray-500">Nivel {item.price_level}</div>
               </div>
               <div className="text-center">
                 <div className="text-gray-600">Cantidad Actual</div>
-                <div className="font-bold text-lg text-purple-600">
-                  {item.quantity}
-                </div>
+                <div className="font-bold text-lg text-purple-600">{item.quantity}</div>
                 <div className="text-xs text-gray-500">unidades</div>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column - Controls */}
+            {/* Left column: controls + tara table */}
             <div className="space-y-6">
-              {/* Quantity */}
+              {/* Quantity (legacy) */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2 flex items-center">
                   <Package className="h-4 w-4 mr-2 text-blue-600" />
@@ -149,10 +210,10 @@ const pesoNeto = Math.max(pesoBruto - pesoTaraTotal, 0);
                 <input
                   type="number"
                   value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                  onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  min="1"
-                  max={product.stock}
+                  min="0"
+                  step="1"
                 />
                 {quantity > product.stock && (
                   <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
@@ -164,58 +225,82 @@ const pesoNeto = Math.max(pesoBruto - pesoTaraTotal, 0);
                 )}
               </div>
 
-           {/* Tara Selection - Nuevo diseño */}
-<div>
-  <h3 className="font-semibold text-gray-900 mb-4 text-lg flex items-center">
-    <Scale className="w-5 h-5 mr-2 text-orange-500" /> Selección de Tara
-  </h3>
-  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-    <table className="w-full text-sm">
-      <thead className="bg-gray-50">
-        <tr>
-          <th className="text-left p-3 text-gray-700 font-semibold">Nombre de Tara</th>
-          <th className="text-right p-3 text-gray-700 font-semibold">Peso Tara (KG)</th>
-          <th className="text-center p-3 text-gray-700 font-semibold">Seleccionar</th>
-        </tr>
-      </thead>
-      <tbody>
-        {taraOptions.map(tara => (
-          <tr
-            key={tara.id}
-            className={`border-b border-gray-200 cursor-pointer transition-colors ${
-              selectedTara?.id === tara.id
-                ? 'bg-orange-50 border-orange-200'
-                : 'hover:bg-gray-50'
-            }`}
-            onClick={() => setSelectedTara(tara)}
-          >
-            <td className="p-3 font-medium text-gray-900">{tara.name}</td>
-            <td className="p-3 text-right font-mono text-gray-700">{tara.weight.toFixed(2)}</td>
-            <td className="p-3 text-center">
-              <input
-                type="radio"
-                name="tara"
-                checked={selectedTara?.id === tara.id}
-                onChange={() => setSelectedTara(tara)}
-                className="w-4 h-4 text-orange-600 focus:ring-orange-500"
-              />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-</div>
+              {/* Tara Selection - tabla */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-4 text-lg flex items-center">
+                  <Scale className="w-5 h-5 mr-2 text-orange-500" /> Selección de Tara
+                </h3>
 
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left p-3 text-gray-700 font-semibold">Nombre de Tara</th>
+                        <th className="text-right p-3 text-gray-700 font-semibold">Peso (KG)</th>
+                        <th className="text-center p-3 text-gray-700 font-semibold">Seleccionar</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {taraOptions.map((tara) => (
+                        <tr
+                          key={tara.id}
+                          className={`border-b border-gray-200 cursor-pointer ${
+                            selectedTara?.id === tara.id ? 'bg-orange-50' : 'hover:bg-gray-50'
+                          }`}
+                          onClick={() => setSelectedTara(tara)}
+                        >
+                          <td className="p-3 font-medium text-gray-900">{tara.name}</td>
+                          <td className="p-3 text-right font-mono text-gray-700">{tara.weight.toFixed(2)}</td>
+                          <td className="p-3 text-center">
+                            <input
+                              type="radio"
+                              name="tara"
+                              checked={selectedTara?.id === tara.id}
+                              onChange={() => setSelectedTara(tara)}
+                              className="w-4 h-4 text-orange-600"
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-              {/* Price Selection */}
+                {/* Peso bruto / cantidad de taras */}
+                <div className="mt-4 grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Peso Bruto (KG)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={pesoBruto}
+                      onChange={(e) => setPesoBruto(parseFloat(e.target.value) || 0)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center font-bold"
+                      placeholder="0.00"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad de Taras</label>
+                    <input
+                      type="number"
+                      value={cantidadCajas}
+                      onChange={(e) => setCantidadCajas(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center font-bold"
+                      min="1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Price selection */}
               <div>
                 <label className="block text-gray-700 font-medium mb-2 flex items-center">
                   <DollarSign className="h-4 w-4 mr-2 text-green-600" />
                   Nivel de Precio
                 </label>
                 <div className="grid grid-cols-1 gap-2">
-                  {[1, 2, 3, 4, 5].map(level => (
+                  {[1, 2, 3, 4, 5].map((level) => (
                     <label key={level} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
                       <input
                         type="radio"
@@ -250,7 +335,7 @@ const pesoNeto = Math.max(pesoBruto - pesoTaraTotal, 0);
                 </div>
               </div>
 
-              {/* Custom Price */}
+              {/* Custom price */}
               <div>
                 <div className="flex items-center mb-3">
                   <input
@@ -291,256 +376,140 @@ const pesoNeto = Math.max(pesoBruto - pesoTaraTotal, 0);
               </div>
             </div>
 
-            {/* Right Column - Summary */}
+            {/* Right column: comparison + summary */}
             <div className="space-y-6">
-              {/* Current vs New Comparison */}
+              {/* Comparison */}
               <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                  <h4 className="font-semibold text-gray-900 flex items-center">
-                    <TrendingUp className="h-4 w-4 mr-2 text-green-600" />
-                    Comparación de Cambios
-                  </h4>
+                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 font-semibold flex items-center">
+                  <TrendingUp className="w-4 h-4 mr-2 text-green-600" /> Comparación de Cambios
                 </div>
-                <div className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-gray-600">Cantidad:</span>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-gray-500">{item.quantity}</span>
-                        <span className="text-gray-400">→</span>
-                        <span className={`font-bold ${quantityChange !== 0 ? 'text-blue-600' : 'text-gray-900'}`}>
-                          {quantity}
-                        </span>
-                        {quantityChange !== 0 && (
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            quantityChange > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {quantityChange > 0 ? '+' : ''}{quantityChange}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-gray-600">Precio Unit.:</span>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-gray-500">${item.unit_price.toFixed(2)}</span>
-                        <span className="text-gray-400">→</span>
-                        <span className={`font-bold ${priceChange !== 0 ? 'text-green-600' : 'text-gray-900'}`}>
-                          ${currentPrice.toFixed(2)}
-                        </span>
-                        {priceChange !== 0 && (
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            priceChange > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {priceChange > 0 ? '+' : ''}${priceChange.toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-gray-600 font-medium">Total:</span>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-gray-500">${originalTotal.toFixed(2)}</span>
-                        <span className="text-gray-400">→</span>
-                        <span className={`font-bold text-lg ${totalChange !== 0 ? 'text-orange-600' : 'text-gray-900'}`}>
-                          ${totalAmount.toFixed(2)}
-                        </span>
-                        {totalChange !== 0 && (
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            totalChange > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {totalChange > 0 ? '+' : ''}${totalChange.toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                <div className="p-4 space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Cantidad / Peso neto:</span>
+                    <span className="font-bold">{usingWeightFlow ? `${pesoNeto.toFixed(2)} kg` : `${quantity}`}</span>
                   </div>
-                </div>
-              </div>
-
-              {/* Summary Card */}
-              <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                  <Info className="h-4 w-4 mr-2 text-orange-600" />
-                  Resumen Final
-                </h4>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Cantidad:</span>
-                    <span className="font-bold text-gray-900 text-lg">{quantity} unidades</span>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Precio Unitario:</span>
+                    <span className="font-bold">${currentPrice.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Precio unitario:</span>
-                    <span className="font-mono font-bold text-blue-600 text-lg">${currentPrice.toFixed(2)}</span>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total:</span>
+                    <span className="font-bold text-orange-600">${totalAmount.toFixed(2)}</span>
                   </div>
-                  {useCustomPrice && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Tipo:</span>
-                      <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
-                        Precio Libre
-                      </span>
-                    </div>
-                  )}
-                  {!useCustomPrice && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Nivel:</span>
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                        Precio {priceLevel}
-                      </span>
-                    </div>
-                  )}
-                  {selectedTara && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Tara:</span>
-                      <span className="font-medium text-gray-900">{selectedTara.name}</span>
-                    </div>
-                  )}
-                  <div className="border-t border-orange-300 pt-3 flex justify-between items-center">
-                    <span className="font-bold text-gray-900 text-lg">Total:</span>
-                    <span className="font-mono font-bold text-orange-600 text-2xl">
-                      ${totalAmount.toFixed(2)}
-                    </span>
-                  </div>
-                  
-                  {/* Change indicator */}
                   {totalChange !== 0 && (
-                    <div className={`p-2 rounded-lg text-center text-sm font-medium ${
-                      totalChange > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
+                    <div className={`p-2 rounded-lg text-sm font-medium ${totalChange > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                       {totalChange > 0 ? 'Incremento' : 'Reducción'} de ${Math.abs(totalChange).toFixed(2)}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Stock validation */}
-              {quantity > product.stock && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-center">
-                    <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
-                    <div>
-                      <div className="font-medium text-red-800">Stock Insuficiente</div>
-                      <div className="text-red-600 text-sm">
-                        Solicitado: {quantity} | Disponible: {product.stock}
-                      </div>
+              {/* Summary */}
+              <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                  <Info className="h-4 w-4 mr-2 text-orange-600" /> Resumen Final
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>{usingWeightFlow ? 'Peso Neto:' : 'Cantidad:'}</span>
+                    <span className="font-bold text-gray-900">{usingWeightFlow ? `${pesoNeto.toFixed(2)} kg` : `${quantity}`}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Precio unitario:</span>
+                    <span className="font-mono font-bold text-blue-600 text-lg">${currentPrice.toFixed(2)}</span>
+                  </div>
+                  {selectedTara && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Tara:</span>
+                      <span className="font-medium text-gray-900">{selectedTara.name} ({selectedTara.weight} kg)</span>
                     </div>
+                  )}
+                  <div className="border-t border-orange-300 pt-3 flex justify-between items-center">
+                    <span className="font-bold text-gray-900 text-lg">Total:</span>
+                    <span className="font-mono font-bold text-orange-600 text-2xl">${totalAmount.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Warnings */}
+              {usingWeightFlow && pesoNeto <= 0 && pesoBruto > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <div className="flex items-center">
+                    <X className="w-4 h-4 text-red-600 mr-2" />
+                    <span className="text-red-800 font-medium text-sm">El peso neto no puede ser negativo. Verifica peso bruto y tara.</span>
                   </div>
                 </div>
               )}
 
-              {/* Price below cost warning */}
-              {useCustomPrice && customPrice < productCost && (
-                <div className="flex justify-between">
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <div className="flex items-center">
-                      <Lock className="h-5 w-5 text-yellow-600 mr-3" />
-                      <div>
-                        <div className="font-medium text-yellow-800">Autorización Requerida</div>
-                        <div className="text-yellow-600 text-sm">
-                          Precio menor al costo estimado (${productCost.toFixed(2)})
-                        </div>
-                      </div>
-                    </div>
+              {usingWeightFlow && pesoNeto > product.stock && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="flex items-center">
+                    <Package className="w-4 h-4 text-yellow-600 mr-2" />
+                    <span className="text-yellow-800 font-medium text-sm">Stock insuficiente. Disponible: {product.stock} kg</span>
                   </div>
                 </div>
               )}
+
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action buttons */}
           <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
-            <button
-              onClick={onClose}
-              className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
-            >
+            <button onClick={onClose} className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors">
               Cancelar
             </button>
             <button
               onClick={handleSave}
-              disabled={quantity <= 0 || quantity > product.stock}
-              className="px-6 py-3  bg-gradient-to-br from-orange-400 via-red-500 to-red-600  hover:from-red-500 hover:to-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-colors shadow-lg"
+              disabled={!canSave || (useCustomPrice && customPrice < 0)}
+              className={`px-6 py-3 rounded-lg font-bold transition-colors shadow-lg text-white ${
+                canSave ? 'bg-gradient-to-br from-orange-400 via-red-500 to-red-600 hover:opacity-95' : 'bg-gray-300 cursor-not-allowed'
+              }`}
             >
               Guardar Cambios
             </button>
           </div>
         </div>
 
-        {/* Password Modal */}
+        {/* Password modal */}
         {showPasswordModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-              <div className="bg-red-600 p-4 border-b border-red-700 rounded-t-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Lock className="h-5 w-5 text-white" />
-                    <h3 className="text-white font-bold">Autorización Requerida</h3>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setShowPasswordModal(false);
-                      setAdminPassword('');
-                    }}
-                    className="text-red-100 hover:text-white"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
+              <div className="bg-red-600 p-4 border-b border-red-700 rounded-t-lg flex justify-between items-center">
+                <h3 className="text-white font-bold">Autorización Requerida</h3>
+                <button onClick={() => setShowPasswordModal(false)} className="text-red-100 hover:text-white">
+                  <X size={20} />
+                </button>
               </div>
-              <div className="p-6">
-                <div className="text-center mb-6">
+              <div className="p-6 space-y-4">
+                <div className="text-center">
                   <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-3" />
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                    Precio Menor al Costo
-                  </h4>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Precio Menor al Costo</h4>
                   <p className="text-gray-600 text-sm">
                     El precio ingresado (${customPrice.toFixed(2)}) es menor al costo estimado (${productCost.toFixed(2)}).
                     Se requiere autorización de administrador.
                   </p>
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Contraseña de Administrador
-                    </label>
-                    <input
-                      type="password"
-                      value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                      placeholder="Ingrese contraseña..."
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handlePasswordSubmit();
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={handlePasswordSubmit}
-                      disabled={!adminPassword.trim()}
-                      className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    >
-                      Autorizar
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowPasswordModal(false);
-                        setAdminPassword('');
-                      }}
-                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contraseña de Administrador</label>
+                  <input
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Ingrese contraseña..."
+                    onKeyDown={(e) => { if (e.key === 'Enter') handlePasswordSubmit(); }}
+                    autoFocus
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button onClick={handlePasswordSubmit} disabled={!adminPassword.trim()} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg">Autorizar</button>
+                  <button onClick={() => setShowPasswordModal(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg">Cancelar</button>
                 </div>
               </div>
             </div>
           </div>
         )}
+
       </div>
     </div>
   );
