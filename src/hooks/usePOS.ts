@@ -85,8 +85,8 @@ export function usePOS() {
         id: client.id,
         name: client.name,
         rfc: client.rfc,
-        credit_limit: client.credit_limit,
-        balance: client.balance,
+        credit_limit: client.credit_limit || 0,
+        balance: client.balance || 0,
         default_price_level: 1, // Default to price level 1
         zone: client.zone
       }));
