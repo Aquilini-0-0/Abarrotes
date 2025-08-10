@@ -1,18 +1,221 @@
-import React, { useState } from 'react';
+// POSPage.tsx
+import React, { useMemo, useState } from 'react';
 import {
-  X,
   Edit,
-  Lock,
-  AlertTriangle,
   Package,
   DollarSign,
-  Calculator,
   TrendingUp,
   Info,
-  Scale
+  Scale,
+  X,
+  AlertTriangle,
+  Calculator,
+  Lock
 } from 'lucide-react';
-import { POSProduct, POSOrderItem } from '../../types/pos';
 
+/* ----------------------
+   Tipos (ajusta a tu proyecto)
+   ---------------------- */
+export type POSProduct = {
+  id: string;
+  code?: string;
+  name: string;
+  line?: string;
+  unit?: string;
+  stock: number; // unidades o kg dependiendo del unit
+  prices: {
+    price1: number;
+    price2: number;
+    price3: number;
+    price4: number;
+    price5: number;
+  };
+};
+
+export type POSOrderItem = {
+  id: string;
+  product_id: string;
+  quantity: number; // puede ser kg si el producto es por peso
+  unit_price: number;
+  price_level: 1 | 2 | 3 | 4 | 5;
+  total: number;
+  tara_option?: { id: string; name: string; weight: number };
+};
+
+/* ----------------------
+   Componente padre: POSPage
+   ---------------------- */
+export default function POSPage() {
+  // productos de ejemplo
+  const [products, setProducts] = useState<POSProduct[]>(() => [
+    {
+      id: 'p1',
+      code: '0001',
+      name: 'Tomate Bola',
+      line: 'Verduras',
+      unit: 'kg',
+      stock: 50,
+      prices: { price1: 20.0, price2: 18.0, price3: 16.0, price4: 15.0, price5: 12.0 }
+    },
+    {
+      id: 'p2',
+      code: '0002',
+      name: 'Lechuga',
+      line: 'Verduras',
+      unit: 'pieza',
+      stock: 30,
+      prices: { price1: 10.0, price2: 9.0, price3: 8.0, price4: 7.5, price5: 6.0 }
+    }
+  ]);
+
+  // items del pedido (ejemplo)
+  const [orderItems, setOrderItems] = useState<POSOrderItem[]>(() => [
+    {
+      id: 'i1',
+      product_id: 'p1',
+      quantity: 2,
+      unit_price: 20.0,
+      price_level: 1,
+      total: 40.0
+    },
+    {
+      id: 'i2',
+      product_id: 'p2',
+      quantity: 1,
+      unit_price: 10.0,
+      price_level: 1,
+      total: 10.0
+    }
+  ]);
+
+  // modal state
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+
+  const editingItem = useMemo(
+    () => orderItems.find((it) => it.id === editingItemId) ?? null,
+    [orderItems, editingItemId]
+  );
+
+  const editingProduct = useMemo(
+    () => (editingItem ? products.find((p) => p.id === editingItem.product_id) ?? null : null),
+    [products, editingItem]
+  );
+
+  // Actualiza un item en orderItems (aquí es clave)
+  const handleUpdateItem = (updatedItem: POSOrderItem) => {
+    setOrderItems((prev) =>
+      prev.map((it) => (it.id === updatedItem.id ? { ...it, ...updatedItem } : it))
+    );
+    // Opcional: si quieres actualizar stock en products (ejemplo, reducir stock)
+    // no lo hago automáticamente para no asumir reglas de negocio; si lo quieres, puedo agregarlo.
+  };
+
+  // Borra item (opcional)
+  const handleRemoveItem = (id: string) => {
+    setOrderItems((prev) => prev.filter((it) => it.id !== id));
+  };
+
+  // Abre modal
+  const openEditModal = (id: string) => setEditingItemId(id);
+  const closeModal = () => setEditingItemId(null);
+
+  // Cálculo total del pedido
+  const totalOrder = orderItems.reduce((s, it) => s + (it.total ?? it.quantity * it.unit_price), 0);
+
+  return (
+    <div className="p-6 max-w-6xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4 flex items-center">
+        <Package className="mr-2" /> Punto de Venta — Pedido
+      </h1>
+
+      <div className="bg-white shadow rounded-lg mb-6">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="p-3 text-left">Producto</th>
+              <th className="p-3 text-right">Cantidad</th>
+              <th className="p-3 text-right">Precio unitario</th>
+              <th className="p-3 text-right">Total</th>
+              <th className="p-3 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orderItems.map((it) => {
+              const prod = products.find((p) => p.id === it.product_id);
+              return (
+                <tr key={it.id} className="border-b">
+                  <td className="p-3">
+                    <div className="font-medium">{prod?.name ?? '—'}</div>
+                    <div className="text-xs text-gray-500">{prod?.code ?? ''} {prod ? `· ${prod.line}` : ''}</div>
+                  </td>
+                  <td className="p-3 text-right">{it.quantity}</td>
+
+                  {/* IMPORTANTE: aquí uso item.unit_price (no product.prices) */}
+                  <td className="p-3 text-right font-mono">${it.unit_price.toFixed(2)}</td>
+
+                  {/* total debe venir del item.total para que refleje cambios */}
+                  <td className="p-3 text-right font-bold text-orange-600">${(it.total ?? (it.quantity * it.unit_price)).toFixed(2)}</td>
+
+                  <td className="p-3 text-center">
+                    <div className="flex items-center justify-center space-x-2">
+                      <button
+                        onClick={() => openEditModal(it.id)}
+                        className="px-3 py-1 bg-blue-600 text-white rounded text-sm flex items-center"
+                        title="Editar"
+                      >
+                        <Edit className="w-4 h-4 mr-1" /> Editar
+                      </button>
+                      <button
+                        onClick={() => handleRemoveItem(it.id)}
+                        className="px-3 py-1 bg-gray-200 rounded text-sm"
+                        title="Eliminar"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {orderItems.length === 0 && (
+              <tr>
+                <td colSpan={5} className="p-6 text-center text-gray-500">No hay productos en el pedido.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        <div className="p-4 border-t flex justify-between items-center">
+          <div className="text-sm text-gray-600">Total del pedido</div>
+          <div className="text-2xl font-bold text-orange-600">${totalOrder.toFixed(2)}</div>
+        </div>
+      </div>
+
+      {/* Modal */}
+      {editingItem && editingProduct && (
+        <POSEditItemModal
+          key={editingItem.id}
+          item={editingItem}
+          product={editingProduct}
+          onClose={closeModal}
+          onSave={(updated) => {
+            // Aseguramos que updatedItem tenga total y unit_price correctos
+            const updatedWithTotal: POSOrderItem = {
+              ...updated,
+              total: updated.total ?? updated.quantity * updated.unit_price
+            };
+            handleUpdateItem(updatedWithTotal);
+            closeModal();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ----------------------
+   POSEditItemModal (adaptada)
+   ---------------------- */
 type TaraOptionLocal = {
   id: string;
   name: string;
@@ -34,7 +237,11 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
   const [useCustomPrice, setUseCustomPrice] = useState<boolean>(false);
 
   // We'll use a local tara type so we are 100% compatible even if your global type doesn't include weight.
-  const [selectedTara, setSelectedTara] = useState<TaraOptionLocal | null>(null);
+  const [selectedTara, setSelectedTara] = useState<TaraOptionLocal | null>(item.tara_option ? {
+    id: item.tara_option.id,
+    name: item.tara_option.name,
+    weight: item.tara_option.weight
+  } : null);
 
   // Peso flow states
   const [pesoBruto, setPesoBruto] = useState<number>(0); // KG
@@ -54,7 +261,7 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
   ];
 
   // --- Derived values
-  const currentPrice = useCustomPrice ? customPrice : product.prices[`price${priceLevel}`];
+  const currentPrice = useCustomPrice ? customPrice : product.prices[`price${priceLevel}` as keyof typeof product.prices];
 
   // peso flow calculations
   const pesoTaraTotal = selectedTara ? selectedTara.weight * cantidadCajas : 0;
@@ -127,13 +334,11 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
       price_level: priceLevel,
       unit_price: finalUnitPrice,
       total: finalTotal,
-      // attach tara info — aquí incluyo weight por si lo usas luego
-      // si tu tipo POSOrderItem espera un objeto distinto, ajusta esto a lo que uses.
-      tara_option: selectedTara ? { id: selectedTara.id, name: selectedTara.name, weight: selectedTara.weight } as any : undefined
+      tara_option: selectedTara ? { id: selectedTara.id, name: selectedTara.name, weight: selectedTara.weight } : undefined
     };
 
     onSave(updatedItem);
-    onClose();
+    // Nota: el cierre del modal lo controla el padre en este ejemplo.
   };
 
   const handlePasswordSubmit = () => {
@@ -152,7 +357,6 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
     ? selectedTara !== null && pesoNeto > 0 && pesoNeto <= product.stock
     : quantity > 0 && quantity <= product.stock;
 
-  // --- JSX
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto mx-4">
@@ -187,6 +391,7 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
               </div>
               <div className="text-center">
                 <div className="text-gray-600">Precio Actual</div>
+                {/* IMPORTANTE: mostramos el precio que viene en el item original para contexto */}
                 <div className="font-bold text-lg text-blue-600">${item.unit_price.toFixed(2)}</div>
                 <div className="text-xs text-gray-500">Nivel {item.price_level}</div>
               </div>
@@ -244,9 +449,7 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
                       {taraOptions.map((tara) => (
                         <tr
                           key={tara.id}
-                          className={`border-b border-gray-200 cursor-pointer ${
-                            selectedTara?.id === tara.id ? 'bg-orange-50' : 'hover:bg-gray-50'
-                          }`}
+                          className={`border-b border-gray-200 cursor-pointer ${selectedTara?.id === tara.id ? 'bg-orange-50' : 'hover:bg-gray-50'}`}
                           onClick={() => setSelectedTara(tara)}
                         >
                           <td className="p-3 font-medium text-gray-900">{tara.name}</td>
@@ -310,25 +513,16 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
                         onChange={() => {
                           setPriceLevel(level as 1 | 2 | 3 | 4 | 5);
                           setUseCustomPrice(false);
-                          setCustomPrice(product.prices[`price${level}`]);
+                          setCustomPrice(product.prices[`price${level}` as keyof typeof product.prices]);
                         }}
                         className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                       />
                       <div className="flex-1">
                         <div className="font-medium text-gray-900">Precio {level}</div>
-                        <div className="text-sm text-gray-600">${product.prices[`price${level}`].toFixed(2)}</div>
+                        <div className="text-sm text-gray-600">${product.prices[`price${level}` as keyof typeof product.prices].toFixed(2)}</div>
                       </div>
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        level === 1 ? 'bg-blue-100 text-blue-800' :
-                        level === 2 ? 'bg-green-100 text-green-800' :
-                        level === 3 ? 'bg-yellow-100 text-yellow-800' :
-                        level === 4 ? 'bg-purple-100 text-purple-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {level === 1 ? 'General' :
-                         level === 2 ? 'Mayoreo' :
-                         level === 3 ? 'Distribuidor' :
-                         level === 4 ? 'VIP' : 'Especial'}
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${level === 1 ? 'bg-blue-100 text-blue-800' : level === 2 ? 'bg-green-100 text-green-800' : level === 3 ? 'bg-yellow-100 text-yellow-800' : level === 4 ? 'bg-purple-100 text-purple-800' : 'bg-red-100 text-red-800'}`}>
+                        {level === 1 ? 'General' : level === 2 ? 'Mayoreo' : level === 3 ? 'Distribuidor' : level === 4 ? 'VIP' : 'Especial'}
                       </div>
                     </label>
                   ))}
@@ -345,7 +539,10 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
                     onChange={(e) => {
                       setUseCustomPrice(e.target.checked);
                       if (!e.target.checked) {
-                        setCustomPrice(product.prices[`price${priceLevel}`]);
+                        setCustomPrice(product.prices[`price${priceLevel}` as keyof typeof product.prices]);
+                      } else {
+                        // si activan precio libre y customPrice está vacío, init con item.unit_price
+                        if (!customPrice) setCustomPrice(item.unit_price);
                       }
                     }}
                     className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-2"
@@ -461,9 +658,7 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
             <button
               onClick={handleSave}
               disabled={!canSave || (useCustomPrice && customPrice < 0)}
-              className={`px-6 py-3 rounded-lg font-bold transition-colors shadow-lg text-white ${
-                canSave ? 'bg-gradient-to-br from-orange-400 via-red-500 to-red-600 hover:opacity-95' : 'bg-gray-300 cursor-not-allowed'
-              }`}
+              className={`px-6 py-3 rounded-lg font-bold transition-colors shadow-lg text-white ${canSave ? 'bg-gradient-to-br from-orange-400 via-red-500 to-red-600 hover:opacity-95' : 'bg-gray-300 cursor-not-allowed'}`}
             >
               Guardar Cambios
             </button>
