@@ -58,6 +58,17 @@ export function POSOrderPanel({
   const creditUsed = client?.balance || 0;
   const creditAvailable = client ? client.credit_limit - creditUsed : 0;
   const orderTotal = order?.total || 0;
+  
+  // Debug logging
+  console.log('Client credit info:', {
+    client: client?.name,
+    credit_limit: client?.credit_limit,
+    balance: client?.balance,
+    creditUsed,
+    creditAvailable,
+    orderTotal
+  });
+  
   const creditExceeded = client && (isCredit || order?.is_credit) && (creditUsed + orderTotal) > client.credit_limit;
 
   const handleApplyDiscount = () => {

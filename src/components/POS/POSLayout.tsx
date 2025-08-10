@@ -55,9 +55,19 @@ export function POSLayout() {
   } = usePOSTabs();
 
   const { isOrderLocked } = useOrderLocks();
+  
+  // Get the actual client data based on the active order
+  const getActiveClientData = (): POSClient | null => {
+    const activeOrder = getActiveOrder();
+    if (!activeOrder?.client_id) return null;
+    
+    const clientData = clients.find(c => c.id === activeOrder.client_id);
+    console.log('Active client data:', clientData);
+    return clientData || null;
+  };
 
   const currentOrder = getActiveOrder();
-  const selectedClient = getActiveClient();
+  const selectedClient = getActiveClientData();
 
   const [selectedPriceLevel, setSelectedPriceLevel] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [showPaymentModal, setShowPaymentModal] = useState(false);

@@ -166,17 +166,9 @@ export function usePOSTabs() {
     const activeOrder = getActiveOrder();
     if (!activeOrder?.client_id) return null;
     
-    // This would need to be connected to the clients data
-    // For now, return a basic client object
-    return {
-      id: activeOrder.client_id,
-      name: activeOrder.client_name,
-      rfc: '',
-      credit_limit: 0,
-      balance: 0,
-      default_price_level: 1,
-      zone: ''
-    };
+    // Get the actual client data from the clients array
+    // This needs to be passed from the parent component that has access to clients
+    return null; // Will be handled by parent component
   }, [getActiveOrder]);
 
   // Auto-extend locks for active orders every 5 minutes

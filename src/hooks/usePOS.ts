@@ -74,25 +74,30 @@ export function usePOS() {
   // Fetch clients
   const fetchClients = async () => {
     try {
+      console.log('Fetching clients for POS...');
       const { data, error } = await supabase
         .from('clients')
         .select('*')
         .order('name');
 
       if (error) throw error;
+      
+      console.log('Raw client data from database:', data);
 
       const posClients: POSClient[] = data.map(client => ({
         id: client.id,
         name: client.name,
         rfc: client.rfc,
-        credit_limit: client.credit_limit || 0,
-        balance: client.balance || 0,
+        credit_limit: Number(client.credit_limit) || 0,
+        balance: Number(client.balance) || 0,
         default_price_level: 1, // Default to price level 1
         zone: client.zone
       }));
 
+      console.log('Formatted POS clients:', posClients);
       setClients(posClients);
     } catch (err) {
+      console.error('Error in fetchClients:', err);
       setError(err instanceof Error ? err.message : 'Error fetching clients');
     }
   };
