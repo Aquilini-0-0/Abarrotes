@@ -220,7 +220,7 @@ export function POSOrderPanel({
                           setEditingItem(item);
                           setShowEditItemModal(true);
                         }}
-                        className="bg-orange-500 hover:bg-blue-700 text-white p-0.5 sm:p-1 rounded shadow-sm transition-colors"
+                        className="bg-orange-500 hover:bg-yellow-700 text-white p-0.5 sm:p-1 rounded shadow-sm transition-colors"
                         title="Editar"
                       >
                         <Edit size={8} className="sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3" />
