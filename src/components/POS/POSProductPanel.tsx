@@ -161,8 +161,7 @@ export function POSProductPanel({
             </button>
           </div>
         </div>
-
-        {/* Price Level Display */}
+        {/*
         <div className="mt-1 sm:mt-2 lg:mt-3 grid grid-cols-5 gap-0.5 sm:gap-1 lg:gap-2">
           {[1, 2, 3, 4, 5].map(level => (
             <button
@@ -179,7 +178,8 @@ export function POSProductPanel({
           ))}
         </div>
       </div>
-
+      */}
+     
       {/* Products Table */}
       <div className="flex-1 overflow-hidden">
         <div ref={tableRef} className="h-full overflow-y-auto">
