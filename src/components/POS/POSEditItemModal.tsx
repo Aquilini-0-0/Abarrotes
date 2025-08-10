@@ -97,7 +97,8 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
 
         <div className="p-6 space-y-6">
           {/* Product Info */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+          <div className="bg-gradient-to-r from-orange-50 to-red-50 border-t border-orange-200
+ rounded-lg p-4 border border-blue-200">
             <div className="flex items-center space-x-3 mb-3">
               <Package className="h-6 w-6 text-blue-600" />
               <div>
