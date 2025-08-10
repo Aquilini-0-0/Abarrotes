@@ -208,20 +208,22 @@ export function POSProductPanel({
                         
                     </td>
                     <td className="p-1 sm:p-2 lg:p-3 text-right">
-<span
-  className={`w-8 sm:w-12 lg:w-20 inline-block text-center rounded-xl sm:rounded-2xl font-bold text-[8px] sm:text-xs lg:text-sm shadow-sm transition-all duration-200
-    ${
-      isLowStock
-        ? 'bg-red-600 text-white'
-        : product.stock > 50
-          ? 'bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 text-green-700'
-          : 'bg-gradient-to-r from-yellow-100 to-yellow-200 hover:from-yellow-200 hover:to-yellow-300 text-yellow-700'
-    }
-    px-0.5 sm:px-1 lg:px-3 py-0.5 sm:py-1 lg:py-2 min-h-[20px] sm:min-h-[28px] lg:min-h-[36px]
-  `}
->
-  {product.stock}
-</span>
+<td className="p-1 sm:p-2 lg:p-3 text-right">
+  <span
+    className={`inline-flex items-center justify-center w-10 sm:w-12 lg:w-14 h-6 sm:h-7 lg:h-8 
+                rounded-full text-xs sm:text-sm font-semibold shadow 
+                ${
+                  isLowStock
+                    ? 'bg-red-500 text-white'
+                    : product.stock > 50
+                      ? 'bg-green-500 text-white'
+                      : 'bg-yellow-400 text-gray-800'
+                }`}
+  >
+    {product.stock}
+  </span>
+</td>
+
 
 
 
