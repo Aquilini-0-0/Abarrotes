@@ -31,10 +31,13 @@ export function POSLayout() {
     addItemToOrder,
     removeItemFromOrder,
     updateItemQuantity,
+    updateItemPrice,
     applyDiscount,
     saveOrder,
     openCashRegister,
     closeCashRegister,
+    updateProductPrices,
+    getEffectivePrice,
     refetch
   } = usePOS();
 
@@ -169,6 +172,16 @@ export function POSLayout() {
     }
   };
 
+  const handleUpdateItemPrice = (itemId: string, priceLevel: 1 | 2 | 3 | 4 | 5, customPrice?: number) => {
+    if (currentOrder) {
+      try {
+        const updatedOrder = updateItemPrice(currentOrder, itemId, priceLevel, customPrice);
+        updateActiveOrder(updatedOrder);
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Error al actualizar precio');
+      }
+    }
+  };
   const handleApplyDiscount = (discountAmount: number) => {
     if (currentOrder) {
       const updatedOrder = applyDiscount(currentOrder, discountAmount);
@@ -283,6 +296,7 @@ export function POSLayout() {
             client={selectedClient}
             onRemoveItem={handleRemoveItem}
             onUpdateQuantity={handleUpdateQuantity}
+            onUpdateItemPrice={handleUpdateItemPrice}
             onApplyDiscount={handleApplyDiscount}
             onSelectClient={handleSelectClient}
             onPay={() => setShowPaymentModal(true)}
@@ -290,6 +304,7 @@ export function POSLayout() {
             onCancel={handleCancelOrder}
             clients={clients}
             onRefreshData={refetch}
+            products={products}
           />
         </div>
 
@@ -312,6 +327,7 @@ export function POSLayout() {
                 handleAddProduct(product);
               }
             }}
+            onGetEffectivePrice={getEffectivePrice}
           />
         </div>
       </div>

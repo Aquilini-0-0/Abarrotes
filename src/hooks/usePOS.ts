@@ -12,12 +12,29 @@ export function usePOS() {
   const [cashRegister, setCashRegister] = useState<CashRegister | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [productPriceOverrides, setProductPriceOverrides] = useState<Record<string, { price1?: number; price2?: number; price3?: number; price4?: number; price5?: number }>>({});
 
   // Add refresh function to force re-fetch of all data
   const refreshAllData = async () => {
     await Promise.all([fetchProducts(), fetchClients(), fetchOrders()]);
   };
 
+  // Update product prices temporarily
+  const updateProductPrices = (productId: string, prices: { price1?: number; price2?: number; price3?: number; price4?: number; price5?: number }) => {
+    setProductPriceOverrides(prev => ({
+      ...prev,
+      [productId]: { ...prev[productId], ...prices }
+    }));
+  };
+
+  // Get effective price for a product (with overrides)
+  const getEffectivePrice = (product: POSProduct, level: 1 | 2 | 3 | 4 | 5): number => {
+    const override = productPriceOverrides[product.id];
+    if (override && override[`price${level}`] !== undefined) {
+      return override[`price${level}`]!;
+    }
+    return product.prices[`price${level}`];
+  };
   // Fetch products with 5 price levels
   const fetchProducts = async () => {
     try {
@@ -111,7 +128,7 @@ export function usePOS() {
       throw new Error(`Stock insuficiente. Disponible: ${product.stock} unidades`);
     }
 
-    const unitPrice = product.prices[`price${priceLevel}`];
+    const unitPrice = getEffectivePrice(product, priceLevel);
     const existingItemIndex = order.items.findIndex(
       item => item.product_id === product.id && item.price_level === priceLevel
     );
@@ -191,6 +208,34 @@ export function usePOS() {
     };
   };
 
+  // Update item price and level
+  const updateItemPrice = (order: POSOrder, itemId: string, newPriceLevel: 1 | 2 | 3 | 4 | 5, customPrice?: number): POSOrder => {
+    if (!order) throw new Error('No hay pedido activo');
+
+    const updatedItems = order.items.map(item => {
+      if (item.id === itemId) {
+        const product = products.find(p => p.id === item.product_id);
+        if (!product) return item;
+
+        const unitPrice = customPrice !== undefined ? customPrice : getEffectivePrice(product, newPriceLevel);
+        return {
+          ...item,
+          price_level: newPriceLevel,
+          unit_price: unitPrice,
+          total: item.quantity * unitPrice
+        };
+      }
+      return item;
+    });
+
+    const subtotal = updatedItems.reduce((sum, item) => sum + item.total, 0);
+    return {
+      ...order,
+      items: updatedItems,
+      subtotal,
+      total: subtotal - order.discount_total
+    };
+  };
   // Apply discount to order
   const applyDiscount = (order: POSOrder, discountAmount: number): POSOrder => {
     if (!order) throw new Error('No hay pedido activo');
@@ -213,21 +258,52 @@ export function usePOS() {
         }
       }
 
-      // Create sale record
-      const { data: saleData, error: saleError } = await supabase
-        .from('sales')
-        .insert({
-          client_id: order.client_id,
-          client_name: order.client_name,
-          date: order.date,
-          total: order.total,
-          status: order.payment_method === 'credit' || order.is_credit ? 'pending' : 'paid',
-          created_by: order.created_by
-        })
-        .select()
-        .single();
+      let saleData;
+      
+      // Check if this is an existing order (not temp)
+      if (!order.id.startsWith('temp-')) {
+        // Update existing order
+        const { data: updatedSale, error: updateError } = await supabase
+          .from('sales')
+          .update({
+            client_id: order.client_id,
+            client_name: order.client_name,
+            date: order.date,
+            total: order.total,
+            status: order.payment_method === 'credit' || order.is_credit ? 'pending' : 'paid'
+          })
+          .eq('id', order.id)
+          .select()
+          .single();
 
-      if (saleError) throw saleError;
+        if (updateError) throw updateError;
+        saleData = updatedSale;
+
+        // Delete existing sale items
+        const { error: deleteItemsError } = await supabase
+          .from('sale_items')
+          .delete()
+          .eq('sale_id', order.id);
+
+        if (deleteItemsError) throw deleteItemsError;
+      } else {
+        // Create new sale record
+        const { data: newSale, error: saleError } = await supabase
+          .from('sales')
+          .insert({
+            client_id: order.client_id,
+            client_name: order.client_name,
+            date: order.date,
+            total: order.total,
+            status: order.payment_method === 'credit' || order.is_credit ? 'pending' : 'paid',
+            created_by: order.created_by
+          })
+          .select()
+          .single();
+
+        if (saleError) throw saleError;
+        saleData = newSale;
+      }
 
       // Create sale items
       const saleItems = order.items.map(item => ({
@@ -429,10 +505,13 @@ export function usePOS() {
     addItemToOrder,
     removeItemFromOrder,
     updateItemQuantity,
+    updateItemPrice,
     applyDiscount,
     saveOrder,
     openCashRegister,
     closeCashRegister,
+    updateProductPrices,
+    getEffectivePrice,
     refetch: refreshAllData
   };
 }

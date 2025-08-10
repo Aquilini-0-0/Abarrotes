@@ -14,6 +14,7 @@ interface POSProductPanelProps {
   onAddProduct: (product: POSProduct) => void;
   onProductSelect: (product: POSProduct) => void;
   onEditProduct?: (product: POSProduct) => void;
+  onGetEffectivePrice?: (product: POSProduct, level: 1 | 2 | 3 | 4 | 5) => number;
 }
 
 export function POSProductPanel({
@@ -26,7 +27,8 @@ export function POSProductPanel({
   onPriceLevelChange,
   onAddProduct,
   onProductSelect,
-  onEditProduct
+  onEditProduct,
+  onGetEffectivePrice
 }: POSProductPanelProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -84,6 +86,10 @@ export function POSProductPanel({
   }, [searchTerm]);
 
   const getPriceForLevel = (product: POSProduct, level: 1 | 2 | 3 | 4 | 5) => {
+    // Use effective price from usePOS hook if available
+    if (onGetEffectivePrice) {
+      return onGetEffectivePrice(product, level);
+    }
     return product.prices[`price${level}`];
   };
 
