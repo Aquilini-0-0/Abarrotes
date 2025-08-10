@@ -148,24 +148,7 @@ export function POSProductPanel({
             </div>
           </div>
 
-          {/* Edit Button */}
-          <div className="col-span-2 sm:col-span-2">
-            <label className="block text-orange-50 text-[10px] sm:text-xs mb-0.5 sm:mb-1 font-medium">
-              Editar
-            </label>
-            <button
-              onClick={() => {
-                if (filteredProducts[selectedIndex]) {
-                  setEditingProduct(filteredProducts[selectedIndex]);
-                  setShowEditModal(true);
-                }
-              }}
-              disabled={filteredProducts.length === 0}
-              className="w-full bg-white border border-orange-300 text-gray-900 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-1 lg:py-2 rounded-lg text-[10px] sm:text-xs lg:text-sm focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:bg-gray-200 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              <Edit size={12} className="sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
-            </button>
-          </div>
+
         </div>
 
       </div>
@@ -223,15 +206,7 @@ export function POSProductPanel({
                       <div className={`text-[8px] sm:text-xs md:hidden ${isSelected ? 'text-orange-100' : 'text-gray-500'}`}>
                         {product.unit}
                       </div>
-                        <div className="flex items-center space-x-1 mt-1">
-                          <button
-                            onClick={(e) => handleEditClick(product, e)}
-                            className={`p-1 rounded ${isSelected ? 'text-white hover:bg-white hover:text-orange-600' : 'text-gray-400 hover:text-blue-600'} transition-colors`}
-                            title="Editar cantidad/precio"
-                          >
-                            <Edit size={12} />
-                          </button>
-                        </div>
+
                     </td>
                     <td className="p-1 sm:p-2 lg:p-3 text-right">
 <span
@@ -318,4 +293,3 @@ export function POSProductPanel({
       )}
     </div>
   );
-}
