@@ -429,7 +429,7 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
             <button
               onClick={handleSave}
               disabled={quantity <= 0 || quantity > product.stock}
-              className="px-6 py-3  bg-gradient-to-br from-orange-400 via-red-500 to-red-600  hover:from-blue-700 hover:to-blue-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-colors shadow-lg"
+              className="px-6 py-3  bg-gradient-to-br from-orange-400 via-red-500 to-red-600  hover: bg-gradient-to-br from-orange-400 via-red-500 to-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-colors shadow-lg"
             >
               Guardar Cambios
             </button>
