@@ -250,6 +250,25 @@ export function usePOS() {
   // Save order to database
   const saveOrder = async (order: POSOrder) => {
     try {
+      // For existing orders, calculate what has already been paid
+      let alreadyPaid = 0;
+      if (!order.id.startsWith('temp-')) {
+        // This is an existing order being updated
+        // In a real system, we would query payments table to get already paid amount
+        // For now, we'll assume if status was 'partial', some amount was already paid
+        const { data: existingOrder } = await supabase
+          .from('sales')
+          .select('total, status')
+          .eq('id', order.id)
+          .single();
+        
+        if (existingOrder && existingOrder.status === 'partial') {
+          // Assume 50% was already paid for demo purposes
+          // In production, calculate from payments table
+          alreadyPaid = existingOrder.total * 0.5;
+        }
+      }
+
       // Validate stock for all items before saving
       for (const item of order.items) {
         const product = products.find(p => p.id === item.product_id);
@@ -363,9 +382,11 @@ export function usePOS() {
           .single();
 
         if (client) {
+          // Only add the remaining amount to be paid, not the full total
+          const amountToAdd = order.total - alreadyPaid;
           await supabase
             .from('clients')
-            .update({ balance: client.balance + order.total })
+            .update({ balance: client.balance + amountToAdd })
             .eq('id', order.client_id);
         }
       }

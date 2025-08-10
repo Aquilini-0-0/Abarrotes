@@ -76,6 +76,10 @@ export function POSLayout() {
   const [searchTerm, setSearchTerm] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [lastOrder, setLastOrder] = useState<any>(null);
+  const [showCreditAuthModal, setShowCreditAuthModal] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [pendingAction, setPendingAction] = useState<'save' | 'pay' | null>(null);
+  const [pendingPaymentData, setPendingPaymentData] = useState<any>(null);
 
   // Auto-sync for real-time updates
   useAutoSync({
@@ -192,6 +196,15 @@ export function POSLayout() {
   const handlePayOrder = async (paymentData: any) => {
     if (!currentOrder) return;
 
+    // Check credit limit before payment if it's a credit sale
+    if (paymentData.method === 'credit' && selectedClient) {
+      const totalAfterSale = selectedClient.balance + currentOrder.total;
+      if (totalAfterSale > selectedClient.credit_limit) {
+        setShowCreditAuthModal(true);
+        return;
+      }
+    }
+
     try {
       const orderToSave = {
         ...currentOrder,
@@ -241,6 +254,15 @@ export function POSLayout() {
   const handleSaveOrder = async () => {
     if (currentOrder) {
       try {
+        // Check credit limit before saving
+        if (currentOrder.is_credit && selectedClient) {
+          const totalAfterSale = selectedClient.balance + currentOrder.total;
+          if (totalAfterSale > selectedClient.credit_limit) {
+            setShowCreditAuthModal(true);
+            return;
+          }
+        }
+
         const savedOrder = await saveOrder({ ...currentOrder, status: 'draft' });
         markTabAsSaved(activeTabId);
         alert('Pedido guardado');
@@ -255,6 +277,71 @@ export function POSLayout() {
     if (confirm('¿Cancelar pedido actual?')) {
       closeTab(activeTabId);
     }
+  };
+
+  const validateAdminPassword = (password: string) => {
+    return password === 'admin123'; // En producción, validar contra la base de datos
+  };
+
+  const handleCreditAuth = async () => {
+    if (!validateAdminPassword(adminPassword)) {
+      alert('Contraseña de administrador incorrecta');
+      setAdminPassword('');
+      return;
+    }
+
+    setShowCreditAuthModal(false);
+    setAdminPassword('');
+
+    // Execute the pending action
+    if (pendingAction === 'save') {
+      try {
+        const savedOrder = await saveOrder({ ...currentOrder!, status: 'draft' });
+        markTabAsSaved(activeTabId);
+        alert('Pedido guardado con autorización de administrador');
+      } catch (err) {
+        console.error('Error saving order:', err);
+        alert('Error al guardar el pedido');
+      }
+    } else if (pendingAction === 'pay' && pendingPaymentData) {
+      try {
+        const orderToSave = {
+          ...currentOrder!,
+          payment_method: pendingPaymentData.method,
+          is_credit: pendingPaymentData.method === 'credit',
+          status: pendingPaymentData.method === 'credit' ? 'pending' : 'paid'
+        } as any;
+
+        const savedOrder = await saveOrder(orderToSave);
+        
+        setLastOrder({
+          id: savedOrder.id,
+          client_name: orderToSave.client_name,
+          total: orderToSave.total,
+          items_count: orderToSave.items.length,
+          date: new Date().toISOString(),
+          status: orderToSave.status
+        });
+        
+        markTabAsSaved(activeTabId);
+        createNewTab();
+        setShowPaymentModal(false);
+        alert('Pedido procesado con autorización de administrador');
+      } catch (err) {
+        console.error('Error processing payment:', err);
+        alert('Error al procesar el pago');
+      }
+    }
+
+    setPendingAction(null);
+    setPendingPaymentData(null);
+  };
+
+  const handleCancelCreditAuth = () => {
+    setShowCreditAuthModal(false);
+    setAdminPassword('');
+    setPendingAction(null);
+    setPendingPaymentData(null);
   };
 
   if (loading) {
@@ -346,7 +433,20 @@ export function POSLayout() {
           order={currentOrder}
           client={selectedClient}
           onClose={() => setShowPaymentModal(false)}
-          onConfirm={handlePayOrder}
+          onConfirm={(paymentData) => {
+            // Check credit limit for credit sales
+            if (paymentData.method === 'credit' && selectedClient) {
+              const totalAfterSale = selectedClient.balance + currentOrder.total;
+              if (totalAfterSale > selectedClient.credit_limit) {
+                setPendingAction('pay');
+                setPendingPaymentData(paymentData);
+                setShowCreditAuthModal(true);
+                setShowPaymentModal(false);
+                return;
+              }
+            }
+            handlePayOrder(paymentData);
+          }}
         />
       )}
 
@@ -436,6 +536,84 @@ export function POSLayout() {
         <POSCollectOrderModal
           onClose={() => setShowCollectOrderModal(false)}
         />
+      )}
+
+      {/* Credit Authorization Modal */}
+      {showCreditAuthModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="bg-red-600 p-4 border-b border-red-700 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white font-bold">Autorización Requerida</h3>
+                <button
+                  onClick={handleCancelCreditAuth}
+                  className="text-red-100 hover:text-white"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-yellow-600 text-2xl">⚠️</span>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                  Límite de Crédito Excedido
+                </h4>
+                <p className="text-gray-600 text-sm mb-4">
+                  El cliente {selectedClient?.name} excederá su límite de crédito con esta operación.
+                  Se requiere autorización de administrador para continuar.
+                </p>
+                {selectedClient && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
+                    <div className="text-yellow-800">
+                      <p>Límite: ${selectedClient.credit_limit.toLocaleString('es-MX')}</p>
+                      <p>Saldo actual: ${selectedClient.balance.toLocaleString('es-MX')}</p>
+                      <p>Este pedido: ${currentOrder?.total.toLocaleString('es-MX')}</p>
+                      <p className="font-bold">Nuevo saldo: ${((selectedClient.balance || 0) + (currentOrder?.total || 0)).toLocaleString('es-MX')}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Contraseña de Administrador
+                  </label>
+                  <input
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Ingrese contraseña..."
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleCreditAuth();
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleCreditAuth}
+                    disabled={!adminPassword.trim()}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Autorizar Operación
+                  </button>
+                  <button
+                    onClick={handleCancelCreditAuth}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

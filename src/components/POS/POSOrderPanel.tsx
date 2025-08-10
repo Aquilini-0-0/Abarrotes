@@ -46,6 +46,9 @@ export function POSOrderPanel({
   const [showObservations, setShowObservations] = useState(false);
   const [showEditItemModal, setShowEditItemModal] = useState(false);
   const [editingItem, setEditingItem] = useState<POSOrderItem | null>(null);
+  const [showCreditAuthModal, setShowCreditAuthModal] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [pendingAction, setPendingAction] = useState<'save' | 'pay' | null>(null);
 
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(searchClient.toLowerCase()) ||
@@ -58,13 +61,69 @@ export function POSOrderPanel({
   const creditExceeded = client && isCredit && (creditUsed + orderTotal) > client.credit_limit;
 
   const handleApplyDiscount = () => {
-      // Trigger parent update for last order
-      if (onRefreshData) {
-        onRefreshData();
-      }
     if (order) {
       onApplyDiscount(discountAmount);
     }
+    // Trigger parent update for last order
+    if (onRefreshData) {
+      onRefreshData();
+    }
+  };
+
+  const validateAdminPassword = (password: string) => {
+    return password === 'admin123'; // En producción, validar contra la base de datos
+  };
+
+  const handleCreditAuth = async () => {
+    if (!validateAdminPassword(adminPassword)) {
+      alert('Contraseña de administrador incorrecta');
+      setAdminPassword('');
+      return;
+    }
+
+    setShowCreditAuthModal(false);
+    setAdminPassword('');
+
+    // Execute the pending action
+    if (pendingAction === 'save') {
+      onSave();
+    } else if (pendingAction === 'pay') {
+      onPay();
+    }
+
+    setPendingAction(null);
+  };
+
+  const handleCancelCreditAuth = () => {
+    setShowCreditAuthModal(false);
+    setAdminPassword('');
+    setPendingAction(null);
+  };
+
+  const handleSaveClick = () => {
+    // Check credit limit if it's a credit sale
+    if (isCredit && client && order) {
+      const totalAfterSale = client.balance + order.total;
+      if (totalAfterSale > client.credit_limit) {
+        setPendingAction('save');
+        setShowCreditAuthModal(true);
+        return;
+      }
+    }
+    onSave();
+  };
+
+  const handlePayClick = () => {
+    // Check credit limit if it's a credit sale
+    if (isCredit && client && order) {
+      const totalAfterSale = client.balance + order.total;
+      if (totalAfterSale > client.credit_limit) {
+        setPendingAction('pay');
+        setShowCreditAuthModal(true);
+        return;
+      }
+    }
+    onPay();
   };
 
   return (
@@ -342,7 +401,7 @@ export function POSOrderPanel({
   {/* Botones */}
   <div className="grid grid-cols-4 gap-0.5 sm:gap-1 lg:gap-2">
     <button
-      onClick={onPay}
+      onClick={handlePayClick}
       disabled={!order?.items.length}
       className="bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 disabled:from-gray-200 disabled:to-gray-300 disabled:cursor-not-allowed text-green-700 disabled:text-gray-500 py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 border border-green-300 disabled:border-gray-300 flex flex-col items-center justify-center min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
     >
@@ -354,7 +413,7 @@ export function POSOrderPanel({
     </button>
 
     <button
-      onClick={onSave}
+      onClick={handleSaveClick}
       disabled={!order?.items.length}
       className="bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 disabled:from-gray-200 disabled:to-gray-300 disabled:cursor-not-allowed text-orange-700 disabled:text-gray-500 py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 border border-orange-300 disabled:border-gray-300 flex flex-col items-center justify-center min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
     >
@@ -574,6 +633,84 @@ export function POSOrderPanel({
                 >
                   Cancelar
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Credit Authorization Modal */}
+      {showCreditAuthModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="bg-red-600 p-4 border-b border-red-700 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white font-bold">Autorización Requerida</h3>
+                <button
+                  onClick={handleCancelCreditAuth}
+                  className="text-red-100 hover:text-white"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-yellow-600 text-2xl">⚠️</span>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                  Límite de Crédito Excedido
+                </h4>
+                <p className="text-gray-600 text-sm mb-4">
+                  El cliente {client?.name} excederá su límite de crédito con esta operación.
+                  Se requiere autorización de administrador para continuar.
+                </p>
+                {client && order && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
+                    <div className="text-yellow-800">
+                      <p>Límite: ${client.credit_limit.toLocaleString('es-MX')}</p>
+                      <p>Saldo actual: ${client.balance.toLocaleString('es-MX')}</p>
+                      <p>Este pedido: ${order.total.toLocaleString('es-MX')}</p>
+                      <p className="font-bold">Nuevo saldo: ${(client.balance + order.total).toLocaleString('es-MX')}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Contraseña de Administrador
+                  </label>
+                  <input
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Ingrese contraseña..."
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleCreditAuth();
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleCreditAuth}
+                    disabled={!adminPassword.trim()}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Autorizar Operación
+                  </button>
+                  <button
+                    onClick={handleCancelCreditAuth}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
