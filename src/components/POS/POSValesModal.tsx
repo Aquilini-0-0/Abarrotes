@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileText, Search, Eye, Download, Plus } from 'lucide-react';
+import { X, FileText, Search, Eye, Download, Plus, DollarSign } from 'lucide-react';
 
 interface Vale {
   id: string;
