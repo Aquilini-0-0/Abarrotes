@@ -26,6 +26,11 @@ const taraOptions: TaraOption[] = [
   { id: '5', name: 'PLÁSTICO CHICO', weight: 1.6 }
 ];
 
+const [pesoBruto, setPesoBruto] = useState(0);
+const [cantidadCajas, setCantidadCajas] = useState(1);
+const pesoTaraTotal = selectedTara ? selectedTara.weight * cantidadCajas : 0;
+const pesoNeto = Math.max(pesoBruto - pesoTaraTotal, 0);
+
 
   const currentPrice = useCustomPrice ? customPrice : product.prices[`price${priceLevel}`];
   const totalAmount = quantity * currentPrice;
