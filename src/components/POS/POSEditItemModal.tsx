@@ -85,7 +85,7 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
         {/* Header */}
-        <div className=" bg-gradient-to-br from-orange-400 via-red-500 to-red-400 p-4 border-b border-blue-800 rounded-t-xl flex items-center justify-between sticky top-0 z-10">
+        <div className=" bg-gradient-to-br from-orange-400 via-red-500 to-red-400 p-4 border-b border-orange-800 rounded-t-xl flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center space-x-2">
             <Edit className="text-white" size={24} />
             <h2 className="text-white font-bold text-lg">Editar Producto</h2>
