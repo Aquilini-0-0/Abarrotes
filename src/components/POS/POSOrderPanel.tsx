@@ -561,7 +561,7 @@ export function POSOrderPanel({
                     setShowEditItemModal(false);
                     setEditingItem(null);
                   }}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="flex-1 px-4 py-2  bg-gradient-to-br from-orange-400 via-red-500 to-red-400 text-white rounded-lg hover:bg-blue-700"
                 >
                   Guardar
                 </button>
