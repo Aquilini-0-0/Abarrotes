@@ -272,24 +272,7 @@ export function POSProductPanel({
           </table>
         </div>
       </div>
-<div className="bg-white p-1 sm:p-2 lg:p-4 rounded-xl shadow flex items-center justify-between space-x-1 sm:space-x-2 lg:space-x-4 max-w-full overflow-x-auto">
-  {[
-    { name: "Aceite", src: "https://www.superaki.mx/cdn/shop/files/7501039121993_060623_fe4dc03c-f3c8-4982-b5c8-b88a5a5704f6_300x300.png?v=1686252385g" },
-    { name: "Arroz", src: "https://i5.walmartimages.com.mx/gr/images/product-images/img_large/00750107130145L.jpg" },
-    { name: "Azúcar", src: "https://i5.walmartimages.com.mx/gr/images/product-images/img_large/00066144000001L.jpg" },
-    { name: "Frijol", src: "https://convy.mx/cdn/shop/files/FrijolNegro1200.png?v=1692036307" },
-    { name: "Leche", src: "https://i5.walmartimages.com.mx/gr/images/product-images/img_large/00750102052606L.jpg" },
-  ].map((item) => (
-    <div key={item.name} className="flex flex-col items-center w-12 sm:w-16 lg:w-20">
-      <img
-        src={item.src}
-        alt={item.name}
-        className="w-8 sm:w-12 lg:w-16 h-8 sm:h-12 lg:h-16 object-contain rounded-lg shadow"
-      />
-      <span className="text-[8px] sm:text-xs text-gray-600 mt-0.5 sm:mt-1 text-center">{item.name}</span>
-    </div>
-  ))}
-</div>
+
 
       {/* Footer Info */}
       <div className="bg-gradient-to-r from-orange-50 to-red-50 p-1 sm:p-2 lg:p-3 border-t border-orange-200">
