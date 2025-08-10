@@ -50,7 +50,7 @@ export function POSLayout() {
   useAutoSync({
     onDataUpdate: refetch,
     interval: 8000, // 8 seconds
-    tables: ['sales', 'products', 'clients', 'cash_registers']
+    tables: ['sales', 'products', 'clients']
   });
 
   // Initialize order on component mount
