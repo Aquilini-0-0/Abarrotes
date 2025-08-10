@@ -193,7 +193,7 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
           </div>
 
           {/* Summary */}
-          <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
+          <div className="bg-gradient-to-r from-orange-50 to-red-50 border-t border-orange-200 rounded-lg p-4 mb-6 border border-blue-200">
             <h4 className="font-semibold text-gray-900 mb-3">Resumen</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
