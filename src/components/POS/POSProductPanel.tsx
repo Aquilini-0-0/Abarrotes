@@ -147,6 +147,10 @@ export function POSProductPanel({
               />
             </div>
           </div>
+
+
+      </div>
+
   
       {/* Products Table */}
       <div className="flex-1 overflow-hidden">
