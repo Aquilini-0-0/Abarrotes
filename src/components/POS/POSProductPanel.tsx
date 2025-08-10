@@ -147,29 +147,6 @@ export function POSProductPanel({
               />
             </div>
           </div>
-
-          {/* Edit Button */}
-          <div className="col-span-2 sm:col-span-2">
-            <label className="block text-orange-50 text-[10px] sm:text-xs mb-0.5 sm:mb-1 font-medium">
-              Editar
-            </label>
-            <button
-              onClick={() => {
-                if (filteredProducts[selectedIndex]) {
-                  setEditingProduct(filteredProducts[selectedIndex]);
-                  setShowEditModal(true);
-                }
-              }}
-              disabled={filteredProducts.length === 0}
-              className="w-full bg-white border border-orange-300 text-gray-900 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-1 lg:py-2 rounded-lg text-[10px] sm:text-xs lg:text-sm focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:bg-gray-200 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              <Edit size={12} className="sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
-            </button>
-          </div>
-        </div>
-
-      </div>
-
   
       {/* Products Table */}
       <div className="flex-1 overflow-hidden">
