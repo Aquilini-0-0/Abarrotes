@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, User, CreditCard, AlertTriangle } from 'lucide-react';
+import { Plus, Edit, Trash2, User, CreditCard, AlertTriangle, X } from 'lucide-react';
 import { POSOrder, POSOrderItem, POSClient } from '../../types/pos';
 
 interface POSOrderPanelProps {
