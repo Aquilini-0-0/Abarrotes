@@ -162,7 +162,23 @@ export function POSProductPanel({
           </div>
         </div>
 
-
+        {/* Price Level Display */}
+        <div className="mt-1 sm:mt-2 lg:mt-3 grid grid-cols-5 gap-0.5 sm:gap-1 lg:gap-2">
+          {[1, 2, 3, 4, 5].map(level => (
+            <button
+              key={level}
+              onClick={() => onPriceLevelChange(level as 1 | 2 | 3 | 4 | 5)}
+              className={`py-0.5 sm:py-1 px-0.5 sm:px-1 lg:px-2 rounded text-[10px] sm:text-xs font-bold transition-all duration-200 ${
+                selectedPriceLevel === level
+                  ? 'bg-white text-orange-600 shadow-sm'
+                  : 'bg-gradient-to-r from-orange-500 to-red-500 text-orange-50 hover:from-orange-400 hover:to-red-400'
+              }`}
+            >
+              P{level}
+            </button>
+          ))}
+        </div>
+      </div>
   
       {/* Products Table */}
       <div className="flex-1 overflow-hidden">
