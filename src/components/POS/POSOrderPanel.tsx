@@ -524,131 +524,175 @@ export function POSOrderPanel({
         </div>
       )}
 
-      {/* Edit Item Modal */}
-      {showEditItemModal && editingItem && products && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className=" bg-gradient-to-r from-orange-50 to-red-50 border-t border-orange-200 p-4 border-b border-blue-700 rounded-t-lg">
-              <div className="flex items-center justify-between">
-                <h3 className="text-orange-700">Editar Producto</h3>
-                <button
-                  onClick={() => {
-                    setShowEditItemModal(false);
-                    setEditingItem(null);
-                  }}
-                  className="text-orange-700 hover:text-white"
-                >
-                  <X size={20} />
-                </button>
-              </div>
+     {/* Edit Item Modal */}
+{showEditItemModal && editingItem && products && (
+  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 border-b border-blue-800 rounded-t-xl flex items-center justify-between sticky top-0 z-10">
+        <h2 className="text-white font-bold text-lg">Editar Producto</h2>
+        <button
+          onClick={() => {
+            setShowEditItemModal(false);
+            setEditingItem(null);
+          }}
+          className="text-blue-100 hover:text-white"
+        >
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className="p-6 space-y-6">
+        {/* Product Info */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+          <div className="flex items-center space-x-3 mb-3">
+            <Package className="h-6 w-6 text-blue-600" />
+            <div>
+              <div className="text-gray-800 font-semibold text-lg">{editingItem.product_name}</div>
+              <div className="text-gray-500 text-sm">Código: {editingItem.product_code}</div>
             </div>
-            <div className="p-6">
-              <div className="mb-4">
-                <h4 className="font-semibold text-gray-900 mb-2">{editingItem.product_name}</h4>
-                <p className="text-sm text-gray-600">Código: {editingItem.product_code}</p>
-              </div>
+          </div>
+        </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cantidad
-                  </label>
-                  <input
-                    type="number"
-                    value={editingItem.quantity}
-                    onChange={(e) => setEditingItem(prev => prev ? { ...prev, quantity: parseFloat(e.target.value) || 1 } : null)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min="0.01"
-                    step="0.01"
-                  />
-                </div>
+        {/* Inputs */}
+        <div className="space-y-4">
+          {/* Cantidad */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Cantidad
+            </label>
+            <input
+              type="number"
+              value={editingItem.quantity}
+              onChange={(e) =>
+                setEditingItem(prev =>
+                  prev ? { ...prev, quantity: parseFloat(e.target.value) || 1 } : null
+                )
+              }
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              min="0.01"
+              step="0.01"
+            />
+          </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nivel de Precio
-                  </label>
-                  <select
-                    value={editingItem.price_level}
-                    onChange={(e) => {
-                      const newLevel = parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5;
-                      const product = products.find(p => p.id === editingItem.product_id);
-                      if (product) {
-                        const newPrice = product.prices[`price${newLevel}`];
-                        setEditingItem(prev => prev ? { 
-                          ...prev, 
+          {/* Nivel de Precio */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nivel de Precio
+            </label>
+            <select
+              value={editingItem.price_level}
+              onChange={(e) => {
+                const newLevel = parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5;
+                const product = products.find(p => p.id === editingItem.product_id);
+                if (product) {
+                  const newPrice = product.prices[`price${newLevel}`];
+                  setEditingItem(prev =>
+                    prev
+                      ? {
+                          ...prev,
                           price_level: newLevel,
                           unit_price: newPrice,
-                          total: prev.quantity * newPrice
-                        } : null);
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value={1}>Precio 1</option>
-                    <option value={2}>Precio 2</option>
-                    <option value={3}>Precio 3</option>
-                    <option value={4}>Precio 4</option>
-                    <option value={5}>Precio 5</option>
-                  </select>
-                </div>
+                          total: prev.quantity * newPrice,
+                        }
+                      : null
+                  );
+                }
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={1}>Precio 1</option>
+              <option value={2}>Precio 2</option>
+              <option value={3}>Precio 3</option>
+              <option value={4}>Precio 4</option>
+              <option value={5}>Precio 5</option>
+            </select>
+          </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Precio Unitario
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={editingItem.unit_price}
-                    onChange={(e) => {
-                      const newPrice = parseFloat(e.target.value) || 0;
-                      setEditingItem(prev => prev ? { 
-                        ...prev, 
+          {/* Precio Unitario */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Precio Unitario
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              value={editingItem.unit_price}
+              onChange={(e) => {
+                const newPrice = parseFloat(e.target.value) || 0;
+                setEditingItem(prev =>
+                  prev
+                    ? {
+                        ...prev,
                         unit_price: newPrice,
-                        total: prev.quantity * newPrice
-                      } : null);
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min="0"
-                  />
-                </div>
+                        total: prev.quantity * newPrice,
+                      }
+                    : null
+                );
+              }}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              min="0"
+            />
+          </div>
 
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="flex justify-between text-sm">
-                    <span>Total:</span>
-                    <span className="font-bold text-green-600">${editingItem.total.toFixed(2)}</span>
-                  </div>
-                </div>
+          {/* Resumen Final */}
+          <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-lg p-4">
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+              <Info className="h-4 w-4 mr-2 text-orange-600" />
+              Resumen Final
+            </h4>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Cantidad:</span>
+                <span className="font-bold text-gray-900 text-lg">
+                  {editingItem.quantity} unidades
+                </span>
               </div>
-
-              <div className="flex space-x-3 mt-6">
-                <button
-                  onClick={() => {
-                    if (editingItem) {
-                      onUpdateQuantity(editingItem.id, editingItem.quantity);
-                      onUpdateItemPrice(editingItem.id, editingItem.price_level, editingItem.unit_price);
-                    }
-                    setShowEditItemModal(false);
-                    setEditingItem(null);
-                  }}
-                  className="flex-1 px-4 py-2  bg-gradient-to-br from-orange-400 via-red-500 to-red-400 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Guardar
-                </button>
-                <button
-                  onClick={() => {
-                    setShowEditItemModal(false);
-                    setEditingItem(null);
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Precio unitario:</span>
+                <span className="font-mono font-bold text-blue-600 text-lg">
+                  ${editingItem.unit_price.toFixed(2)}
+                </span>
+              </div>
+              <div className="border-t border-orange-300 pt-3 flex justify-between items-center">
+                <span className="font-bold text-gray-900 text-lg">Total:</span>
+                <span className="font-mono font-bold text-orange-600 text-2xl">
+                  ${editingItem.total.toFixed(2)}
+                </span>
               </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Botones */}
+      <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 p-6">
+        <button
+          onClick={() => {
+            setShowEditItemModal(false);
+            setEditingItem(null);
+          }}
+          className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={() => {
+            if (editingItem) {
+              onUpdateQuantity(editingItem.id, editingItem.quantity);
+              onUpdateItemPrice(editingItem.id, editingItem.price_level, editingItem.unit_price);
+            }
+            setShowEditItemModal(false);
+            setEditingItem(null);
+          }}
+          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-bold transition-colors shadow-lg"
+        >
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Credit Authorization Modal */}
       {showCreditAuthModal && (
