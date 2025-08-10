@@ -149,6 +149,8 @@ export function POSProductPanel({
           </div>
 
 
+        </div>
+
       </div>
 
   
