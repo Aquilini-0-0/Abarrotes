@@ -18,12 +18,14 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
 
-  const taraOptions: TaraOption[] = [
-    { id: '1', name: 'SIN TARA', factor: 1, price_adjustment: 0 },
-    { id: '2', name: 'CAJA (12 piezas)', factor: 12, price_adjustment: -0.50 },
-    { id: '3', name: 'BULTO (24 piezas)', factor: 24, price_adjustment: -1.00 },
-    { id: '4', name: 'COSTAL (50 piezas)', factor: 50, price_adjustment: -2.00 }
-  ];
+const taraOptions: TaraOption[] = [
+  { id: '1', name: 'SIN TARA', weight: 0.0 },
+  { id: '2', name: 'MADERA', weight: 2.5 },
+  { id: '3', name: 'PLÁSTICO GRANDE', weight: 2.0 },
+  { id: '4', name: 'PLÁSTICO CHICO', weight: 1.5 },
+  { id: '5', name: 'PLÁSTICO CHICO', weight: 1.6 }
+];
+
 
   const currentPrice = useCustomPrice ? customPrice : product.prices[`price${priceLevel}`];
   const totalAmount = quantity * currentPrice;
@@ -157,25 +159,49 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
                 )}
               </div>
 
-              {/* Tara Selection */}
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Selección de Tara</label>
-                <select
-                  value={selectedTara?.id || ''}
-                  onChange={(e) => {
-                    const tara = taraOptions.find(t => t.id === e.target.value);
-                    setSelectedTara(tara || null);
-                  }}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Sin tara especial</option>
-                  {taraOptions.map(tara => (
-                    <option key={tara.id} value={tara.id}>
-                      {tara.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+           {/* Tara Selection - Nuevo diseño */}
+<div>
+  <h3 className="font-semibold text-gray-900 mb-4 text-lg flex items-center">
+    <Scale className="w-5 h-5 mr-2 text-orange-500" /> Selección de Tara
+  </h3>
+  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+    <table className="w-full text-sm">
+      <thead className="bg-gray-50">
+        <tr>
+          <th className="text-left p-3 text-gray-700 font-semibold">Nombre de Tara</th>
+          <th className="text-right p-3 text-gray-700 font-semibold">Peso Tara (KG)</th>
+          <th className="text-center p-3 text-gray-700 font-semibold">Seleccionar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {taraOptions.map(tara => (
+          <tr
+            key={tara.id}
+            className={`border-b border-gray-200 cursor-pointer transition-colors ${
+              selectedTara?.id === tara.id
+                ? 'bg-orange-50 border-orange-200'
+                : 'hover:bg-gray-50'
+            }`}
+            onClick={() => setSelectedTara(tara)}
+          >
+            <td className="p-3 font-medium text-gray-900">{tara.name}</td>
+            <td className="p-3 text-right font-mono text-gray-700">{tara.weight.toFixed(2)}</td>
+            <td className="p-3 text-center">
+              <input
+                type="radio"
+                name="tara"
+                checked={selectedTara?.id === tara.id}
+                onChange={() => setSelectedTara(tara)}
+                className="w-4 h-4 text-orange-600 focus:ring-orange-500"
+              />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 
               {/* Price Selection */}
               <div>
