@@ -53,13 +53,13 @@ export function useOrderLocks() {
 
     try {
       // First check if order is already locked
-      const { data: existingLock } = await supabase
+      const { data: existingLocks } = await supabase
         .from('order_locks')
         .select('*')
-        .eq('order_id', orderId)
-        .single();
+        .eq('order_id', orderId);
 
-      if (existingLock) {
+      if (existingLocks && existingLocks.length > 0) {
+        const existingLock = existingLocks[0];
         // Check if lock is expired
         const expiresAt = new Date(existingLock.expires_at);
         const now = new Date();
