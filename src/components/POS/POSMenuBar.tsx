@@ -165,9 +165,9 @@ export function POSMenuBar({
                 >
                   <FileText size={14} />
                   <span>Remisiones</span>
-                  
-                  {/*
                 </button>
+                
+                 {/*
                 <button className="w-full text-left px-2 py-1 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center space-x-2 rounded">
                   <FileText size={14} />
                   <span>Comprobantes Fiscales</span>
