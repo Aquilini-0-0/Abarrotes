@@ -460,7 +460,7 @@ export function POSOrderPanel({
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className=" bg-gradient-to-r from-orange-50 to-red-50 border-t border-orange-200 p-4 border-b border-blue-700 rounded-t-lg">
               <div className="flex items-center justify-between">
-                <h3 className="text-orange500">Editar Producto</h3>
+                <h3 className="text-orange-500">Editar Producto</h3>
                 <button
                   onClick={() => {
                     setShowEditItemModal(false);
