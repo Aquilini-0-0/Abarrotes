@@ -91,8 +91,8 @@ return (
       </div>
 
       {/* Orders Table */}
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto overflow-x-auto custom-scrollbar">
+<div className="flex-1 overflow-y-auto">
+  <div className="min-h-[200px] overflow-x-auto custom-scrollbar">
         <table className="w-full text-xs sm:text-sm min-w-[600px]">
           <thead className="bg-gray-100 sticky top-0 border-b border-gray-200">
             <tr>
