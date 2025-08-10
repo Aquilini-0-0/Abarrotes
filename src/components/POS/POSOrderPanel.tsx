@@ -466,7 +466,7 @@ export function POSOrderPanel({
                     setShowEditItemModal(false);
                     setEditingItem(null);
                   }}
-                  className="text-blue-100 hover:text-white"
+                  className="text-orange-700 hover:text-white"
                 >
                   <X size={20} />
                 </button>
