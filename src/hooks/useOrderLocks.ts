@@ -140,7 +140,9 @@ export function useOrderLocks() {
 
       if (error) throw error;
     } catch (err) {
-      console.error('Error cleaning up locks:', err);
+      // Silently handle cleanup errors to prevent breaking the app
+      // This is not critical functionality and shouldn't block the user
+      console.warn('Could not cleanup locks (non-critical):', err);
     }
   };
 
