@@ -224,6 +224,14 @@ export function POSLayout() {
   };
 
   const handleEditOrder = async (order: POSOrder) => {
+    // Check if order is already paid
+    if (order.status === 'paid') {
+      const confirmed = confirm('Este pedido ya ha sido pagado. ¿Seguro que quieres editarlo?');
+      if (!confirmed) {
+        return;
+      }
+    }
+
     const success = await openOrderInTab(order);
     if (success) {
       setShowOrdersModal(false);
