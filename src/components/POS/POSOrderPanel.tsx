@@ -1,245 +1,250 @@
-import React, { useState } from 'react';
-import { Plus, Edit, Trash2, User, CreditCard, AlertTriangle, X } from 'lucide-react';
-import { POSOrder, POSOrderItem, POSClient } from '../../types/pos';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Package, Edit } from 'lucide-react';
+import { POSProduct } from '../../types/pos';
+import { POSEditItemModal } from './POSEditItemModal';
 
-interface POSOrderPanelProps {
-  order: POSOrder | null;
-  client: POSClient | null;
-  onRemoveItem: (itemId: string) => void;
-  onUpdateQuantity: (itemId: string, quantity: number) => void;
-  onUpdateItemPrice: (itemId: string, priceLevel: 1 | 2 | 3 | 4 | 5, customPrice?: number) => void;
-  onApplyDiscount: (discountAmount: number) => void;
-  onSelectClient: (client: POSClient) => void;
-  onPay: () => void;
-  onSave: () => void;
-  onCancel: () => void;
-  clients: POSClient[];
-  onRefreshData?: () => void;
-  products?: any[];
+interface POSProductPanelProps {
+  products: POSProduct[];
+  searchTerm: string;
+  quantity: number;
+  selectedPriceLevel: 1 | 2 | 3 | 4 | 5;
+  onSearchChange: (term: string) => void;
+  onQuantityChange: (quantity: number) => void;
+  onPriceLevelChange: (level: 1 | 2 | 3 | 4 | 5) => void;
+  onAddProduct: (product: POSProduct) => void;
+  onProductSelect: (product: POSProduct) => void;
+  onEditProduct?: (product: POSProduct) => void;
+  onGetEffectivePrice?: (product: POSProduct, level: 1 | 2 | 3 | 4 | 5) => number;
 }
 
-export function POSOrderPanel({
-  order,
-  client,
-  onRemoveItem,
-  onUpdateQuantity,
-  onUpdateItemPrice,
-  onApplyDiscount,
-  onSelectClient,
-  onPay,
-  onSave,
-  onCancel,
-  clients,
-  onRefreshData,
-  products
-}: POSOrderPanelProps) {
-  const [showClientModal, setShowClientModal] = useState(false);
-  const [searchClient, setSearchClient] = useState('');
-  const [observations, setObservations] = useState('');
-  const [driver, setDriver] = useState('');
-  const [route, setRoute] = useState('');
-  const [isCredit, setIsCredit] = useState(false);
-  const [isInvoice, setIsInvoice] = useState(false);
-  const [isQuote, setIsQuote] = useState(false);
-  const [isExternal, setIsExternal] = useState(false);
-  const [discountAmount, setDiscountAmount] = useState(0);
-  const [showObservations, setShowObservations] = useState(false);
-  const [showEditItemModal, setShowEditItemModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<POSOrderItem | null>(null);
-  const [showCreditAuthModal, setShowCreditAuthModal] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
-  const [pendingAction, setPendingAction] = useState<'save' | 'pay' | null>(null);
+export function POSProductPanel({
+  products,
+  searchTerm,
+  quantity,
+  selectedPriceLevel,
+  onSearchChange,
+  onQuantityChange,
+  onPriceLevelChange,
+  onAddProduct,
+  onProductSelect,
+  onEditProduct,
+  onGetEffectivePrice
+}: POSProductPanelProps) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<POSProduct | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
 
-  const filteredClients = clients.filter(c =>
-    c.name.toLowerCase().includes(searchClient.toLowerCase()) ||
-    c.rfc.toLowerCase().includes(searchClient.toLowerCase())
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.line.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const creditUsed = client?.balance || 0;
-  const creditAvailable = client ? client.credit_limit - creditUsed : 0;
-  const orderTotal = order?.total || 0;
-  
-  // Debug logging
-  console.log('Client credit info:', {
-    client: client?.name,
-    credit_limit: client?.credit_limit,
-    balance: client?.balance,
-    creditUsed,
-    creditAvailable,
-    orderTotal
-  });
-  
-  const creditExceeded = client && (isCredit || order?.is_credit) && (creditUsed + orderTotal) > client.credit_limit;
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F5') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex(prev => Math.min(prev + 1, filteredProducts.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex(prev => Math.max(prev - 1, 0));
+      } else if (e.key === 'Enter' && filteredProducts[selectedIndex]) {
+        e.preventDefault();
+        onAddProduct(filteredProducts[selectedIndex]);
+      } else if (e.key === '+') {
+        e.preventDefault();
+        onQuantityChange(quantity + 1);
+      } else if (e.key === '-') {
+        e.preventDefault();
+        onQuantityChange(Math.max(1, quantity - 1));
+      }
+    };
 
-  const handleApplyDiscount = () => {
-    if (order) {
-      onApplyDiscount(discountAmount);
-    }
-    // Trigger parent update for last order
-    if (onRefreshData) {
-      onRefreshData();
-    }
-  };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [filteredProducts, selectedIndex, quantity, onQuantityChange, onAddProduct]);
 
-  const validateAdminPassword = (password: string) => {
-    return password === 'admin123'; // En producción, validar contra la base de datos
-  };
-
-  const handleCreditAuth = async () => {
-    if (!validateAdminPassword(adminPassword)) {
-      alert('Contraseña de administrador incorrecta');
-      setAdminPassword('');
-      return;
-    }
-
-    setShowCreditAuthModal(false);
-    setAdminPassword('');
-
-    // Execute the pending action
-    if (pendingAction === 'save') {
-      onSave();
-    } else if (pendingAction === 'pay') {
-      onPay();
-    }
-
-    setPendingAction(null);
-  };
-
-  const handleCancelCreditAuth = () => {
-    setShowCreditAuthModal(false);
-    setAdminPassword('');
-    setPendingAction(null);
-  };
-
-  const handleSaveClick = () => {
-    // Check credit limit if it's a credit sale
-    if (isCredit && client && order) {
-      const totalAfterSale = client.balance + order.total;
-      if (totalAfterSale > client.credit_limit) {
-        setPendingAction('save');
-        setShowCreditAuthModal(true);
-        return;
+  // Auto-scroll to selected item
+  useEffect(() => {
+    if (tableRef.current) {
+      const selectedRow = tableRef.current.querySelector(`[data-index="${selectedIndex}"]`);
+      if (selectedRow) {
+        selectedRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }
-    onSave();
+  }, [selectedIndex]);
+
+  // Reset selection when search changes
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchTerm]);
+
+  const getPriceForLevel = (product: POSProduct, level: 1 | 2 | 3 | 4 | 5) => {
+    // Use effective price from usePOS hook if available
+    if (onGetEffectivePrice) {
+      return onGetEffectivePrice(product, level);
+    }
+    return product.prices[`price${level}`];
   };
 
-  const handlePayClick = () => {
-    // Check credit limit if it's a credit sale
-    if (isCredit && client && order) {
-      const totalAfterSale = client.balance + order.total;
-      if (totalAfterSale > client.credit_limit) {
-        setPendingAction('pay');
-        setShowCreditAuthModal(true);
-        return;
-      }
+  const handleEditClick = (product: POSProduct, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingProduct(product);
+    setShowEditModal(true);
+  };
+
+  const handleEditSave = (updatedItem: any) => {
+    // This would update the product in the context
+    if (onEditProduct && editingProduct) {
+      onEditProduct(editingProduct);
     }
-    onPay();
+    setShowEditModal(false);
+    setEditingProduct(null);
   };
 
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
-<div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 py-1 sm:py-2 px-2 sm:px-3 lg:px-4">
-  <div className="flex items-center justify-between">
-    {/* Left: Title + Button */}
-    <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3">
-      <h2 className="text-white font-bold text-xs sm:text-sm lg:text-base">Detalle del Pedido</h2>
-      <button
-        onClick={() => setShowClientModal(true)}
-        className="flex items-center space-x-1 bg-gradient-to-r from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 border border-orange-200 px-1 sm:px-2 lg:px-3 py-0.5 sm:py-1 rounded-lg text-orange-700 text-[10px] sm:text-xs font-medium transition-all duration-200 shadow-sm"
-      >
-        <User size={12} className="sm:w-3.5 sm:h-3.5" />
-        <span className="hidden md:inline">{client?.name || 'Seleccionar Cliente'}</span>
-        <span className="md:hidden">{client?.name ? client.name.substring(0, 8) + '...' : 'Cliente'}</span>
-      </button>
-    </div>
+      <div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 p-2 lg:p-4">
+        <h2 className="text-white font-bold text-sm sm:text-base lg:text-lg mb-1 sm:mb-2 lg:mb-3">Catálogo de Productos</h2>
+        
+        {/* Controls */}
+        <div className="grid grid-cols-10 gap-1 sm:gap-2 lg:gap-3">
+          {/* Quantity */}
+          <div className="col-span-2 sm:col-span-2">
+            <label className="block text-orange-50 text-[10px] sm:text-xs mb-0.5 sm:mb-1 font-medium">Cant.</label>
+            <input
+              type="number"
+              value={quantity}
+              onChange={(e) => onQuantityChange(parseInt(e.target.value) || 1)}
+              className="w-full bg-white border border-orange-300 text-gray-900 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-1 lg:py-2 rounded-lg text-center font-bold text-[10px] sm:text-xs lg:text-sm focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              min="1"
+            />
+          </div>
 
-    {/* Right: Pedido info */}
-    <div className="text-orange-50 text-[10px] sm:text-xs hidden md:block">
-      Pedido: {order?.id.slice(-6) || 'NUEVO'}
-      {client && (
-        <span className="ml-1 sm:ml-2">| RFC: {client.rfc} | Zona: {client.zone}</span>
-      )}
-    </div>
-  </div>
-</div>
+          {/* Search */}
+          <div className="col-span-6 sm:col-span-6 lg:col-span-6">
+            <label className="block text-orange-50 text-[10px] sm:text-xs mb-0.5 sm:mb-1 font-medium">
+              <span className="hidden md:inline">Búsqueda (F5)</span>
+              <span className="md:hidden">Buscar</span>
+            </label>
+            <div className="relative">
+              <Search className="absolute left-1 sm:left-2 lg:left-3 top-1 sm:top-1.5 lg:top-2.5 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+              <input
+                ref={searchInputRef}
+                id="product-search"
+                type="text"
+                value={searchTerm}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="w-full bg-white border border-orange-300 text-gray-900 pl-5 sm:pl-7 lg:pl-10 pr-1 sm:pr-2 lg:pr-3 py-0.5 sm:py-1 lg:py-2 rounded-lg text-[10px] sm:text-xs lg:text-sm focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                placeholder="Buscar producto..."
+              />
+            </div>
+          </div>
 
+        </div>
 
-      {/* Items Table */}
+      </div>
+
+  
+      {/* Products Table */}
       <div className="flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto">
-          <table className="w-full text-sm">
+        <div ref={tableRef} className="h-full overflow-y-auto">
+          <table className="w-full text-[10px] sm:text-xs lg:text-sm">
             <thead className="bg-gray-700 sticky top-0">
               <tr>
-                <th className="text-left p-1 sm:p-2 lg:p-3 text-gray-700 w-10 sm:w-12 lg:w-16 font-semibold bg-gradient-to-r from-orange-50 to-red-50 text-[10px] sm:text-xs lg:text-sm">Cant.</th>
-                <th className="text-left p-1 sm:p-2 lg:p-3 text-gray-700 w-12 sm:w-16 lg:w-20 font-semibold bg-gradient-to-r from-orange-50 to-red-50 text-[10px] sm:text-xs lg:text-sm">Pres.</th>
-                <th className="text-left p-1 sm:p-2 lg:p-3 text-gray-700 font-semibold bg-gradient-to-r from-orange-50 to-red-50 text-[10px] sm:text-xs lg:text-sm">Artículo</th>
-                <th className="text-right p-1 sm:p-2 lg:p-3 text-gray-700 w-14 sm:w-16 lg:w-20 font-semibold bg-gradient-to-r from-orange-50 to-red-50 text-[10px] sm:text-xs lg:text-sm">Precio</th>
-                <th className="text-right p-1 sm:p-2 lg:p-3 text-gray-700 w-16 sm:w-20 lg:w-24 font-semibold bg-gradient-to-r from-orange-50 to-red-50 text-[10px] sm:text-xs lg:text-sm">Importe</th>
-                <th className="text-center p-1 sm:p-2 lg:p-3 text-gray-700 w-12 sm:w-16 lg:w-20 font-semibold bg-gradient-to-r from-orange-50 to-red-50 text-[10px] sm:text-xs lg:text-sm">Acc.</th>
+                <th className="text-left p-1 sm:p-2 lg:p-3 text-gray-700 w-12 sm:w-16 lg:w-20 font-semibold bg-gradient-to-r from-orange-50 to-red-50">Código</th>
+                <th className="text-left p-1 sm:p-2 lg:p-3 text-gray-700 w-14 sm:w-16 lg:w-24 font-semibold bg-gradient-to-r from-orange-50 to-red-50 hidden md:table-cell">Pres.</th>
+                <th className="text-left p-1 sm:p-2 lg:p-3 text-gray-700 font-semibold bg-gradient-to-r from-orange-50 to-red-50">Artículo</th>
+                <th className="text-right p-1 sm:p-2 lg:p-3 text-gray-700 w-12 sm:w-16 lg:w-20 font-semibold bg-gradient-to-r from-orange-50 to-red-50">Stock</th>
+                <th className="text-right p-1 sm:p-2 lg:p-3 text-gray-700 w-16 sm:w-20 lg:w-24 font-semibold bg-gradient-to-r from-orange-50 to-red-50">Precio</th>
               </tr>
             </thead>
             <tbody>
-              {order?.items.map((item, index) => (
-                <tr key={item.id} className={`border-b border-gray-200 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                  <td className="p-1 sm:p-2 lg:p-3">
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => onUpdateQuantity(item.id, parseInt(e.target.value) || 1)}
-                      className="w-full bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded text-center text-[10px] sm:text-xs lg:text-sm focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                      min="1"
-                    />
-                  </td>
-                  <td className="p-1 sm:p-2 lg:p-3 text-orange-600 font-semibold text-[10px] sm:text-xs lg:text-sm">P{item.price_level}</td>
-                  <td className="p-1 sm:p-2 lg:p-3 text-gray-900">
-                    <div className="font-medium text-[10px] sm:text-xs lg:text-sm">
-                      {item.product_name.length > 15 ? `${item.product_name.substring(0, 15)}...` : item.product_name}
-                    </div>
-                    <div className="text-[8px] sm:text-xs text-gray-500 hidden md:block">{item.product_code}</div>
-                  </td>
-                  <td className="p-1 sm:p-2 lg:p-3 text-right text-green-600 font-mono font-semibold text-[10px] sm:text-xs lg:text-sm">
-                    ${item.unit_price.toFixed(2)}
-                  </td>
-                  <td className="p-1 sm:p-2 lg:p-3 text-right text-orange-600 font-mono font-bold text-[10px] sm:text-xs lg:text-sm">
-                    ${item.total.toFixed(2)}
-                  </td>
-                  <td className="p-1 sm:p-2 lg:p-3">
-                    <div className="flex items-center justify-center space-x-1">
-                      <button
-                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                        className="bg-green-600 hover:bg-green-700 text-white p-0.5 sm:p-1 rounded shadow-sm transition-colors"
-                        title="Añadir"
-                      >
-                        <Plus size={8} className="sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingItem(item);
-                          setShowEditItemModal(true);
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white p-0.5 sm:p-1 rounded shadow-sm transition-colors"
-                        title="Editar"
-                      >
-                        <Edit size={8} className="sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3" />
-                      </button>
-                      <button
-                        onClick={() => onRemoveItem(item.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white p-0.5 sm:p-1 rounded shadow-sm transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 size={8} className="sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filteredProducts.map((product, index) => {
+                const currentPrice = getPriceForLevel(product, selectedPriceLevel);
+                const isSelected = index === selectedIndex;
+                const isLowStock = product.stock < 10;
+                
+                return (
+                  <tr
+                    key={product.id}
+                    data-index={index}
+                    onClick={() => onProductSelect(product)}
+                    onDoubleClick={() => onAddProduct(product)}
+                    className={`border-b border-orange-100 cursor-pointer transition-all duration-200 ${
+                      isSelected 
+                        ? ' bg-gradient-to-br from-orange-400 via-red-500 to-red-400 text-white shadow-sm' 
+                        : index % 2 === 0 
+                          ? 'bg-white hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50' 
+                          : 'bg-gray-50 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50'
+                    }`}
+                  >
+                    <td className="p-1 sm:p-2 lg:p-3 font-mono text-[10px] sm:text-xs text-black">
+                      {product.code}
+                    </td>
+                    <td className="p-1 sm:p-2 lg:p-3 text-black hidden md:table-cell">
+                      {product.unit}
+                    </td>
+                    <td className="p-1 sm:p-2 lg:p-3">
+                      <div className={`font-medium ${isSelected ? 'text-white' : 'text-gray-900'}`}>
+                        <span className="md:hidden">
+                          {product.name.length > 15 ? `${product.name.substring(0, 15)}...` : product.name}
+                        </span>
+                        <span className="hidden md:inline">{product.name}</span>
+                      </div>
+                      <div className={`text-[8px] sm:text-xs hidden lg:block ${isSelected ? 'text-orange-100' : 'text-gray-500'}`}>
+                        {product.line} - {product.subline}
+                      </div>
+                      <div className={`text-[8px] sm:text-xs md:hidden ${isSelected ? 'text-orange-100' : 'text-gray-500'}`}>
+                        {product.unit}
+                      </div>
+                        
+                    </td>
+                    <td className="p-1 sm:p-2 lg:p-3 text-right">
+<span
+  className={`w-8 sm:w-12 lg:w-20 inline-block text-center rounded-xl sm:rounded-2xl font-bold text-[8px] sm:text-xs lg:text-sm shadow-sm transition-all duration-200
+    ${
+      isLowStock
+        ? 'bg-red-600 text-white'
+        : product.stock > 50
+          ? 'bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 text-green-700'
+          : 'bg-gradient-to-r from-yellow-100 to-yellow-200 hover:from-yellow-200 hover:to-yellow-300 text-yellow-700'
+    }
+    px-0.5 sm:px-1 lg:px-3 py-0.5 sm:py-1 lg:py-2 min-h-[20px] sm:min-h-[28px] lg:min-h-[36px]
+  `}
+>
+  {product.stock}
+</span>
+
+
+
+
+
+                    </td>
+                    <td className="p-1 sm:p-2 lg:p-3 text-right">
+                      <span className={`font-mono font-bold ${
+                        isSelected ? 'text-yellow-200' : 'text-green-600'
+                      }`}>
+                        ${currentPrice.toFixed(2)}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
               
-              {(!order?.items || order.items.length === 0) && (
+              {filteredProducts.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-2 sm:p-4 lg:p-8 text-center text-gray-500 bg-gradient-to-r from-orange-25 to-red-25 text-[10px] sm:text-xs lg:text-sm">
-                    No hay artículos en el pedido
+                  <td colSpan={5} className="p-2 sm:p-4 lg:p-8 text-center text-gray-500 bg-gradient-to-r from-orange-25 to-red-25">
+                    <Package size={24} className="sm:w-8 sm:h-8 lg:w-12 lg:h-12 mx-auto mb-1 sm:mb-2 opacity-50" />
+                    <div>No se encontraron productos</div>
+                    <div className="text-[10px] sm:text-xs">Intenta con otro término de búsqueda</div>
                   </td>
                 </tr>
               )}
@@ -248,528 +253,42 @@ export function POSOrderPanel({
         </div>
       </div>
 
-{/* Credit Information */}
-{client && (
-  <div className="bg-gradient-to-r from-orange-50 to-red-50 py-1 sm:py-2 px-2 sm:px-3 border-t border-orange-200">
-    <div className="grid grid-cols-3 gap-1 sm:gap-2 text-[10px] sm:text-xs">
-      <div>
-        <div className="text-gray-600 font-medium">Límite de Crédito</div>
-        <div className="text-orange-600 font-mono font-semibold">
-          ${client.credit_limit.toLocaleString('es-MX')}
+
+      {/* Footer Info */}
+      <div className="bg-gradient-to-r from-orange-50 to-red-50 p-1 sm:p-2 lg:p-3 border-t border-orange-200">
+        <div className="flex items-center justify-between text-[10px] sm:text-xs text-gray-600">
+          <div>
+            Productos: {filteredProducts.length} de {products.length}
+          </div>
+          <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
+            <span className="bg-white px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-orange-200 text-[8px] sm:text-xs">↑↓ Navegar</span>
+            <span className="bg-white px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-orange-200 text-[8px] sm:text-xs">Enter: Agregar</span>
+            <span className="bg-white px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-orange-200 text-[8px] sm:text-xs">+/- Cantidad</span>
+            <span className="bg-white px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-orange-200 text-[8px] sm:text-xs">F5: Buscar</span>
+          </div>
         </div>
       </div>
-      <div>
-        <div className="text-gray-600 font-medium">Crédito Usado</div>
-        <div className="text-amber-600 font-mono font-semibold">
-          ${creditUsed.toLocaleString('es-MX')}
-        </div>
-      </div>
-      <div>
-        <div className="text-gray-600 font-medium">Crédito Disponible</div>
-        <div
-          className={`font-mono font-semibold ${
-            creditAvailable > 0 ? 'text-green-600' : 'text-red-600'
-          }`}
-        >
-          ${creditAvailable.toLocaleString('es-MX')}
-        </div>
-      </div>
-    </div>
 
-    {creditExceeded && (
-      <div className="mt-1 sm:mt-2 bg-red-50 border border-red-200 rounded-md p-1 sm:p-2 flex items-center space-x-1">
-        <AlertTriangle size={12} className="sm:w-3.5 sm:h-3.5 text-red-600" />
-        <span className="text-red-700 font-bold text-[10px] sm:text-xs">
-          ¡LÍMITE DE CRÉDITO EXCEDIDO!
-        </span>
-      </div>
-    )}
-  </div>
-)}
-
-
-{/* Observaciones Colapsables */}
-<div className="bg-gradient-to-r from-orange-25 to-red-25 border-t border-orange-100">
-  {/* Toggle Button */}
-  <button
-    onClick={() => setShowObservations(!showObservations)}
-    className="w-full py-1 sm:py-2 px-2 sm:px-3 text-left flex items-center justify-between hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-colors"
-  >
-    <span className="text-gray-700 font-medium text-[10px] sm:text-xs lg:text-sm">
-      Observaciones y Detalles
-    </span>
-    <svg
-      className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-500 transition-transform ${
-        showObservations ? 'rotate-180' : ''
-      }`}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-    </svg>
-  </button>
-
-  {/* Collapsible Content */}
-  {showObservations && (
-    <div className="px-2 sm:px-3 pb-1 sm:pb-2 space-y-1 sm:space-y-2">
-      {/* Observaciones */}
-      <div>
-        <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Observaciones</label>
-        <input
-          type="text"
-          value={observations}
-          onChange={(e) => setObservations(e.target.value)}
-          className="w-full bg-white border border-orange-200 text-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
-          placeholder="Observaciones del pedido..."
+      {/* Edit Modal */}
+      {showEditModal && editingProduct && (
+        <POSEditItemModal
+          item={{
+            id: 'temp',
+            product_id: editingProduct.id,
+            product_name: editingProduct.name,
+            product_code: editingProduct.code,
+            quantity: quantity,
+            price_level: selectedPriceLevel,
+            unit_price: editingProduct.prices[`price${selectedPriceLevel}`],
+            total: quantity * editingProduct.prices[`price${selectedPriceLevel}`]
+          }}
+          product={editingProduct}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingProduct(null);
+          }}
+          onSave={handleEditSave}
         />
-      </div>
-      
-      {/* Chofer y Ruta */}
-      <div className="grid grid-cols-2 gap-1 sm:gap-2">
-        <div>
-          <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Chofer</label>
-          <select
-            value={driver}
-            onChange={(e) => setDriver(e.target.value)}
-            className="w-full bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
-          >
-            <option value="">Sin chofer</option>
-            <option value="Juan Pérez">Juan Pérez</option>
-            <option value="María García">María García</option>
-            <option value="Carlos López">Carlos López</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Ruta</label>
-          <select
-            value={route}
-            onChange={(e) => setRoute(e.target.value)}
-            className="w-full bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
-          >
-            <option value="">Sin ruta</option>
-            <option value="Centro">Centro</option>
-            <option value="Norte">Norte</option>
-            <option value="Sur">Sur</option>
-            <option value="Foránea">Foránea</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  )}
-
-  {/* Opciones de Venta - Siempre visibles */}
-  <div className="px-2 sm:px-3 py-1 sm:py-2 border-t border-orange-200">
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
-    {[
-      { label: 'Crédito', checked: isCredit, set: setIsCredit },
-      { label: 'Factura', checked: isInvoice, set: setIsInvoice },
-      { label: 'Cotización', checked: isQuote, set: setIsQuote },
-      { label: 'Vender en Ext.', checked: isExternal, set: setIsExternal },
-    ].map((opt, idx) => (
-      <label key={idx} className="flex items-center space-x-0.5 sm:space-x-1 text-[10px] sm:text-xs">
-        <input
-          type="checkbox"
-          checked={opt.checked}
-          onChange={(e) => opt.set(e.target.checked)}
-          className="rounded text-orange-600 focus:ring-orange-500 border-orange-300 w-2.5 h-2.5 sm:w-3 sm:h-3"
-        />
-        <span className="text-gray-700 text-[10px] sm:text-xs lg:text-sm">{opt.label}</span>
-      </label>
-    ))}
-    </div>
-
-    {/* Descuento */}
-    <div className="flex items-center space-x-1 sm:space-x-2">
-      <label className="text-gray-600 text-[10px] sm:text-xs font-medium">Desc:</label>
-      <input
-        type="number"
-        step="0.01"
-        value={discountAmount}
-        onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
-        className="bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs w-12 sm:w-16 lg:w-20 focus:outline-none focus:ring-1 focus:ring-orange-500"
-        placeholder="0.00"
-      />
-      <button
-        onClick={handleApplyDiscount}
-        className="bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 text-orange-700 px-1 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium border border-orange-300 shadow-sm"
-      >
-        Aplicar
-      </button>
-    </div>
-  </div>
-</div>
-
-<div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 py-0.5 sm:py-1 lg:py-2 px-1 sm:px-2 lg:px-4">
-  {/* Total */}
-  <div className="flex items-center justify-between mb-0.5 sm:mb-1 lg:mb-2">
-    <span className="text-orange-50 text-[10px] sm:text-xs lg:text-sm font-semibold">TOTAL:</span>
-    <span className="text-white font-bold text-sm sm:text-base lg:text-lg font-mono">
-      ${orderTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-    </span>
-  </div>
-
-  {/* Botones */}
-  <div className="grid grid-cols-4 gap-0.5 sm:gap-1 lg:gap-2">
-    <button
-      onClick={handlePayClick}
-      disabled={!order?.items.length}
-      className="bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 disabled:from-gray-200 disabled:to-gray-300 disabled:cursor-not-allowed text-green-700 disabled:text-gray-500 py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 border border-green-300 disabled:border-gray-300 flex flex-col items-center justify-center min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-9 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-      PAGAR
-      <div className="text-[6px] sm:text-[8px] lg:text-[10px] opacity-80 hidden lg:block">F12</div>
-    </button>
-
-    <button
-      onClick={handleSaveClick}
-      disabled={!order?.items.length}
-      className="bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 disabled:from-gray-200 disabled:to-gray-300 disabled:cursor-not-allowed text-orange-700 disabled:text-gray-500 py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 border border-orange-300 disabled:border-gray-300 flex flex-col items-center justify-center min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-      </svg>
-      GUARDAR
-    </button>
-
-    <button
-      onClick={onCancel}
-      className="bg-white text-orange-600 border border-orange-600 py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 flex flex-col items-center justify-center hover:bg-orange-50 min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-      CANCELAR
-    </button>
-
-    <button
-      onClick={onCancel}
-      className="bg-black text-white py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 border border-gray-800 flex flex-col items-center justify-center min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22m-5-4h-8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z" />
-      </svg>
-      ELIMINAR
-    </button>
-  </div>
-</div>
-
-
-      {/* Client Selection Modal */}
-      {showClientModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
-            <div className="bg-gradient-to-r from-orange-600 to-red-600 p-4 border-b border-red-700">
-              <div className="flex items-center justify-between">
-                <h3 className="text-white font-bold">Seleccionar Cliente</h3>
-                <button
-                  onClick={() => setShowClientModal(false)}
-                  className="text-orange-50 hover:text-white text-lg sm:text-xl font-bold w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full hover:bg-gradient-to-r hover:from-orange-700 hover:to-red-700 transition-all duration-200"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="mt-3">
-                <input
-                  type="text"
-                  value={searchClient}
-                  onChange={(e) => setSearchClient(e.target.value)}
-                  className="w-full bg-white border border-orange-200 text-gray-900 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Buscar cliente por nombre o RFC..."
-                  autoFocus
-                />
-              </div>
-            </div>
-            
-            <div className="max-h-96 overflow-y-auto">
-              <table className="w-full text-xs sm:text-sm">
-                <thead className="bg-gradient-to-r from-orange-50 to-red-50 sticky top-0">
-                  <tr>
-                    <th className="text-left p-2 sm:p-3 text-gray-700 font-semibold">Cliente</th>
-                    <th className="text-left p-2 sm:p-3 text-gray-700 font-semibold hidden sm:table-cell">RFC</th>
-                    <th className="text-right p-2 sm:p-3 text-gray-700 font-semibold">Crédito</th>
-                    <th className="text-center p-2 sm:p-3 text-gray-700 font-semibold">Precio</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredClients.map(clientOption => (
-                    <tr
-                      key={clientOption.id}
-                      onClick={() => {
-                        onSelectClient(clientOption);
-                        setShowClientModal(false);
-                        setSearchClient('');
-                        if (onRefreshData) {
-                          onRefreshData();
-                        }
-                      }}
-                      className="border-b border-orange-100 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 cursor-pointer transition-all duration-200"
-                    >
-                      <td className="p-2 sm:p-3 text-gray-900 font-medium">{clientOption.name}</td>
-                      <td className="p-2 sm:p-3 text-gray-600 hidden sm:table-cell">{clientOption.rfc}</td>
-                      <td className="p-2 sm:p-3 text-right text-green-600 font-mono font-semibold">
-                        ${clientOption.credit_limit.toLocaleString('es-MX')}
-                      </td>
-                      <td className="p-2 sm:p-3 text-center text-orange-600 font-semibold">
-                        Nivel {clientOption.default_price_level}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-     {/* Edit Item Modal */}
-{showEditItemModal && editingItem && products && (
-  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-    <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 border-b border-blue-800 rounded-t-xl flex items-center justify-between sticky top-0 z-10">
-        <h2 className="text-white font-bold text-lg">Editar Producto</h2>
-        <button
-          onClick={() => {
-            setShowEditItemModal(false);
-            setEditingItem(null);
-          }}
-          className="text-blue-100 hover:text-white"
-        >
-          <X size={20} />
-        </button>
-      </div>
-
-      <div className="p-6 space-y-6">
-        {/* Product Info */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
-          <div className="flex items-center space-x-3 mb-3">
-            <Package className="h-6 w-6 text-blue-600" />
-            <div>
-              <div className="text-gray-800 font-semibold text-lg">{editingItem.product_name}</div>
-              <div className="text-gray-500 text-sm">Código: {editingItem.product_code}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Inputs */}
-        <div className="space-y-4">
-          {/* Cantidad */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Cantidad
-            </label>
-            <input
-              type="number"
-              value={editingItem.quantity}
-              onChange={(e) =>
-                setEditingItem(prev =>
-                  prev ? { ...prev, quantity: parseFloat(e.target.value) || 1 } : null
-                )
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              min="0.01"
-              step="0.01"
-            />
-          </div>
-
-          {/* Nivel de Precio */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nivel de Precio
-            </label>
-            <select
-              value={editingItem.price_level}
-              onChange={(e) => {
-                const newLevel = parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5;
-                const product = products.find(p => p.id === editingItem.product_id);
-                if (product) {
-                  const newPrice = product.prices[`price${newLevel}`];
-                  setEditingItem(prev =>
-                    prev
-                      ? {
-                          ...prev,
-                          price_level: newLevel,
-                          unit_price: newPrice,
-                          total: prev.quantity * newPrice,
-                        }
-                      : null
-                  );
-                }
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value={1}>Precio 1</option>
-              <option value={2}>Precio 2</option>
-              <option value={3}>Precio 3</option>
-              <option value={4}>Precio 4</option>
-              <option value={5}>Precio 5</option>
-            </select>
-          </div>
-
-          {/* Precio Unitario */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Precio Unitario
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={editingItem.unit_price}
-              onChange={(e) => {
-                const newPrice = parseFloat(e.target.value) || 0;
-                setEditingItem(prev =>
-                  prev
-                    ? {
-                        ...prev,
-                        unit_price: newPrice,
-                        total: prev.quantity * newPrice,
-                      }
-                    : null
-                );
-              }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              min="0"
-            />
-          </div>
-
-          {/* Resumen Final */}
-          <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-lg p-4">
-            <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-              <Info className="h-4 w-4 mr-2 text-orange-600" />
-              Resumen Final
-            </h4>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Cantidad:</span>
-                <span className="font-bold text-gray-900 text-lg">
-                  {editingItem.quantity} unidades
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Precio unitario:</span>
-                <span className="font-mono font-bold text-blue-600 text-lg">
-                  ${editingItem.unit_price.toFixed(2)}
-                </span>
-              </div>
-              <div className="border-t border-orange-300 pt-3 flex justify-between items-center">
-                <span className="font-bold text-gray-900 text-lg">Total:</span>
-                <span className="font-mono font-bold text-orange-600 text-2xl">
-                  ${editingItem.total.toFixed(2)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Botones */}
-      <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 p-6">
-        <button
-          onClick={() => {
-            setShowEditItemModal(false);
-            setEditingItem(null);
-          }}
-          className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={() => {
-            if (editingItem) {
-              onUpdateQuantity(editingItem.id, editingItem.quantity);
-              onUpdateItemPrice(editingItem.id, editingItem.price_level, editingItem.unit_price);
-            }
-            setShowEditItemModal(false);
-            setEditingItem(null);
-          }}
-          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-bold transition-colors shadow-lg"
-        >
-          Guardar Cambios
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-      {/* Credit Authorization Modal */}
-      {showCreditAuthModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="bg-red-600 p-4 border-b border-red-700 rounded-t-lg">
-              <div className="flex items-center justify-between">
-                <h3 className="text-white font-bold">Autorización Requerida</h3>
-                <button
-                  onClick={handleCancelCreditAuth}
-                  className="text-red-100 hover:text-white"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="text-center mb-6">
-                <div className="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-yellow-600 text-2xl">⚠️</span>
-                </div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                  Límite de Crédito Excedido
-                </h4>
-                <p className="text-gray-600 text-sm mb-4">
-                  El cliente {client?.name} excederá su límite de crédito con esta operación.
-                  Se requiere autorización de administrador para continuar.
-                </p>
-                {client && order && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
-                    <div className="text-yellow-800">
-                      <p>Límite: ${client.credit_limit.toLocaleString('es-MX')}</p>
-                      <p>Saldo actual: ${client.balance.toLocaleString('es-MX')}</p>
-                      <p>Este pedido: ${order.total.toLocaleString('es-MX')}</p>
-                      <p className="font-bold">Nuevo saldo: ${(client.balance + order.total).toLocaleString('es-MX')}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contraseña de Administrador
-                  </label>
-                  <input
-                    type="password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                    placeholder="Ingrese contraseña..."
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleCreditAuth();
-                      }
-                    }}
-                  />
-                </div>
-                <div className="flex space-x-3">
-                  <button
-                    onClick={handleCreditAuth}
-                    disabled={!adminPassword.trim()}
-                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    Autorizar Operación
-                  </button>
-                  <button
-                    onClick={handleCancelCreditAuth}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
