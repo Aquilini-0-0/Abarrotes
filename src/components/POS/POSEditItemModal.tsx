@@ -158,7 +158,7 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
                 )}
               </div>
 
-              {/* Tara Selection */}
+              {/*
               <div>
                 <label className="block text-gray-700 font-medium mb-2">Selección de Tara</label>
                 <select
@@ -177,6 +177,8 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
                   ))}
                 </select>
               </div>
+
+              */}
 
               {/* Price Selection */}
               <div>
