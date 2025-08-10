@@ -462,6 +462,7 @@ export function POSOrderPanel({
               <div className="flex items-center justify-between">
                 <h3 className="text-white font-bold">Editar Producto</h3>
                 <button
+                  onClick={() => {
                     setShowEditItemModal(false);
                     setEditingItem(null);
                   }}
