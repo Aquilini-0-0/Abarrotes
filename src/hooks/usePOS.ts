@@ -81,7 +81,7 @@ export function usePOS() {
   };
 
   // Initialize new order
-  const initializeOrder = (clientName: string = 'Cliente General', clientId?: string) => {
+  const initializeOrder = (clientName: string = 'Cliente General', clientId?: string): POSOrder => {
     const newOrder: POSOrder = {
       id: `temp-${Date.now()}`,
       client_id: clientId,
@@ -99,13 +99,12 @@ export function usePOS() {
       created_by: user?.id || '',
       created_at: new Date().toISOString()
     };
-    setCurrentOrder(newOrder);
     return newOrder;
   };
 
   // Add item to current order
-  const addItemToOrder = (product: POSProduct, quantity: number, priceLevel: 1 | 2 | 3 | 4 | 5) => {
-    if (!currentOrder) return;
+  const addItemToOrder = (order: POSOrder, product: POSProduct, quantity: number, priceLevel: 1 | 2 | 3 | 4 | 5): POSOrder => {
+    if (!order) throw new Error('No hay pedido activo');
 
     // Validate stock
     if (quantity > product.stock) {
@@ -113,7 +112,7 @@ export function usePOS() {
     }
 
     const unitPrice = product.prices[`price${priceLevel}`];
-    const existingItemIndex = currentOrder.items.findIndex(
+    const existingItemIndex = order.items.findIndex(
       item => item.product_id === product.id && item.price_level === priceLevel
     );
 
@@ -121,7 +120,7 @@ export function usePOS() {
 
     if (existingItemIndex >= 0) {
       // Update existing item
-      updatedItems = currentOrder.items.map((item, index) => 
+      updatedItems = order.items.map((item, index) => 
         index === existingItemIndex 
           ? { ...item, quantity: item.quantity + quantity, total: (item.quantity + quantity) * unitPrice }
           : item
@@ -138,42 +137,38 @@ export function usePOS() {
         unit_price: unitPrice,
         total: quantity * unitPrice
       };
-      updatedItems = [...currentOrder.items, newItem];
+      updatedItems = [...order.items, newItem];
     }
 
     const subtotal = updatedItems.reduce((sum, item) => sum + item.total, 0);
-    const updatedOrder = {
-      ...currentOrder,
+    return {
+      ...order,
       items: updatedItems,
       subtotal,
-      total: subtotal - currentOrder.discount_total
+      total: subtotal - order.discount_total
     };
-
-    setCurrentOrder(updatedOrder);
   };
 
   // Remove item from order
-  const removeItemFromOrder = (itemId: string) => {
-    if (!currentOrder) return;
+  const removeItemFromOrder = (order: POSOrder, itemId: string): POSOrder => {
+    if (!order) throw new Error('No hay pedido activo');
 
-    const updatedItems = currentOrder.items.filter(item => item.id !== itemId);
+    const updatedItems = order.items.filter(item => item.id !== itemId);
     const subtotal = updatedItems.reduce((sum, item) => sum + item.total, 0);
-    const updatedOrder = {
-      ...currentOrder,
+    return {
+      ...order,
       items: updatedItems,
       subtotal,
-      total: subtotal - currentOrder.discount_total
+      total: subtotal - order.discount_total
     };
-
-    setCurrentOrder(updatedOrder);
   };
 
   // Update item quantity
-  const updateItemQuantity = (itemId: string, newQuantity: number) => {
-    if (!currentOrder || newQuantity <= 0) return;
+  const updateItemQuantity = (order: POSOrder, itemId: string, newQuantity: number): POSOrder => {
+    if (!order || newQuantity <= 0) throw new Error('Cantidad inválida');
 
     // Find the item and product to validate stock
-    const item = currentOrder.items.find(i => i.id === itemId);
+    const item = order.items.find(i => i.id === itemId);
     if (item) {
       const product = products.find(p => p.id === item.product_id);
       if (product && newQuantity > product.stock) {
@@ -181,34 +176,30 @@ export function usePOS() {
       }
     }
 
-    const updatedItems = currentOrder.items.map(item => 
+    const updatedItems = order.items.map(item => 
       item.id === itemId 
         ? { ...item, quantity: newQuantity, total: newQuantity * item.unit_price }
         : item
     );
 
     const subtotal = updatedItems.reduce((sum, item) => sum + item.total, 0);
-    const updatedOrder = {
-      ...currentOrder,
+    return {
+      ...order,
       items: updatedItems,
       subtotal,
-      total: subtotal - currentOrder.discount_total
+      total: subtotal - order.discount_total
     };
-
-    setCurrentOrder(updatedOrder);
   };
 
   // Apply discount to order
-  const applyDiscount = (discountAmount: number) => {
-    if (!currentOrder) return;
+  const applyDiscount = (order: POSOrder, discountAmount: number): POSOrder => {
+    if (!order) throw new Error('No hay pedido activo');
 
-    const updatedOrder = {
-      ...currentOrder,
+    return {
+      ...order,
       discount_total: discountAmount,
-      total: currentOrder.subtotal - discountAmount
+      total: order.subtotal - discountAmount
     };
-
-    setCurrentOrder(updatedOrder);
   };
 
   // Save order to database
@@ -430,7 +421,6 @@ export function usePOS() {
   return {
     products,
     clients,
-    currentOrder,
     orders,
     cashRegister,
     loading,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { POSMenuBar } from './POSMenuBar';
+import { POSOrderTabs } from './POSOrderTabs';
 import { POSOrderPanel } from './POSOrderPanel';
 import { POSProductPanel } from './POSProductPanel';
 import { POSPaymentModal } from './POSPaymentModal';
@@ -9,7 +10,14 @@ import { POSTaraModal } from './POSTaraModal';
 import { POSCreditPaymentsModal } from './POSCreditPaymentsModal';
 import { POSAdvancesModal } from './POSAdvancesModal';
 import { POSCashCutsModal } from './POSCashCutsModal';
+import { POSCashMovementsModal } from './POSCashMovementsModal';
+import { POSRemisionesModal } from './POSRemisionesModal';
+import { POSValesModal } from './POSValesModal';
+import { POSPrintPricesModal } from './POSPrintPricesModal';
+import { POSCollectOrderModal } from './POSCollectOrderModal';
 import { usePOS } from '../../hooks/usePOS';
+import { usePOSTabs } from '../../hooks/usePOSTabs';
+import { useOrderLocks } from '../../hooks/useOrderLocks';
 import { useAutoSync } from '../../hooks/useAutoSync';
 import { POSProduct, POSClient } from '../../types/pos';
 
@@ -17,11 +25,9 @@ export function POSLayout() {
   const {
     products,
     clients,
-    currentOrder,
     orders,
     cashRegister,
     loading,
-    initializeOrder,
     addItemToOrder,
     removeItemFromOrder,
     updateItemQuantity,
@@ -32,7 +38,24 @@ export function POSLayout() {
     refetch
   } = usePOS();
 
-  const [selectedClient, setSelectedClient] = useState<POSClient | null>(null);
+  const {
+    tabs,
+    activeTabId,
+    createNewTab,
+    openOrderInTab,
+    switchTab,
+    closeTab,
+    updateActiveOrder,
+    markTabAsSaved,
+    getActiveOrder,
+    getActiveClient
+  } = usePOSTabs();
+
+  const { isOrderLocked } = useOrderLocks();
+
+  const currentOrder = getActiveOrder();
+  const selectedClient = getActiveClient();
+
   const [selectedPriceLevel, setSelectedPriceLevel] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showOrdersModal, setShowOrdersModal] = useState(false);
@@ -41,6 +64,11 @@ export function POSLayout() {
   const [showCreditPaymentsModal, setShowCreditPaymentsModal] = useState(false);
   const [showAdvancesModal, setShowAdvancesModal] = useState(false);
   const [showCashCutsModal, setShowCashCutsModal] = useState(false);
+  const [showCashMovementsModal, setShowCashMovementsModal] = useState(false);
+  const [showRemisionesModal, setShowRemisionesModal] = useState(false);
+  const [showValesModal, setShowValesModal] = useState(false);
+  const [showPrintPricesModal, setShowPrintPricesModal] = useState(false);
+  const [showCollectOrderModal, setShowCollectOrderModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<POSProduct | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -49,16 +77,9 @@ export function POSLayout() {
   // Auto-sync for real-time updates
   useAutoSync({
     onDataUpdate: refetch,
-    interval: 8000, // 8 seconds
+    interval: 5000, // 5 seconds for real-time feel
     tables: ['sales', 'products', 'clients']
   });
-
-  // Initialize order on component mount
-  useEffect(() => {
-    if (!currentOrder) {
-      initializeOrder();
-    }
-  }, [currentOrder, initializeOrder]);
 
   // Update last order when orders change
   useEffect(() => {
@@ -112,7 +133,8 @@ export function POSLayout() {
   const handleAddProduct = (product: POSProduct) => {
     try {
       if (quantity > 0) {
-        addItemToOrder(product, quantity, selectedPriceLevel);
+        const updatedOrder = addItemToOrder(currentOrder!, product, quantity, selectedPriceLevel);
+        updateActiveOrder(updatedOrder);
         setQuantity(1);
         setSearchTerm('');
       }
@@ -122,10 +144,35 @@ export function POSLayout() {
   };
 
   const handleSelectClient = (client: POSClient) => {
-    setSelectedClient(client);
     setSelectedPriceLevel(client.default_price_level);
     if (currentOrder) {
-      initializeOrder(client.name, client.id);
+      const updatedOrder = { ...currentOrder, client_id: client.id, client_name: client.name };
+      updateActiveOrder(updatedOrder);
+    }
+  };
+
+  const handleRemoveItem = (itemId: string) => {
+    if (currentOrder) {
+      const updatedOrder = removeItemFromOrder(currentOrder, itemId);
+      updateActiveOrder(updatedOrder);
+    }
+  };
+
+  const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
+    if (currentOrder) {
+      try {
+        const updatedOrder = updateItemQuantity(currentOrder, itemId, newQuantity);
+        updateActiveOrder(updatedOrder);
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Error al actualizar cantidad');
+      }
+    }
+  };
+
+  const handleApplyDiscount = (discountAmount: number) => {
+    if (currentOrder) {
+      const updatedOrder = applyDiscount(currentOrder, discountAmount);
+      updateActiveOrder(updatedOrder);
     }
   };
 
@@ -152,12 +199,40 @@ export function POSLayout() {
         status: orderToSave.status
       });
       
-      initializeOrder(selectedClient?.name || 'Cliente General', selectedClient?.id);
+      // Mark tab as saved and create new tab
+      markTabAsSaved(activeTabId);
+      createNewTab();
       setShowPaymentModal(false);
       alert('Pedido procesado exitosamente');
     } catch (err) {
       console.error('Error processing payment:', err);
       alert('Error al procesar el pago');
+    }
+  };
+
+  const handleEditOrder = async (order: POSOrder) => {
+    const success = await openOrderInTab(order);
+    if (success) {
+      setShowOrdersModal(false);
+    }
+  };
+
+  const handleSaveOrder = async () => {
+    if (currentOrder) {
+      try {
+        const savedOrder = await saveOrder({ ...currentOrder, status: 'draft' });
+        markTabAsSaved(activeTabId);
+        alert('Pedido guardado');
+      } catch (err) {
+        console.error('Error saving order:', err);
+        alert('Error al guardar el pedido');
+      }
+    }
+  };
+
+  const handleCancelOrder = () => {
+    if (confirm('¿Cancelar pedido actual?')) {
+      closeTab(activeTabId);
     }
   };
 
@@ -181,33 +256,38 @@ export function POSLayout() {
         onOpenCreditPayments={() => setShowCreditPaymentsModal(true)}
         onOpenAdvances={() => setShowAdvancesModal(true)}
         onOpenCashCuts={() => setShowCashCutsModal(true)}
+        onOpenCashMovements={() => setShowCashMovementsModal(true)}
+        onOpenRemisiones={() => setShowRemisionesModal(true)}
+        onOpenVales={() => setShowValesModal(true)}
+        onOpenPrintPrices={() => setShowPrintPricesModal(true)}
+        onOpenCollectOrder={() => setShowCollectOrderModal(true)}
         cashRegister={cashRegister}
         lastOrder={lastOrder}
       />
 
+      {/* Order Tabs */}
+      <POSOrderTabs
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onTabChange={switchTab}
+        onTabClose={closeTab}
+        onNewTab={createNewTab}
+      />
+
       {/* Main Content - Responsive Layout */}
-      <div className="flex flex-col md:flex-row h-[calc(100vh-60px)] bg-white shadow-sm">
+      <div className="flex flex-col md:flex-row h-[calc(100vh-100px)] bg-white shadow-sm">
         {/* Left Panel - Order Details */}
         <div className="w-full md:w-2/5 lg:w-1/2 border-b md:border-b-0 md:border-r border-gray-200 bg-white h-1/2 md:h-full">
           <POSOrderPanel
             order={currentOrder}
             client={selectedClient}
-            onRemoveItem={removeItemFromOrder}
-            onUpdateQuantity={updateItemQuantity}
-            onApplyDiscount={applyDiscount}
+            onRemoveItem={handleRemoveItem}
+            onUpdateQuantity={handleUpdateQuantity}
+            onApplyDiscount={handleApplyDiscount}
             onSelectClient={handleSelectClient}
             onPay={() => setShowPaymentModal(true)}
-            onSave={() => {
-              if (currentOrder) {
-                saveOrder({ ...currentOrder, status: 'draft' });
-                alert('Pedido guardado');
-              }
-            }}
-            onCancel={() => {
-              if (confirm('¿Cancelar pedido actual?')) {
-                initializeOrder(selectedClient?.name || 'Cliente General', selectedClient?.id);
-              }
-            }}
+            onSave={handleSaveOrder}
+            onCancel={handleCancelOrder}
             clients={clients}
             onRefreshData={refetch}
           />
@@ -251,9 +331,10 @@ export function POSLayout() {
           orders={orders}
           onClose={() => setShowOrdersModal(false)}
           onSelectOrder={(order) => {
-            // Load selected order for editing
             setShowOrdersModal(false);
+            // Just view the order details, don't edit
           }}
+          onEditOrder={handleEditOrder}
         />
       )}
 
@@ -299,6 +380,36 @@ export function POSLayout() {
       {showCashCutsModal && (
         <POSCashCutsModal
           onClose={() => setShowCashCutsModal(false)}
+        />
+      )}
+
+      {showCashMovementsModal && (
+        <POSCashMovementsModal
+          onClose={() => setShowCashMovementsModal(false)}
+        />
+      )}
+
+      {showRemisionesModal && (
+        <POSRemisionesModal
+          onClose={() => setShowRemisionesModal(false)}
+        />
+      )}
+
+      {showValesModal && (
+        <POSValesModal
+          onClose={() => setShowValesModal(false)}
+        />
+      )}
+
+      {showPrintPricesModal && (
+        <POSPrintPricesModal
+          onClose={() => setShowPrintPricesModal(false)}
+        />
+      )}
+
+      {showCollectOrderModal && (
+        <POSCollectOrderModal
+          onClose={() => setShowCollectOrderModal(false)}
         />
       )}
     </div>

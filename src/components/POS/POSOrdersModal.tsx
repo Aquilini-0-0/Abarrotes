@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { X, Search, Eye, Trash2, CreditCard } from 'lucide-react';
+import { X, Search, Eye, Trash2, CreditCard, Edit } from 'lucide-react';
 import { POSOrder } from '../../types/pos';
 
 interface POSOrdersModalProps {
   orders: POSOrder[];
   onClose: () => void;
   onSelectOrder: (order: POSOrder) => void;
+  onEditOrder?: (order: POSOrder) => void;
 }
 
-export function POSOrdersModal({ orders, onClose, onSelectOrder }: POSOrdersModalProps) {
+export function POSOrdersModal({ orders, onClose, onSelectOrder, onEditOrder }: POSOrdersModalProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
@@ -153,9 +154,24 @@ return (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (onEditOrder) {
+                          onEditOrder(order);
+                        } else {
+                          onSelectOrder(order);
+                        }
+                      }}
+                      className="p-0.5 sm:p-1 text-blue-600 hover:text-blue-800"
+                      title="Editar pedido"
+                    >
+                      <Edit size={12} className="sm:w-4 sm:h-4" />
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
                         onSelectOrder(order);
                       }}
-                      className="p-0.5 sm:p-1 text-blue-600 hover:text-blue-500"
+                      className="p-0.5 sm:p-1 text-green-600 hover:text-green-800"
                       title="Ver detalles"
                     >
                       <Eye size={12} className="sm:w-4 sm:h-4" />

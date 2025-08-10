@@ -56,7 +56,9 @@ export function POSOrderPanel({
       if (onRefreshData) {
         onRefreshData();
       }
-    onApplyDiscount(discountAmount);
+    if (order) {
+      onApplyDiscount(discountAmount);
+    }
   };
 
   return (

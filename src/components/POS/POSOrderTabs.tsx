@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, User, Lock } from 'lucide-react';
+import { X, Plus, User, Lock, AlertTriangle } from 'lucide-react';
 import { POSOrder } from '../../types/pos';
 
 interface OrderTab {
@@ -60,7 +60,7 @@ export function POSOrderTabs({ tabs, activeTabId, onTabChange, onTabClose, onNew
             {/* Tab content */}
             <div className="flex-1 min-w-0">
               <div className="text-xs font-medium truncate">
-                {tab.order.client_name}
+                {tab.order.client_name || 'Sin cliente'}
               </div>
               <div className="text-xs text-gray-500">
                 #{tab.order.id.slice(-6)} • ${tab.order.total.toFixed(0)}
@@ -105,9 +105,12 @@ export function POSOrderTabs({ tabs, activeTabId, onTabChange, onTabClose, onNew
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Confirmar Cierre de Pestaña
-              </h3>
+              <div className="flex items-center mb-4">
+                <AlertTriangle className="h-6 w-6 text-yellow-500 mr-3" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Confirmar Cierre de Pestaña
+                </h3>
+              </div>
               <p className="text-gray-600 mb-6">
                 Este pedido tiene productos agregados. ¿Está seguro de cerrar la pestaña? 
                 Los cambios no guardados se perderán.
