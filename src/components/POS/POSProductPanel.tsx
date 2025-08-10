@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Package } from 'lucide-react';
+import { Search, Package, Edit } from 'lucide-react';
 import { POSProduct } from '../../types/pos';
+import { POSEditItemModal } from './POSEditItemModal';
 
 interface POSProductPanelProps {
   products: POSProduct[];
@@ -12,6 +13,7 @@ interface POSProductPanelProps {
   onPriceLevelChange: (level: 1 | 2 | 3 | 4 | 5) => void;
   onAddProduct: (product: POSProduct) => void;
   onProductSelect: (product: POSProduct) => void;
+  onEditProduct?: (product: POSProduct) => void;
 }
 
 export function POSProductPanel({
@@ -23,9 +25,12 @@ export function POSProductPanel({
   onQuantityChange,
   onPriceLevelChange,
   onAddProduct,
-  onProductSelect
+  onProductSelect,
+  onEditProduct
 }: POSProductPanelProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<POSProduct | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
 
@@ -82,14 +87,29 @@ export function POSProductPanel({
     return product.prices[`price${level}`];
   };
 
+  const handleEditClick = (product: POSProduct, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingProduct(product);
+    setShowEditModal(true);
+  };
+
+  const handleEditSave = (updatedItem: any) => {
+    // This would update the product in the context
+    if (onEditProduct && editingProduct) {
+      onEditProduct(editingProduct);
+    }
+    setShowEditModal(false);
+    setEditingProduct(null);
+  };
+
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
-      <div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 p-1 sm:p-2 lg:p-4">
+      <div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 p-2 lg:p-4">
         <h2 className="text-white font-bold text-sm sm:text-base lg:text-lg mb-1 sm:mb-2 lg:mb-3">Catálogo de Productos</h2>
         
         {/* Controls */}
-        <div className="grid grid-cols-12 gap-1 sm:gap-2 lg:gap-3">
+        <div className="grid grid-cols-10 gap-1 sm:gap-2 lg:gap-3">
           {/* Quantity */}
           <div className="col-span-2 sm:col-span-2">
             <label className="block text-orange-50 text-[10px] sm:text-xs mb-0.5 sm:mb-1 font-medium">Cant.</label>
@@ -103,7 +123,7 @@ export function POSProductPanel({
           </div>
 
           {/* Search */}
-          <div className="col-span-7 sm:col-span-7 lg:col-span-7">
+          <div className="col-span-6 sm:col-span-6 lg:col-span-6">
             <label className="block text-orange-50 text-[10px] sm:text-xs mb-0.5 sm:mb-1 font-medium">
               <span className="hidden md:inline">Búsqueda (F5)</span>
               <span className="md:hidden">Buscar</span>
@@ -122,23 +142,22 @@ export function POSProductPanel({
             </div>
           </div>
 
-          {/* Price Level */}
-          <div className="col-span-3 sm:col-span-3">
+          {/* Edit Button */}
+          <div className="col-span-2 sm:col-span-2">
             <label className="block text-orange-50 text-[10px] sm:text-xs mb-0.5 sm:mb-1 font-medium">
-              <span className="hidden md:inline">Nivel de Precio</span>
-              <span className="md:hidden">Precio</span>
+              Editar
             </label>
-            <select
-              value={selectedPriceLevel}
-              onChange={(e) => onPriceLevelChange(parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5)}
-              className="w-full bg-white border border-orange-300 text-gray-900 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-1 lg:py-2 rounded-lg text-[10px] sm:text-xs lg:text-sm focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            <button
+              onClick={() => {
+                if (filteredProducts[selectedIndex]) {
+                  handleEditClick(filteredProducts[selectedIndex], {} as React.MouseEvent);
+                }
+              }}
+              disabled={filteredProducts.length === 0}
+              className="w-full bg-white border border-orange-300 text-gray-900 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-1 lg:py-2 rounded-lg text-[10px] sm:text-xs lg:text-sm focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:bg-gray-200 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              <option value={1}>Precio 1</option>
-              <option value={2}>Precio 2</option>
-              <option value={3}>Precio 3</option>
-              <option value={4}>Precio 4</option>
-              <option value={5}>Precio 5</option>
-            </select>
+              <Edit size={12} className="sm:w-3 sm:h-3 lg:w-4 lg:h-4" />
+            </button>
           </div>
         </div>
 
@@ -212,6 +231,15 @@ export function POSProductPanel({
                       <div className={`text-[8px] sm:text-xs md:hidden ${isSelected ? 'text-orange-100' : 'text-gray-500'}`}>
                         {product.unit}
                       </div>
+                        <div className="flex items-center space-x-1 mt-1">
+                          <button
+                            onClick={(e) => handleEditClick(product, e)}
+                            className={`p-1 rounded ${isSelected ? 'text-white hover:bg-white hover:text-orange-600' : 'text-gray-400 hover:text-blue-600'} transition-colors`}
+                            title="Editar cantidad/precio"
+                          >
+                            <Edit size={12} />
+                          </button>
+                        </div>
                     </td>
                     <td className="p-1 sm:p-2 lg:p-3 text-right">
 <span
@@ -291,6 +319,28 @@ export function POSProductPanel({
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {showEditModal && editingProduct && (
+        <POSEditItemModal
+          item={{
+            id: 'temp',
+            product_id: editingProduct.id,
+            product_name: editingProduct.name,
+            product_code: editingProduct.code,
+            quantity: quantity,
+            price_level: selectedPriceLevel,
+            unit_price: editingProduct.prices[`price${selectedPriceLevel}`],
+            total: quantity * editingProduct.prices[`price${selectedPriceLevel}`]
+          }}
+          product={editingProduct}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingProduct(null);
+          }}
+          onSave={handleEditSave}
+        />
+      )}
     </div>
   );
 }

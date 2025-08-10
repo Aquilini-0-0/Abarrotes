@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CreditCard, DollarSign, Smartphone, Calculator, AlertTriangle } from 'lucide-react';
+import { X, CreditCard, DollarSign, Smartphone, Calculator, AlertTriangle, Lock } from 'lucide-react';
 import { POSOrder, POSClient, PaymentBreakdown } from '../../types/pos';
 
 interface POSPaymentModalProps {
@@ -20,10 +20,21 @@ export function POSPaymentModal({ order, client, onClose, onConfirm }: POSPaymen
   const [cashReceived, setCashReceived] = useState(order.total);
   const [printTicket, setPrintTicket] = useState(true);
   const [printA4, setPrintA4] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showCreditAuthModal, setShowCreditAuthModal] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
 
   const change = cashReceived - order.total;
   const totalPayment = paymentBreakdown.cash + paymentBreakdown.card + paymentBreakdown.transfer + paymentBreakdown.credit;
   const paymentComplete = Math.abs(totalPayment - order.total) < 0.01;
+  
+  // Check if credit exceeds limit
+  const creditExceeded = client && paymentMethod === 'credit' && 
+    (client.balance + order.total) > client.credit_limit;
+
+  const validateAdminPassword = (password: string) => {
+    return password === 'admin123'; // En producción, validar contra la base de datos
+  };
 
   const handlePaymentBreakdownChange = (method: keyof PaymentBreakdown, amount: number) => {
     setPaymentBreakdown(prev => ({
@@ -41,11 +52,25 @@ export function POSPaymentModal({ order, client, onClose, onConfirm }: POSPaymen
   };
 
   const handleConfirm = () => {
+    if (isProcessing) return; // Prevent double submission
+    
     if (!paymentComplete && paymentMethod === 'mixed') {
       alert('El total de pagos debe coincidir con el importe del pedido');
       return;
     }
 
+    // Check credit limit
+    if (creditExceeded) {
+      setShowCreditAuthModal(true);
+      return;
+    }
+
+    processPayment();
+  };
+
+  const processPayment = () => {
+    setIsProcessing(true);
+    
     const paymentData = {
       method: paymentMethod,
       breakdown: paymentMethod === 'mixed' ? paymentBreakdown : undefined,
@@ -55,7 +80,23 @@ export function POSPaymentModal({ order, client, onClose, onConfirm }: POSPaymen
       printA4
     };
 
-    onConfirm(paymentData);
+    // Simulate processing delay
+    setTimeout(() => {
+      onConfirm(paymentData);
+      setIsProcessing(false);
+    }, 1000);
+  };
+
+  const handleCreditAuth = () => {
+    if (!validateAdminPassword(adminPassword)) {
+      alert('Contraseña de administrador incorrecta');
+      setAdminPassword('');
+      return;
+    }
+
+    setShowCreditAuthModal(false);
+    setAdminPassword('');
+    processPayment();
   };
 
   return (
@@ -100,6 +141,23 @@ export function POSPaymentModal({ order, client, onClose, onConfirm }: POSPaymen
           </div>
         </div>
       </div>
+
+          {/* Credit limit warning */}
+          {creditExceeded && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center">
+                <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
+                <div>
+                  <p className="text-red-800 font-medium">Límite de crédito excedido</p>
+                  <p className="text-red-600 text-sm">
+                    Límite: ${client?.credit_limit.toLocaleString('es-MX')} | 
+                    Usado: ${client?.balance.toLocaleString('es-MX')} | 
+                    Este pedido: ${order.total.toLocaleString('es-MX')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
       {/* Método de Pago */}
       <div>
@@ -225,16 +283,111 @@ export function POSPaymentModal({ order, client, onClose, onConfirm }: POSPaymen
         <button
           onClick={handleConfirm}
           disabled={
+            isProcessing ||
             (paymentMethod === 'cash' && change < 0) ||
             (paymentMethod === 'mixed' && !paymentComplete) ||
             (paymentMethod === 'credit' && (!client || (client.credit_limit - client.balance) < order.total))
           }
-          className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-lg font-bold shadow disabled:opacity-50 text-sm"
+          className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-bold shadow disabled:opacity-50 text-sm transition-all ${
+            isProcessing 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
+          } text-white`}
         >
-          Confirmar Pago
+          {isProcessing ? (
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Procesando pago...
+            </div>
+          ) : (
+            'Confirmar Pago'
+          )}
         </button>
       </div>
     </div>
+
+    {/* Credit Authorization Modal */}
+    {showCreditAuthModal && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div className="bg-red-600 p-4 border-b border-red-700 rounded-t-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Lock className="h-5 w-5 text-white" />
+                <h3 className="text-white font-bold">Autorización Requerida</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowCreditAuthModal(false);
+                  setAdminPassword('');
+                }}
+                className="text-red-100 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="text-center mb-6">
+              <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-3" />
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                Límite de Crédito Excedido
+              </h4>
+              <p className="text-gray-600 text-sm">
+                El cliente {client?.name} excederá su límite de crédito con esta venta.
+                Se requiere autorización de administrador para continuar.
+              </p>
+              <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div className="text-sm text-yellow-800">
+                  <p>Límite: ${client?.credit_limit.toLocaleString('es-MX')}</p>
+                  <p>Saldo actual: ${client?.balance.toLocaleString('es-MX')}</p>
+                  <p>Este pedido: ${order.total.toLocaleString('es-MX')}</p>
+                  <p className="font-bold">Nuevo saldo: ${((client?.balance || 0) + order.total).toLocaleString('es-MX')}</p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Contraseña de Administrador
+                </label>
+                <input
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Ingrese contraseña..."
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCreditAuth();
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCreditAuth}
+                  disabled={!adminPassword.trim()}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  Autorizar Venta
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCreditAuthModal(false);
+                    setAdminPassword('');
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
   </div>
 </div>
 

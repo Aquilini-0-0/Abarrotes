@@ -2,6 +2,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { Search, Bell, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useAutoSync } from '../../hooks/useAutoSync';
 import { supabase } from '../../lib/supabase';
 
 interface Notification {
@@ -18,6 +19,13 @@ export function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Auto-sync for notifications
+  useAutoSync({
+    onDataUpdate: fetchNotifications,
+    interval: 15000, // 15 seconds
+    tables: ['products', 'sales']
+  });
 
   useEffect(() => {
     fetchNotifications();

@@ -25,6 +25,11 @@ interface POSMenuBarProps {
   onOpenCreditPayments: () => void;
   onOpenAdvances: () => void;
   onOpenCashCuts: () => void;
+  onOpenCashMovements: () => void;
+  onOpenRemisiones: () => void;
+  onOpenVales: () => void;
+  onOpenPrintPrices: () => void;
+  onOpenCollectOrder: () => void;
   lastOrder?: {
     id: string;
     client_name: string;
@@ -46,6 +51,11 @@ export function POSMenuBar({
   onOpenCreditPayments, 
   onOpenAdvances, 
   onOpenCashCuts,
+  onOpenCashMovements,
+  onOpenRemisiones,
+  onOpenVales,
+  onOpenPrintPrices,
+  onOpenCollectOrder,
   lastOrder 
 }: POSMenuBarProps) {
   const { user, logout } = useAuth();
@@ -118,12 +128,25 @@ export function POSMenuBar({
                   <DollarSign size={14} />
                   <span>Abonar/Pagar Ventas a Crédito</span>
                 </button>
-                <button className="w-full text-left px-2 py-1 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center space-x-2 rounded">
+                <button 
+                  onClick={onOpenCashMovements}
+                  className="w-full text-left px-2 py-1 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center space-x-2 rounded"
+                >
                   <Calculator size={14} />
                   <span>Movimientos de Efectivo</span>
                 </button>
+                <button 
+                  onClick={onOpenCollectOrder}
+                  className="w-full text-left px-2 py-1 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center space-x-2 rounded"
+                >
+                  <DollarSign size={14} />
+                  <span>Cobrar Pedido/Cotización</span>
+                </button>
                 <hr className="border-gray-200 my-1" />
-                <button className="w-full text-left px-2 py-1 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center space-x-2 rounded">
+                <button 
+                  onClick={onOpenPrintPrices}
+                  className="w-full text-left px-2 py-1 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center space-x-2 rounded"
+                >
                   <Printer size={14} />
                   <span>Imprimir Precios</span>
                 </button>
@@ -136,7 +159,10 @@ export function POSMenuBar({
                 Historial
               </button>
               <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                <button className="w-full text-left px-2 py-1 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center space-x-2 rounded">
+                <button 
+                  onClick={onOpenRemisiones}
+                  className="w-full text-left px-2 py-1 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center space-x-2 rounded"
+                >
                   <FileText size={14} />
                   <span>Remisiones</span>
                 </button>
@@ -151,7 +177,10 @@ export function POSMenuBar({
                   <Calculator size={14} />
                   <span>Mis Cortes de Caja</span>
                 </button>
-                <button className="w-full text-left px-2 py-1 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center space-x-2 rounded">
+                <button 
+                  onClick={onOpenVales}
+                  className="w-full text-left px-2 py-1 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center space-x-2 rounded"
+                >
                   <FileText size={14} />
                   <span>Vales por Devolución</span>
                 </button>
@@ -246,6 +275,26 @@ export function POSMenuBar({
                     <DollarSign size={16} />
                     <span>Abonar/Pagar Ventas a Crédito</span>
                   </button>
+                  <button 
+                    onClick={() => {
+                      onOpenCashMovements();
+                      setShowMobileMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-gray-700 hover:bg-blue-50 rounded flex items-center space-x-2 text-sm"
+                  >
+                    <Calculator size={16} />
+                    <span>Movimientos de Efectivo</span>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      onOpenCollectOrder();
+                      setShowMobileMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-gray-700 hover:bg-blue-50 rounded flex items-center space-x-2 text-sm"
+                  >
+                    <DollarSign size={16} />
+                    <span>Cobrar Pedido/Cotización</span>
+                  </button>
                 </div>
                 
                 {/* Historial Section */}
@@ -253,6 +302,7 @@ export function POSMenuBar({
                   <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Historial</div>
                   <button 
                     onClick={() => {
+                      onOpenRemisiones();
                       setShowMobileMenu(false);
                     }}
                     className="w-full text-left px-3 py-2 text-gray-700 hover:bg-blue-50 rounded flex items-center space-x-2 text-sm"
@@ -279,6 +329,16 @@ export function POSMenuBar({
                   >
                     <DollarSign size={16} />
                     <span>Anticipos</span>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      onOpenVales();
+                      setShowMobileMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-gray-700 hover:bg-blue-50 rounded flex items-center space-x-2 text-sm"
+                  >
+                    <FileText size={16} />
+                    <span>Vales por Devolución</span>
                   </button>
                 </div>
                 

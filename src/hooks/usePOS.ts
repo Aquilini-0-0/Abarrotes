@@ -107,6 +107,11 @@ export function usePOS() {
   const addItemToOrder = (product: POSProduct, quantity: number, priceLevel: 1 | 2 | 3 | 4 | 5) => {
     if (!currentOrder) return;
 
+    // Validate stock
+    if (quantity > product.stock) {
+      throw new Error(`Stock insuficiente. Disponible: ${product.stock} unidades`);
+    }
+
     const unitPrice = product.prices[`price${priceLevel}`];
     const existingItemIndex = currentOrder.items.findIndex(
       item => item.product_id === product.id && item.price_level === priceLevel
@@ -167,6 +172,15 @@ export function usePOS() {
   const updateItemQuantity = (itemId: string, newQuantity: number) => {
     if (!currentOrder || newQuantity <= 0) return;
 
+    // Find the item and product to validate stock
+    const item = currentOrder.items.find(i => i.id === itemId);
+    if (item) {
+      const product = products.find(p => p.id === item.product_id);
+      if (product && newQuantity > product.stock) {
+        throw new Error(`Stock insuficiente. Disponible: ${product.stock} unidades`);
+      }
+    }
+
     const updatedItems = currentOrder.items.map(item => 
       item.id === itemId 
         ? { ...item, quantity: newQuantity, total: newQuantity * item.unit_price }
@@ -200,6 +214,14 @@ export function usePOS() {
   // Save order to database
   const saveOrder = async (order: POSOrder) => {
     try {
+      // Validate stock for all items before saving
+      for (const item of order.items) {
+        const product = products.find(p => p.id === item.product_id);
+        if (product && item.quantity > product.stock) {
+          throw new Error(`Stock insuficiente para ${product.name}. Disponible: ${product.stock} unidades`);
+        }
+      }
+
       // Create sale record
       const { data: saleData, error: saleError } = await supabase
         .from('sales')
@@ -233,32 +255,35 @@ export function usePOS() {
       if (itemsError) throw itemsError;
 
       // Create inventory movements and update stock
-      for (const item of order.items) {
-        // Create inventory movement
-        await supabase
-          .from('inventory_movements')
-          .insert({
-            product_id: item.product_id,
-            product_name: item.product_name,
-            type: 'salida',
-            quantity: item.quantity,
-            date: order.date,
-            reference: `POS-${saleData.id.slice(-6)}`,
-            user_name: user?.name || 'POS User'
-          });
-
-        // Update product stock
-        const { data: product } = await supabase
-          .from('products')
-          .select('stock')
-          .eq('id', item.product_id)
-          .single();
-
-        if (product) {
+      // Only update stock if order is paid, not for saved/draft orders
+      if (order.status === 'paid') {
+        for (const item of order.items) {
+          // Create inventory movement
           await supabase
+            .from('inventory_movements')
+            .insert({
+              product_id: item.product_id,
+              product_name: item.product_name,
+              type: 'salida',
+              quantity: item.quantity,
+              date: order.date,
+              reference: `POS-${saleData.id.slice(-6)}`,
+              user_name: user?.name || 'POS User'
+            });
+
+          // Update product stock immediately
+          const { data: product } = await supabase
             .from('products')
-            .update({ stock: Math.max(0, product.stock - item.quantity) })
-            .eq('id', item.product_id);
+            .select('stock')
+            .eq('id', item.product_id)
+            .single();
+
+          if (product) {
+            await supabase
+              .from('products')
+              .update({ stock: Math.max(0, product.stock - item.quantity) })
+              .eq('id', item.product_id);
+          }
         }
       }
 

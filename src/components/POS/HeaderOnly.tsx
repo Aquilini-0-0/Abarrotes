@@ -5,13 +5,12 @@ import { supabase } from '../../lib/supabase';
 export function HeaderOnly() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lastOrder, setLastOrder] = useState<any>(null);
+  const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Fetch orders directly without authentication dependency
   const fetchOrders = async () => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('sales')
         .select(`
@@ -25,42 +24,34 @@ export function HeaderOnly() {
             total
           )
         `)
+        .in('status', ['pending', 'draft']) // Only show unpaid orders
         .order('created_at', { ascending: false })
-        .limit(1);
+        .limit(10); // Show up to 10 pending orders
 
       if (error) {
         console.error('Error fetching orders:', error);
-        // If there's an error, show a placeholder
         setOrders([]);
-        setLastOrder(null);
+        setPendingOrders([]);
         return;
       }
 
       setOrders(data || []);
       
-      if (data && data.length > 0) {
-        const latest = data[0];
-        const products = latest.sale_items?.map((item: any) => ({
-          name: item.product_name,
-          quantity: item.quantity
-        })) || [];
-        
-        setLastOrder({
-          id: latest.id,
-          client_name: latest.client_name,
-          total: latest.total,
-          items_count: latest.sale_items?.length || 0,
-          products: products,
-          date: latest.created_at,
-          status: latest.status
-        });
-      } else {
-        setLastOrder(null);
-      }
+      const formattedOrders = (data || []).map((order: any) => ({
+        id: order.id,
+        client_name: order.client_name,
+        total: order.total,
+        items_count: order.sale_items?.length || 0,
+        date: order.created_at,
+        status: order.status,
+        folio: order.id.slice(-6).toUpperCase()
+      }));
+      
+      setPendingOrders(formattedOrders);
     } catch (err) {
       console.error('Error in fetchOrders:', err);
       setOrders([]);
-      setLastOrder(null);
+      setPendingOrders([]);
     } finally {
       setLoading(false);
     }
@@ -79,8 +70,10 @@ export function HeaderOnly() {
   useEffect(() => {
     fetchOrders();
     
-    // Refresh every 5 seconds to get real-time updates
-    const refreshInterval = setInterval(fetchOrders, 5000);
+    // Refresh every 3 seconds for real-time updates without flashing
+    const refreshInterval = setInterval(() => {
+      fetchOrders();
+    }, 3000);
     
     return () => clearInterval(refreshInterval);
   }, []);
@@ -96,16 +89,16 @@ export function HeaderOnly() {
     );
   }
 
-  if (!lastOrder) {
+  if (pendingOrders.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center bg-white rounded-3xl shadow-2xl p-16 border border-gray-200">
           <Package size={120} className="mx-auto text-gray-300 mb-8" />
           <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            No hay pedidos recientes
+            No hay pedidos pendientes
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Esperando el primer pedido del día...
+            Todos los pedidos han sido completados
           </p>
           <div className="text-lg text-gray-500">
             {currentTime.toLocaleString('es-MX', {
@@ -123,31 +116,13 @@ export function HeaderOnly() {
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid': return 'text-green-600 bg-green-100';
-      case 'pending': return 'text-yellow-600 bg-yellow-100';
-      case 'draft': return 'text-blue-600 bg-blue-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'paid': return 'PAGADO';
-      case 'pending': return 'PENDIENTE';
-      case 'draft': return 'GUARDADO';
-      default: return status.toUpperCase();
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 flex items-center justify-center p-8">
       <div className="w-full max-w-7xl">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-6xl font-bold text-gray-800 mb-4">
-            DURAN - PUNTO DE VENTA
+            DURAN - PEDIDOS PENDIENTES
           </h1>
           <div className="text-2xl text-gray-600 font-medium">
             {currentTime.toLocaleString('es-MX', {
@@ -162,124 +137,84 @@ export function HeaderOnly() {
           </div>
         </div>
 
-        {/* Main Card */}
+        {/* Orders Board */}
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
           {/* Card Header */}
           <div className="bg-gradient-to-r from-orange-400 via-red-500 to-red-400 p-8">
             <div className="flex items-center justify-center space-x-4">
               <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
-              <h2 className="text-white font-bold text-4xl">ÚLTIMO PEDIDO REALIZADO</h2>
+              <h2 className="text-white font-bold text-4xl">PEDIDOS PENDIENTES DE PAGO</h2>
               <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
             </div>
           </div>
 
-          {/* Card Content */}
-          <div className="p-12">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-              
-              {/* Left Column - Order Info */}
-              <div className="space-y-8">
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-4">
-                    <FileText size={48} className="text-orange-600" />
-                  </div>
-                  <div className="text-gray-600 text-xl font-medium mb-2">FOLIO</div>
-                  <div className="text-4xl font-bold text-orange-600 font-mono">
-                    #{lastOrder.id.slice(-6).toUpperCase()}
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-4">
-                    <User size={48} className="text-blue-600" />
-                  </div>
-                  <div className="text-gray-600 text-xl font-medium mb-2">CLIENTE</div>
-                  <div className="text-3xl font-bold text-gray-800">
-                    {lastOrder.client_name}
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-4">
-                    <Clock size={48} className="text-purple-600" />
-                  </div>
-                  <div className="text-gray-600 text-xl font-medium mb-2">HORA</div>
-                  <div className="text-2xl font-bold text-gray-800">
-                    {new Date(lastOrder.date).toLocaleTimeString('es-MX', { 
-                      hour: '2-digit', 
-                      minute: '2-digit',
-                      second: '2-digit'
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Center Column - Products */}
-              <div className="space-y-6">
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-6">
-                    <ShoppingCart size={48} className="text-green-600" />
-                  </div>
-                  <div className="text-gray-600 text-xl font-medium mb-4">PRODUCTOS VENDIDOS</div>
-                  <div className="text-3xl font-bold text-green-600 mb-8">
-                    {lastOrder.items_count} ARTÍCULOS
-                  </div>
-                </div>
-
-                <div className="space-y-4 max-h-80 overflow-y-auto">
-                  {lastOrder.products && lastOrder.products.map((product: any, index: number) => (
-                    <div 
-                      key={index} 
-                      className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-2xl p-4 shadow-sm"
+          {/* Orders Table */}
+          <div className="p-8">
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-orange-100 to-red-100">
+                  <tr>
+                    <th className="text-left p-6 text-gray-700 font-bold text-xl">CLIENTE</th>
+                    <th className="text-center p-6 text-gray-700 font-bold text-xl">HORA</th>
+                    <th className="text-center p-6 text-gray-700 font-bold text-xl">FOLIO</th>
+                    <th className="text-right p-6 text-gray-700 font-bold text-xl">TOTAL</th>
+                    <th className="text-center p-6 text-gray-700 font-bold text-xl">ESTADO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingOrders.map((order, index) => (
+                    <tr
+                      key={order.id}
+                      className={`border-b border-gray-200 transition-all duration-300 ${
+                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                      } hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-lg font-bold text-gray-800 truncate">
-                            {product.name}
-                          </div>
+                      <td className="p-6">
+                        <div className="text-2xl font-bold text-gray-800">{order.client_name}</div>
+                        <div className="text-sm text-gray-500">{order.items_count} productos</div>
+                      </td>
+                      <td className="p-6 text-center">
+                        <div className="text-2xl font-bold text-blue-600 font-mono">
+                          {new Date(order.date).toLocaleTimeString('es-MX', { 
+                            hour: '2-digit', 
+                            minute: '2-digit'
+                          })}
                         </div>
-                        <div className="ml-4 flex-shrink-0">
-                          <span className="bg-orange-500 text-white px-4 py-2 rounded-full font-bold text-lg">
-                            {product.quantity}
-                          </span>
+                      </td>
+                      <td className="p-6 text-center">
+                        <div className="text-2xl font-bold text-orange-600 font-mono">
+                          #{order.folio}
                         </div>
-                      </div>
-                    </div>
+                      </td>
+                      <td className="p-6 text-right">
+                        <div className="text-3xl font-bold text-green-600 font-mono">
+                          ${order.total.toLocaleString('es-MX')}
+                        </div>
+                      </td>
+                      <td className="p-6 text-center">
+                        <div className={`inline-flex items-center px-6 py-3 rounded-2xl text-lg font-bold ${
+                          order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          <div className="w-3 h-3 rounded-full bg-current mr-3 animate-pulse"></div>
+                          {order.status === 'pending' ? 'PENDIENTE' : 'GUARDADO'}
+                        </div>
+                      </td>
+                    </tr>
                   ))}
+                </tbody>
+              </table>
+              
+              {pendingOrders.length === 0 && (
+                <div className="p-12 text-center">
+                  <Package size={80} className="mx-auto text-gray-300 mb-6" />
+                  <h3 className="text-2xl font-bold text-gray-600 mb-2">
+                    No hay pedidos pendientes
+                  </h3>
+                  <p className="text-gray-500">
+                    Todos los pedidos han sido completados
+                  </p>
                 </div>
-              </div>
-
-              {/* Right Column - Total & Status */}
-              <div className="space-y-8">
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-4">
-                    <DollarSign size={64} className="text-green-600" />
-                  </div>
-                  <div className="text-gray-600 text-xl font-medium mb-2">TOTAL</div>
-                  <div className="text-6xl font-bold text-green-600 font-mono">
-                    ${lastOrder.total.toLocaleString('es-MX')}
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <div className="text-gray-600 text-xl font-medium mb-4">ESTADO</div>
-                  <div className={`inline-flex items-center px-8 py-4 rounded-2xl text-2xl font-bold ${getStatusColor(lastOrder.status)}`}>
-                    <div className="w-4 h-4 rounded-full bg-current mr-4 animate-pulse"></div>
-                    {getStatusText(lastOrder.status)}
-                  </div>
-                </div>
-
-                <div className="text-center bg-gray-50 rounded-2xl p-6">
-                  <div className="text-gray-600 text-lg font-medium mb-2">FECHA</div>
-                  <div className="text-xl font-bold text-gray-800">
-                    {new Date(lastOrder.date).toLocaleDateString('es-MX', {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long'
-                    })}
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -287,7 +222,7 @@ export function HeaderOnly() {
         {/* Footer */}
         <div className="text-center mt-8">
           <div className="text-gray-500 text-lg">
-            Actualización automática en tiempo real
+            Actualización automática cada 3 segundos • {pendingOrders.length} pedidos pendientes
           </div>
         </div>
       </div>

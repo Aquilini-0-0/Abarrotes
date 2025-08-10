@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { User } from '../types';
 import { supabase, signInWithEmail, signOut, getCurrentUser } from '../lib/supabase';
+import { useAutoSync } from '../hooks/useAutoSync';
 import { Database } from '../types/database';
 
 interface AuthContextType {
@@ -17,6 +18,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Auto-sync for user-related data
+  useAutoSync({
+    onDataUpdate: () => {
+      // Refresh user data if needed
+      console.log('User data sync triggered');
+    },
+    interval: 10000, // 10 seconds
+    tables: ['users']
+  });
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {

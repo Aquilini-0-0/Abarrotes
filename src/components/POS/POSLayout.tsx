@@ -10,6 +10,7 @@ import { POSCreditPaymentsModal } from './POSCreditPaymentsModal';
 import { POSAdvancesModal } from './POSAdvancesModal';
 import { POSCashCutsModal } from './POSCashCutsModal';
 import { usePOS } from '../../hooks/usePOS';
+import { useAutoSync } from '../../hooks/useAutoSync';
 import { POSProduct, POSClient } from '../../types/pos';
 
 export function POSLayout() {
@@ -44,6 +45,13 @@ export function POSLayout() {
   const [searchTerm, setSearchTerm] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [lastOrder, setLastOrder] = useState<any>(null);
+
+  // Auto-sync for real-time updates
+  useAutoSync({
+    onDataUpdate: refetch,
+    interval: 8000, // 8 seconds
+    tables: ['sales', 'products', 'clients', 'cash_registers']
+  });
 
   // Initialize order on component mount
   useEffect(() => {
@@ -96,15 +104,14 @@ export function POSLayout() {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentOrder]);
-
-  const handleAddProduct = (product: POSProduct) => {
-    if (quantity > 0) {
-      addItemToOrder(product, quantity, selectedPriceLevel);
-      setQuantity(1);
-      setSearchTerm('');
+    try {
+      if (quantity > 0) {
+        addItemToOrder(product, quantity, selectedPriceLevel);
+        setQuantity(1);
+        setSearchTerm('');
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Error al agregar producto');
     }
   };
 
