@@ -223,15 +223,7 @@ export function POSProductPanel({
                       <div className={`text-[8px] sm:text-xs md:hidden ${isSelected ? 'text-orange-100' : 'text-gray-500'}`}>
                         {product.unit}
                       </div>
-                        <div className="flex items-center space-x-1 mt-1">
-                          <button
-                            onClick={(e) => handleEditClick(product, e)}
-                            className={`p-1 rounded ${isSelected ? 'text-white hover:bg-white hover:text-orange-600' : 'text-gray-400 hover:text-blue-600'} transition-colors`}
-                            title="Editar cantidad/precio"
-                          >
-                            <Edit size={12} />
-                          </button>
-                        </div>
+
                     </td>
                     <td className="p-1 sm:p-2 lg:p-3 text-right">
 <span
