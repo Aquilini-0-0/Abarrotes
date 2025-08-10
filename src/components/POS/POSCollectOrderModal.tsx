@@ -93,7 +93,6 @@ CÓDIGO DE BARRAS: ${selectedOrder.id}
       printWindow.document.close();
       setTimeout(() => {
         printWindow.print();
-        printWindow.close();
       }, 250);
     }
 
