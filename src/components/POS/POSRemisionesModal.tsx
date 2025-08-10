@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileText, Search, Eye, Download } from 'lucide-react';
+import { X, FileText, Search, Eye, Download, DollarSign } from 'lucide-react';
 
 interface Remision {
   id: string;
