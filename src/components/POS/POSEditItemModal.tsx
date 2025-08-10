@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Edit, Lock, AlertTriangle, Package, DollarSign, Calculator, TrendingUp, Info } from 'lucide-react';
+import { X, Edit, Lock, AlertTriangle, Package, DollarSign, Calculator, TrendingUp, Info, Scale } from 'lucide-react';
 import { POSProduct, POSOrderItem, TaraOption } from '../../types/pos';
 
 interface POSEditItemModalProps {
