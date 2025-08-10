@@ -82,6 +82,7 @@ export function POSLayout() {
       });
     }
   }, [orders]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -104,6 +105,11 @@ export function POSLayout() {
       }
     };
 
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [currentOrder]);
+
+  const handleAddProduct = (product: POSProduct) => {
     try {
       if (quantity > 0) {
         addItemToOrder(product, quantity, selectedPriceLevel);
