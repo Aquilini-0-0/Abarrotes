@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
-import { POSProductPanel } from '../../components/Almacen/ProductosForm';
+import { ProductForm } from '../../components/Almacen/ProductosForm';
 import { useProducts } from '../../hooks/useProducts';
 import { Product } from '../../types';
 import { Plus, Edit, Trash2, Eye, X } from 'lucide-react';
@@ -168,14 +168,13 @@ export function Inventario() {
       </Card>
 
       {showForm && (
-        <POSProductPanel
+        <ProductForm
           product={editingProduct}
           onSave={handleSaveProduct}
-          onClose={() => {
+          onCancel={() => {
             setShowForm(false);
             setEditingProduct(undefined);
           }}
-          products={products}
         />
       )}
 
