@@ -37,9 +37,9 @@ export function POSProductPanel({
   const tableRef = useRef<HTMLDivElement>(null);
 
   const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.line.toLowerCase().includes(searchTerm.toLowerCase())
+    (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.code || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.line || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Keyboard navigation
