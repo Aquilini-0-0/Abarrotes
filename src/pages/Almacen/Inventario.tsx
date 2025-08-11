@@ -168,13 +168,14 @@ export function Inventario() {
       </Card>
 
       {showForm && (
-        <ProductForm
+        <POSProductPanel
           product={editingProduct}
           onSave={handleSaveProduct}
-          onCancel={() => {
+          onClose={() => {
             setShowForm(false);
             setEditingProduct(undefined);
           }}
+          products={products}
         />
       )}
 
