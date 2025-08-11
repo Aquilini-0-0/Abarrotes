@@ -29,20 +29,26 @@ export function POSProductPanel({
   onProductSelect,
   onEditProduct,
   onGetEffectivePrice
-  ]);
-
 }: POSProductPanelProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<POSProduct | null>(null);
+  const [showProductSuggestions, setShowProductSuggestions] = useState(false);
+  const [formData, setFormData] = useState({ name: '' });
   const searchInputRef = useRef<HTMLInputElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
+
+  const productSuggestions: string[] = [];
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.line.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   // Keyboard navigation
   useEffect(() => {
@@ -77,20 +83,20 @@ export function POSProductPanel({
     if (tableRef.current) {
       const selectedRow = tableRef.current.querySelector(`[data-index="${selectedIndex}"]`);
       if (selectedRow) {
-  const filteredSuggestions = productSuggestions.filter(suggestion =>
-    suggestion.toLowerCase().includes(formData.name.toLowerCase()) && 
-    suggestion.toLowerCase() !== formData.name.toLowerCase()
-  );
+        const filteredSuggestions = productSuggestions.filter(suggestion =>
+          suggestion.toLowerCase().includes(formData.name.toLowerCase()) && 
+          suggestion.toLowerCase() !== formData.name.toLowerCase()
+        );
 
-  const handleProductNameSelect = (suggestion: string) => {
-    handleChange('name', suggestion);
-    setShowProductSuggestions(false);
-    
-    // Auto-generate code based on product name
-    const words = suggestion.split(' ');
-    const code = words.map(word => word.substring(0, 3).toUpperCase()).join('');
-    handleChange('code', code);
-  };
+        const handleProductNameSelect = (suggestion: string) => {
+          handleChange('name', suggestion);
+          setShowProductSuggestions(false);
+          
+          // Auto-generate code based on product name
+          const words = suggestion.split(' ');
+          const code = words.map(word => word.substring(0, 3).toUpperCase()).join('');
+          handleChange('code', code);
+        };
         selectedRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }
@@ -144,48 +150,6 @@ export function POSProductPanel({
             />
           </div>
 
-                
-                {/* Autocomplete Dropdown */}
-                {showProductSuggestions && formData.name && filteredSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {filteredSuggestions.slice(0, 8).map((suggestion, index) => (
-                      <div
-                        key={index}
-                        onClick={() => handleProductNameSelect(suggestion)}
-                        className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium text-gray-900">{suggestion}</div>
-                            <div className="text-sm text-gray-500">
-                              Código sugerido: {suggestion.split(' ').map(word => word.substring(0, 3).toUpperCase()).join('')}
-                            </div>
-                          </div>
-                          <Check className="h-4 w-4 text-blue-600 opacity-0 group-hover:opacity-100" />
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {/* Add custom option */}
-                    <div
-                      onClick={() => {
-                        setShowProductSuggestions(false);
-                        // Keep current name as is
-                      }}
-                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-t border-gray-200 bg-gray-25"
-                    >
-                      <div className="flex items-center">
-                        <div className="font-medium text-blue-600">
-                          Usar: "{formData.name}"
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Crear producto con nombre personalizado
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
           {/* Search */}
           <div className="col-span-6 sm:col-span-6 lg:col-span-6">
             <label className="block text-orange-50 text-[10px] sm:text-xs mb-0.5 sm:mb-1 font-medium">
@@ -199,13 +163,71 @@ export function POSProductPanel({
                 id="product-search"
                 type="text"
                 value={searchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
+                onChange={(e) => {
+                  onSearchChange(e.target.value);
+                  handleChange('name', e.target.value);
+                  setShowProductSuggestions(true);
+                }}
+                onFocus={() => setShowProductSuggestions(true)}
+                onBlur={() => {
+                  // Delay hiding to allow click on suggestions
+                  setTimeout(() => setShowProductSuggestions(false), 200);
+                }}
                 className="w-full bg-white border border-orange-300 text-gray-900 pl-5 sm:pl-7 lg:pl-10 pr-1 sm:pr-2 lg:pr-3 py-0.5 sm:py-1 lg:py-2 rounded-lg text-[10px] sm:text-xs lg:text-sm focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 placeholder="Buscar producto..."
               />
               <p className="text-xs text-gray-500 mt-1">
                 Se genera automáticamente al seleccionar un producto sugerido
               </p>
+              
+              {/* Autocomplete Dropdown */}
+              {showProductSuggestions && formData.name && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {productSuggestions.slice(0, 8).map((suggestion, index) => (
+                    <div
+                      key={index}
+                      onClick={() => {
+                        handleChange('name', suggestion);
+                        setShowProductSuggestions(false);
+                        
+                        // Auto-generate code based on product name
+                        const words = suggestion.split(' ');
+                        const code = words.map(word => word.substring(0, 3).toUpperCase()).join('');
+                        handleChange('code', code);
+                      }}
+                      className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-gray-900">{suggestion}</div>
+                          <div className="text-sm text-gray-500">
+                            Código sugerido: {suggestion.split(' ').map(word => word.substring(0, 3).toUpperCase()).join('')}
+                          </div>
+                        </div>
+                        <Check className="h-4 w-4 text-blue-600 opacity-0 group-hover:opacity-100" />
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Add custom option */}
+                  <div
+                    onClick={() => {
+                      setShowProductSuggestions(false);
+                      // Keep current name as is
+                    }}
+                    className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-t border-gray-200 bg-gray-25"
+                  >
+                    <div className="flex items-center">
+                      <div className="font-medium text-blue-600">
+                        Usar: "{formData.name}"
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Crear producto con nombre personalizado
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -269,27 +291,19 @@ export function POSProductPanel({
                         
                     </td>
                     <td className="p-1 sm:p-2 lg:p-3 text-right">
-<td className="p-1 sm:p-2 lg:p-3 text-right">
-  <span
-    className={`inline-flex items-center justify-center w-10 sm:w-12 lg:w-14 h-6 sm:h-7 lg:h-8 
-                rounded-full text-xs sm:text-sm font-semibold shadow 
-                ${
-                  isLowStock
-                    ? 'bg-red-500 text-white'
-                    : product.stock > 50
-                      ? 'bg-green-500 text-white'
-                      : 'bg-yellow-400 text-gray-800'
-                }`}
-  >
-    {product.stock}
-  </span>
-</td>
-
-
-
-
-
-
+                      <span
+                        className={`inline-flex items-center justify-center w-10 sm:w-12 lg:w-14 h-6 sm:h-7 lg:h-8 
+                                    rounded-full text-xs sm:text-sm font-semibold shadow 
+                                    ${
+                                      isLowStock
+                                        ? 'bg-red-500 text-white'
+                                        : product.stock > 50
+                                          ? 'bg-green-500 text-white'
+                                          : 'bg-yellow-400 text-gray-800'
+                                    }`}
+                      >
+                        {product.stock}
+                      </span>
                     </td>
                     <td className="p-1 sm:p-2 lg:p-3 text-right">
                       <span className={`font-mono font-bold ${
@@ -337,19 +351,9 @@ export function POSProductPanel({
         <POSEditItemModal
           item={{
             id: 'temp',
-              <div className="relative">
             product_id: editingProduct.id,
             product_name: editingProduct.name,
             product_code: editingProduct.code,
-                  onChange={(e) => {
-                    handleChange('name', e.target.value);
-                    setShowProductSuggestions(true);
-                  }}
-                  onFocus={() => setShowProductSuggestions(true)}
-                  onBlur={() => {
-                    // Delay hiding to allow click on suggestions
-                    setTimeout(() => setShowProductSuggestions(false), 200);
-                  }}
             price_level: selectedPriceLevel,
             unit_price: editingProduct.prices[`price${selectedPriceLevel}`],
             total: quantity * editingProduct.prices[`price${selectedPriceLevel}`]
