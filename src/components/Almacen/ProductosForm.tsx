@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Package, Edit, ChevronDown, Check } from 'lucide-react';
 import { POSProduct } from '../../types/pos';
-import { POSEditItemModal } from './POSEditItemModal';
+import { POSEditItemModal } from '../POS/POSEditItemModal';
 
 interface POSProductPanelProps {
   products: POSProduct[];

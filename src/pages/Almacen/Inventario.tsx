@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
-import { ProductForm } from '../../components/Almacen/ProductosForm';
+import { POSProductPanel } from '../../components/Almacen/ProductosForm';
 import { useProducts } from '../../hooks/useProducts';
 import { Product } from '../../types';
 import { Plus, Edit, Trash2, Eye, X } from 'lucide-react';
