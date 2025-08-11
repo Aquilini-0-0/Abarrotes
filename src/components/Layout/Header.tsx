@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Bell, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAutoSync } from '../../hooks/useAutoSync';
@@ -20,18 +20,7 @@ export function Header() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Auto-sync for notifications
-  useAutoSync({
-    onDataUpdate: fetchNotifications,
-    interval: 15000, // 15 seconds
-    tables: ['products', 'sales']
-  });
-
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     setLoading(true);
     try {
       // Obtener productos con stock bajo
@@ -103,7 +92,18 @@ export function Header() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Auto-sync for notifications
+  useAutoSync({
+    onDataUpdate: fetchNotifications,
+    interval: 15000, // 15 seconds
+    tables: ['products', 'sales']
+  });
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   const markAsRead = (notificationId: string) => {
     setNotifications(prev => prev.map(notif => 

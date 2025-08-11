@@ -132,17 +132,22 @@ export function useOrderLocks() {
     if (!user) return;
 
     try {
-      const { error } = await supabase
-        .from('order_locks')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('session_id', sessionId);
+      // Only attempt cleanup if we have a valid session
+      if (user.id && sessionId) {
+        const { error } = await supabase
+          .from('order_locks')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('session_id', sessionId);
 
-      if (error) throw error;
+        if (error) {
+          console.warn('Could not cleanup locks (non-critical):', error.message);
+        }
+      }
     } catch (err) {
       // Silently handle cleanup errors to prevent breaking the app
       // This is not critical functionality and shouldn't block the user
-      console.warn('Could not cleanup locks (non-critical):', err);
+      console.warn('Could not cleanup locks (non-critical):', err instanceof Error ? err.message : 'Unknown error');
     }
   };
 
