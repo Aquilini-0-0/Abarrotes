@@ -1,10 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
+interface TableConfig {
+  name: string;
+  timestampColumn?: string;
+}
+
 interface AutoSyncOptions {
   onDataUpdate?: () => void;
   interval?: number; // milliseconds
-  tables?: string[];
+  tables?: (string | TableConfig)[];
 }
 
 export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: AutoSyncOptions) {
@@ -16,19 +21,22 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
       try {
         let hasUpdates = false;
 
-        for (const table of tables) {
+        for (const tableConfig of tables) {
+          const tableName = typeof tableConfig === 'string' ? tableConfig : tableConfig.name;
+          const timestampColumn = typeof tableConfig === 'string' ? 'updated_at' : (tableConfig.timestampColumn || 'updated_at');
+          
           const { data, error } = await supabase
-            .from(table)
-            .select('updated_at')
-            .order('updated_at', { ascending: false })
+            .from(tableName)
+            .select(timestampColumn)
+            .order(timestampColumn, { ascending: false })
             .limit(1)
             .maybeSingle();
 
           if (error) continue;
 
-          const lastUpdate = data?.updated_at;
-          if (lastUpdate && lastUpdate !== lastUpdateRef.current[table]) {
-            lastUpdateRef.current[table] = lastUpdate;
+          const lastUpdate = data?.[timestampColumn];
+          if (lastUpdate && lastUpdate !== lastUpdateRef.current[tableName]) {
+            lastUpdateRef.current[tableName] = lastUpdate;
             hasUpdates = true;
           }
         }
@@ -58,13 +66,15 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
   useEffect(() => {
     const subscriptions: any[] = [];
 
-    tables.forEach(table => {
+    tables.forEach(tableConfig => {
+      const tableName = typeof tableConfig === 'string' ? tableConfig : tableConfig.name;
+      
       const subscription = supabase
-        .channel(`${table}_changes`)
+        .channel(`${tableName}_changes`)
         .on('postgres_changes', 
-          { event: '*', schema: 'public', table }, 
+          { event: '*', schema: 'public', table: tableName }, 
           (payload) => {
-            console.log(`Real-time update in ${table}:`, payload);
+            console.log(`Real-time update in ${tableName}:`, payload);
             if (onDataUpdate) {
               // Debounce updates to avoid excessive re-renders
               setTimeout(onDataUpdate, 100);

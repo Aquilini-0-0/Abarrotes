@@ -17,7 +17,10 @@ export function HeaderOnly() {
       setLastUpdate(new Date().toLocaleTimeString('es-MX'));
     },
     interval: 2000, // Update every 2 seconds for real-time feel
-    tables: ['sales', 'sale_items']
+    tables: [
+      'sales',
+      { name: 'sale_items', timestampColumn: 'created_at' }
+    ]
   });
 
   // Fetch orders directly without authentication dependency
