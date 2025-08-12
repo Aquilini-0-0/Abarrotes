@@ -4,7 +4,7 @@ import { DataTable } from '../../components/Common/DataTable';
 import { useCFDI, CFDI as CFDIInterface } from '../../hooks/useCFDI';
 import { useClients } from '../../hooks/useClients';
 import { useProducts } from '../../hooks/useProducts';
-import { Plus, FileText, Download, Eye, CheckCircle, Edit } from 'lucide-react';
+import { Plus, FileText, Download, Eye, CheckCircle, Edit, X, Trash2 } from 'lucide-react';
 
 export function CFDI() {
   const { facturas, loading, error, createCFDI, timbrarFactura, cancelarFactura, updateCFDI } = useCFDI();

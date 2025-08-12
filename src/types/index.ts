@@ -16,6 +16,11 @@ export interface Product {
   stock: number;
   cost: number;
   price: number;
+  price1?: number;
+  price2?: number;
+  price3?: number;
+  price4?: number;
+  price5?: number;
   status: 'active' | 'disabled';
 }
 

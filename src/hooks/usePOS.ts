@@ -282,10 +282,14 @@ export function usePOS() {
         const wasFullyPaid = currentOrder.status === 'paid';
         const newTotal = order.total;
         
-        // Determine new status based on payment state and total changes
-        let newStatus = order.payment_method === 'credit' ? 'pending' : 'paid';
+        // Determine new status based on payment method
+        let newStatus: 'pending' | 'paid' = 'paid'; // Default to paid
+        if (order.payment_method === 'credit' || order.is_credit) {
+          newStatus = 'pending';
+        }
+        
         let newAmountPaid = amountPaid;
-        let newRemainingBalance = order.payment_method === 'credit' ? newTotal : 0;
+        let newRemainingBalance = (order.payment_method === 'credit' || order.is_credit) ? newTotal : 0;
         
         if (wasFullyPaid) {
           if (newTotal === previousTotal) {
@@ -295,7 +299,7 @@ export function usePOS() {
             newRemainingBalance = 0;
           } else if (newTotal > previousTotal) {
             // Case B: Total increased
-            if (order.payment_method === 'credit') {
+            if (order.payment_method === 'credit' || order.is_credit) {
               newStatus = 'pending';
               newRemainingBalance = newTotal - amountPaid;
             } else {
@@ -311,7 +315,7 @@ export function usePOS() {
           }
         } else {
           // Was not fully paid
-          if (order.payment_method === 'credit') {
+          if (order.payment_method === 'credit' || order.is_credit) {
             newStatus = 'pending';
             newRemainingBalance = newTotal - amountPaid;
           } else {
@@ -349,10 +353,14 @@ export function usePOS() {
 
         if (deleteItemsError) throw deleteItemsError;
       } else {
-        // Determine initial status based on payment method
-        let initialStatus = order.payment_method === 'credit' ? 'pending' : 'paid';
-        let initialAmountPaid = order.payment_method === 'credit' ? 0 : order.total;
-        let initialRemainingBalance = order.payment_method === 'credit' ? order.total : 0;
+        // Determine initial status based on payment method and credit flag
+        let initialStatus: 'pending' | 'paid' = 'paid'; // Default to paid
+        if (order.payment_method === 'credit' || order.is_credit) {
+          initialStatus = 'pending';
+        }
+        
+        let initialAmountPaid = (order.payment_method === 'credit' || order.is_credit) ? 0 : order.total;
+        let initialRemainingBalance = (order.payment_method === 'credit' || order.is_credit) ? order.total : 0;
         
         // Create new sale record
         const { data: newSale, error: saleError } = await supabase

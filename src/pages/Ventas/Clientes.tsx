@@ -427,7 +427,7 @@ export function Clientes() {
             <div className="space-y-3">
               <button 
                 onClick={() => {
-                  // Generate client account status PDF
+                  // Generate and download client account status PDF
                   const htmlContent = `
                     <!DOCTYPE html>
                     <html>
@@ -438,10 +438,13 @@ export function Clientes() {
                         body { font-family: Arial, sans-serif; margin: 20px; }
                         .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3B82F6; padding-bottom: 15px; }
                         .title { font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
+                        .summary { background-color: #EFF6FF; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
                         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
                         th { background-color: #3B82F6; color: white; padding: 12px 8px; text-align: left; font-weight: bold; }
                         td { padding: 8px; border-bottom: 1px solid #E5E7EB; }
                         tr:nth-child(even) { background-color: #F9FAFB; }
+                        .total { font-weight: bold; color: #059669; }
+                        .debt { font-weight: bold; color: #DC2626; }
                       </style>
                     </head>
                     <body>
@@ -449,11 +452,21 @@ export function Clientes() {
                         <div class="title">ESTADO DE CUENTA DE CLIENTES</div>
                         <div>Generado el ${new Date().toLocaleString('es-MX')}</div>
                       </div>
+                      
+                      <div class="summary">
+                        <strong>Resumen:</strong><br>
+                        • Total clientes: ${clients.length}<br>
+                        • Total límite crédito: $${totalCredito.toLocaleString('es-MX')}<br>
+                        • Total saldo pendiente: $${totalSaldo.toLocaleString('es-MX')}<br>
+                        • Crédito disponible: $${(totalCredito - totalSaldo).toLocaleString('es-MX')}
+                      </div>
+                      
                       <table>
                         <thead>
                           <tr>
                             <th>Cliente</th>
                             <th>RFC</th>
+                            <th>Zona</th>
                             <th>Límite Crédito</th>
                             <th>Saldo Actual</th>
                             <th>Crédito Disponible</th>
@@ -464,13 +477,19 @@ export function Clientes() {
                             <tr>
                               <td>${client.name}</td>
                               <td>${client.rfc}</td>
-                              <td>$${client.credit_limit.toLocaleString('es-MX')}</td>
-                              <td>$${client.balance.toLocaleString('es-MX')}</td>
-                              <td>$${(client.credit_limit - client.balance).toLocaleString('es-MX')}</td>
+                              <td>${client.zone}</td>
+                              <td class="total">$${client.credit_limit.toLocaleString('es-MX')}</td>
+                              <td class="${client.balance > 0 ? 'debt' : 'total'}">$${client.balance.toLocaleString('es-MX')}</td>
+                              <td class="total">$${(client.credit_limit - client.balance).toLocaleString('es-MX')}</td>
                             </tr>
                           `).join('')}
                         </tbody>
                       </table>
+                      
+                      <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #6B7280;">
+                        <p><strong>Sistema ERP DURAN</strong> - Estado de Cuenta de Clientes</p>
+                        <p>Documento generado automáticamente</p>
+                      </div>
                     </body>
                     </html>
                   `;
@@ -494,7 +513,7 @@ export function Clientes() {
                     }, 250);
                   }
                   
-                  alert('PDF de estado de cuenta generado exitosamente');
+                  alert('✅ PDF de estado de cuenta generado y descargado exitosamente');
                 }}
                 className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
@@ -503,7 +522,7 @@ export function Clientes() {
               </button>
               <button 
                 onClick={() => {
-                  // Generate sales report PDF by client
+                  // Generate and download sales report PDF by client
                   const htmlContent = `
                     <!DOCTYPE html>
                     <html>
@@ -514,10 +533,12 @@ export function Clientes() {
                         body { font-family: Arial, sans-serif; margin: 20px; }
                         .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3B82F6; padding-bottom: 15px; }
                         .title { font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
+                        .summary { background-color: #EFF6FF; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
                         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
                         th { background-color: #3B82F6; color: white; padding: 12px 8px; text-align: left; font-weight: bold; }
                         td { padding: 8px; border-bottom: 1px solid #E5E7EB; }
                         tr:nth-child(even) { background-color: #F9FAFB; }
+                        .total { font-weight: bold; color: #059669; }
                       </style>
                     </head>
                     <body>
@@ -525,12 +546,22 @@ export function Clientes() {
                         <div class="title">REPORTE DE VENTAS POR CLIENTE</div>
                         <div>Generado el ${new Date().toLocaleString('es-MX')}</div>
                       </div>
+                      
+                      <div class="summary">
+                        <strong>Resumen de Ventas:</strong><br>
+                        • Total clientes: ${clients.length}<br>
+                        • Clientes con ventas: ${clients.filter(c => c.balance > 0).length}<br>
+                        • Total facturado: $${totalSaldo.toLocaleString('es-MX')}
+                      </div>
+                      
                       <table>
                         <thead>
                           <tr>
                             <th>Cliente</th>
                             <th>RFC</th>
                             <th>Zona</th>
+                            <th>Teléfono</th>
+                            <th>Email</th>
                             <th>Límite Crédito</th>
                             <th>Saldo Actual</th>
                           </tr>
@@ -541,12 +572,19 @@ export function Clientes() {
                               <td>${client.name}</td>
                               <td>${client.rfc}</td>
                               <td>${client.zone}</td>
-                              <td>$${client.credit_limit.toLocaleString('es-MX')}</td>
-                              <td>$${client.balance.toLocaleString('es-MX')}</td>
+                              <td>${client.phone}</td>
+                              <td>${client.email}</td>
+                              <td class="total">$${client.credit_limit.toLocaleString('es-MX')}</td>
+                              <td class="total">$${client.balance.toLocaleString('es-MX')}</td>
                             </tr>
                           `).join('')}
                         </tbody>
                       </table>
+                      
+                      <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #6B7280;">
+                        <p><strong>Sistema ERP DURAN</strong> - Reporte de Ventas por Cliente</p>
+                        <p>Documento generado automáticamente</p>
+                      </div>
                     </body>
                     </html>
                   `;
@@ -570,14 +608,105 @@ export function Clientes() {
                     }, 250);
                   }
                   
-                  alert('PDF de reporte de ventas generado exitosamente');
+                  alert('✅ PDF de reporte de ventas generado y descargado exitosamente');
                 }}
                 className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="font-medium text-gray-900">Reporte de Ventas</div>
                 <div className="text-sm text-gray-500">Generar PDF por cliente</div>
               </button>
-            
+              
+              <button 
+                onClick={() => {
+                  // Generate special prices PDF
+                  const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                      <meta charset="UTF-8">
+                      <title>Precios Especiales por Cliente</title>
+                      <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3B82F6; padding-bottom: 15px; }
+                        .title { font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
+                        .summary { background-color: #EFF6FF; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th { background-color: #3B82F6; color: white; padding: 12px 8px; text-align: left; font-weight: bold; }
+                        td { padding: 8px; border-bottom: 1px solid #E5E7EB; }
+                        tr:nth-child(even) { background-color: #F9FAFB; }
+                        .price { font-weight: bold; color: #059669; }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="header">
+                        <div class="title">PRECIOS ESPECIALES POR CLIENTE</div>
+                        <div>Generado el ${new Date().toLocaleString('es-MX')}</div>
+                      </div>
+                      
+                      <div class="summary">
+                        <strong>Información de Precios:</strong><br>
+                        • Total clientes: ${clients.length}<br>
+                        • Niveles de precio disponibles: 5<br>
+                        • Precio 1: General | Precio 2: Mayoreo | Precio 3: Distribuidor | Precio 4: VIP | Precio 5: Especial
+                      </div>
+                      
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Cliente</th>
+                            <th>RFC</th>
+                            <th>Zona</th>
+                            <th>Nivel de Precio Asignado</th>
+                            <th>Límite de Crédito</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${clients.map(client => `
+                            <tr>
+                              <td>${client.name}</td>
+                              <td>${client.rfc}</td>
+                              <td>${client.zone}</td>
+                              <td class="price">Precio ${client.default_price_level || 1}</td>
+                              <td class="price">$${client.credit_limit.toLocaleString('es-MX')}</td>
+                            </tr>
+                          `).join('')}
+                        </tbody>
+                      </table>
+                      
+                      <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #6B7280;">
+                        <p><strong>Sistema ERP DURAN</strong> - Precios Especiales por Cliente</p>
+                        <p>Documento generado automáticamente</p>
+                      </div>
+                    </body>
+                    </html>
+                  `;
+                  
+                  const blob = new Blob([htmlContent], { type: 'text/html' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `precios_especiales_clientes_${new Date().toISOString().split('T')[0]}.html`;
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  
+                  // Also open print dialog
+                  const printWindow = window.open('', '_blank');
+                  if (printWindow) {
+                    printWindow.document.write(htmlContent);
+                    printWindow.document.close();
+                    setTimeout(() => {
+                      printWindow.print();
+                      printWindow.close();
+                    }, 250);
+                  }
+                  
+                  alert('✅ PDF de precios especiales generado y descargado exitosamente');
+                }}
+                className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="font-medium text-gray-900">Precios Especiales</div>
+                <div className="text-sm text-gray-500">Generar PDF de precios por cliente</div>
+              </button>
             </div>
           </Card>
         </div>

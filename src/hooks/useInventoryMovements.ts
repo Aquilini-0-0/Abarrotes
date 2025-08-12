@@ -70,8 +70,8 @@ export function useInventoryMovements() {
       } else if (movementData.type === 'salida' || movementData.type === 'merma') {
         newStock -= movementData.quantity;
       } else if (movementData.type === 'ajuste') {
-        // For adjustments, the quantity represents the adjustment amount
-        newStock += movementData.quantity;
+        // For adjustments, set the stock to the exact quantity specified
+        newStock = movementData.quantity;
       }
 
       // Update the product stock
@@ -82,7 +82,16 @@ export function useInventoryMovements() {
 
       if (updateError) throw updateError;
 
-      console.log(`Stock updated for product ${movementData.product_name}: ${product.stock} → ${Math.max(0, newStock)}`);
+      console.log(`✅ Stock updated for product ${movementData.product_name}: ${product.stock} → ${Math.max(0, newStock)}`);
+      
+      // Force refresh of products data
+      window.dispatchEvent(new CustomEvent('stockUpdated', { 
+        detail: { 
+          productId: movementData.product_id, 
+          oldStock: product.stock, 
+          newStock: Math.max(0, newStock) 
+        } 
+      }));
 
       const newMovement: InventoryMovement = {
         id: data.id,

@@ -42,10 +42,10 @@ export function Inventario() {
     if (confirm('¿Está seguro de eliminar este producto?')) {
       try {
         await deleteProduct(productId);
-        alert('Producto eliminado exitosamente');
+        alert('✅ Producto eliminado exitosamente');
       } catch (err) {
         console.error('Error deleting product:', err);
-        alert('Error al eliminar el producto');
+        alert('❌ Error al eliminar el producto: ' + (err instanceof Error ? err.message : 'Error desconocido'));
       }
     }
   };

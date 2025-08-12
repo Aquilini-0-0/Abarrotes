@@ -57,6 +57,11 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
         price3: formData.price3,
         price4: formData.price4,
         price5: formData.price5,
+        price1: formData.price1,
+        price2: formData.price2,
+        price3: formData.price3,
+        price4: formData.price4,
+        price5: formData.price5,
         status: formData.status
       };
       onSave(productData);

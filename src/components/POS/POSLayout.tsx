@@ -217,7 +217,7 @@ export function POSLayout() {
           ? paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer + paymentData.breakdown.credit
           : currentOrder.total;
           
-        await processPayment(currentOrder.id, {
+        const result = await processPayment(currentOrder.id, {
           amount: paymentAmount,
           method: paymentData.method,
           reference: paymentData.reference
@@ -230,13 +230,18 @@ export function POSLayout() {
           total: currentOrder.total,
           items_count: currentOrder.items.length,
           date: new Date().toISOString(),
-          status: 'paid'
+          status: result.newStatus
         });
         
         markTabAsSaved(activeTabId);
         createNewTab();
         setShowPaymentModal(false);
-        alert('Pago procesado exitosamente');
+        
+        if (result.newStatus === 'paid') {
+          alert('✅ Pago procesado exitosamente - Pedido marcado como PAGADO');
+        } else {
+          alert(`✅ Abono procesado exitosamente - Saldo restante: $${result.newRemainingBalance.toFixed(2)}`);
+        }
         return;
       }
       
@@ -244,8 +249,7 @@ export function POSLayout() {
       const orderToSave = {
         ...currentOrder,
         payment_method: paymentData.method,
-        is_credit: paymentData.method === 'credit',
-        status: paymentData.method === 'credit' ? 'pending' : 'paid'
+        is_credit: paymentData.method === 'credit'
       } as any;
 
       const savedOrder = await saveOrder(orderToSave);
@@ -264,7 +268,12 @@ export function POSLayout() {
       markTabAsSaved(activeTabId);
       createNewTab();
       setShowPaymentModal(false);
-      alert('Pedido procesado exitosamente');
+      
+      if (savedOrder.status === 'paid') {
+        alert('✅ Pedido procesado exitosamente - Marcado como PAGADO');
+      } else {
+        alert('✅ Pedido guardado como CRÉDITO - Estado: PENDIENTE');
+      }
     } catch (err) {
       console.error('Error processing payment:', err);
       alert('Error al procesar el pago');
