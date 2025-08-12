@@ -244,15 +244,7 @@ export function Dashboard() {
             </div>
           </Card>
 
-          <Card title="Acciones Rápidas">
-            <div className="space-y-3">
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <p className="text-blue-800 font-medium text-center">
-                  Acciones rápidas removidas para simplificar la interfaz
-                </p>
-              </div>
-            </div>
-          </Card>
+        
         </div>
       </div>
 
