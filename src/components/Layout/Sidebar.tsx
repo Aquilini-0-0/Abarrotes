@@ -63,7 +63,7 @@ const menuItems = [
     title: 'Ventas - Reportes',
     items: [
       { name: 'Reporte de Inventario', path: '/ventas/reporte-inventario', icon: Warehouse },
-      { name: 'Reporte de Ventas por Caja', path: '/ventas/reporte-ventas-caja', icon: Calculator },
+      
       { name: 'Estado de Cuenta Clientes', path: '/ventas/estado-cuenta-clientes', icon: Users },
     ]
   },
@@ -72,7 +72,7 @@ const menuItems = [
     items: [
       { name: 'Dashboard', path: '/ejecutivo/dashboard', icon: BarChart3 },
       { name: 'Análisis de Resultados', path: '/ejecutivo/analisis', icon: TrendingUp },
-      { name: 'Corte de Caja', path: '/ejecutivo/corte-caja', icon: Calculator },
+      
       { name: 'Reporte de Cajas', path: '/ejecutivo/reporte-cajas', icon: Calculator },
     ]
   }
