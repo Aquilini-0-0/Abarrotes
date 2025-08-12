@@ -43,10 +43,17 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      // Convertir a formato estándar para compatibilidad
+      // Only include fields that exist in the database schema
       const productData = {
-        ...formData,
-        price: formData.price1 // Usar price1 como precio principal
+        name: formData.name,
+        code: formData.code,
+        line: formData.line,
+        subline: formData.subline,
+        unit: formData.unit,
+        stock: formData.stock,
+        cost: formData.cost,
+        price: formData.price1, // Map price1 to the database price field
+        status: formData.status
       };
       onSave(productData);
     }
