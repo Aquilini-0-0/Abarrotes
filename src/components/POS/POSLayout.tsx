@@ -221,7 +221,7 @@ export function POSLayout() {
         ...currentOrder,
         payment_method: paymentData.method,
         is_credit: paymentData.method === 'credit',
-        status: paymentData.method === 'credit' ? 'pending' : 'paid'
+        status: 'draft' // Let the saveOrder function determine the correct status
       } as any;
 
       const savedOrder = await saveOrder(orderToSave);

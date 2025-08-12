@@ -425,15 +425,24 @@ export function Clientes() {
 
           <Card title="Acciones Rápidas">
             <div className="space-y-3">
-              <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <button 
+                onClick={() => window.location.href = '/ventas/estado-cuenta-clientes'}
+                className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 <div className="font-medium text-gray-900">Estado de Cuenta</div>
                 <div className="text-sm text-gray-500">Ver deudas pendientes</div>
               </button>
-              <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <button 
+                onClick={() => window.location.href = '/ventas/reportes'}
+                className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 <div className="font-medium text-gray-900">Reporte de Ventas</div>
                 <div className="text-sm text-gray-500">Por cliente</div>
               </button>
-              <button className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <button 
+                onClick={() => window.location.href = '/contabilidad/catalogos'}
+                className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 <div className="font-medium text-gray-900">Precios Especiales</div>
                 <div className="text-sm text-gray-500">Configurar descuentos</div>
               </button>

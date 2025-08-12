@@ -40,7 +40,7 @@ export function usePOS() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, code, line, subline, unit, stock, price, status')
+        .select('id, name, code, line, subline, unit, stock, price, price1, price2, price3, price4, price5, status')
         .eq('status', 'active')
         .order('name');
 
@@ -55,11 +55,11 @@ export function usePOS() {
         unit: product.unit,
         stock: product.stock,
         prices: {
-          price1: product.price,
-          price2: product.price * 1.1, // 10% más
-          price3: product.price * 1.2, // 20% más
-          price4: product.price * 1.3, // 30% más
-          price5: product.price * 1.4, // 40% más
+          price1: product.price1 || product.price,
+          price2: product.price2 || product.price * 1.1,
+          price3: product.price3 || product.price * 1.2,
+          price4: product.price4 || product.price * 1.3,
+          price5: product.price5 || product.price * 1.4,
         },
         status: product.status,
         has_tara: product.line === 'Granos' || product.line === 'Aceites' // Example logic
@@ -334,6 +334,18 @@ export function usePOS() {
 
         if (deleteItemsError) throw deleteItemsError;
       } else {
+        // Determine initial status based on payment method
+        let initialStatus = 'pending';
+        let initialAmountPaid = 0;
+        let initialRemainingBalance = order.total;
+        
+        // If it's a cash payment (not credit), mark as paid immediately
+        if (order.payment_method && order.payment_method !== 'credit') {
+          initialStatus = 'paid';
+          initialAmountPaid = order.total;
+          initialRemainingBalance = 0;
+        }
+        
         // Create new sale record
         const { data: newSale, error: saleError } = await supabase
           .from('sales')
@@ -342,9 +354,9 @@ export function usePOS() {
             client_name: order.client_name,
             date: order.date,
             total: order.total,
-            status: 'pending', // Always save new orders as pending
-            amount_paid: 0,
-            remaining_balance: order.total,
+            status: initialStatus,
+            amount_paid: initialAmountPaid,
+            remaining_balance: initialRemainingBalance,
             created_by: order.created_by
           })
           .select()
@@ -370,8 +382,38 @@ export function usePOS() {
 
       if (itemsError) throw itemsError;
 
-      // Note: Inventory movements only happen when payment is processed
-      // Saving an order doesn't affect inventory until payment is made
+      // Create inventory movements and update stock if order is paid
+      if (saleData.status === 'paid') {
+        for (const item of order.items) {
+          // Create inventory movement
+          await supabase
+            .from('inventory_movements')
+            .insert({
+              product_id: item.product_id,
+              product_name: item.product_name,
+              type: 'salida',
+              quantity: item.quantity,
+              date: order.date,
+              reference: `POS-${saleData.id.slice(-6)}`,
+              user_name: user?.name || 'POS User',
+              created_by: user?.id
+            });
+
+          // Update product stock
+          const { data: product } = await supabase
+            .from('products')
+            .select('stock')
+            .eq('id', item.product_id)
+            .single();
+
+          if (product) {
+            await supabase
+              .from('products')
+              .update({ stock: Math.max(0, product.stock - item.quantity) })
+              .eq('id', item.product_id);
+          }
+        }
+      }
 
       await fetchOrders();
       return saleData;

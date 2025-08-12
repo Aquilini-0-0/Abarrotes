@@ -121,7 +121,12 @@ export function Catalogos() {
 
     try {
       await updateProduct(selectedProduct.id, {
-        price: newPrices.price1 // Update main price with price1
+        price: newPrices.price1,
+        price1: newPrices.price1,
+        price2: newPrices.price2,
+        price3: newPrices.price3,
+        price4: newPrices.price4,
+        price5: newPrices.price5
       });
       
       setShowPriceForm(false);

@@ -65,10 +65,13 @@ export function useInventoryMovements() {
       if (productError) throw productError;
 
       let newStock = product.stock;
-      if (movementData.type === 'entrada' || movementData.type === 'ajuste') {
+      if (movementData.type === 'entrada') {
         newStock += movementData.quantity;
       } else if (movementData.type === 'salida' || movementData.type === 'merma') {
         newStock -= movementData.quantity;
+      } else if (movementData.type === 'ajuste') {
+        // For adjustments, the quantity represents the new stock level
+        newStock = movementData.quantity;
       }
 
       // Update the product stock

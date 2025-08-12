@@ -43,7 +43,6 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      // Only include fields that exist in the database schema
       const productData = {
         name: formData.name,
         code: formData.code,
@@ -52,7 +51,12 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
         unit: formData.unit,
         stock: formData.stock,
         cost: formData.cost,
-        price: formData.price1, // Map price1 to the database price field
+        price: formData.price1,
+        price1: formData.price1,
+        price2: formData.price2,
+        price3: formData.price3,
+        price4: formData.price4,
+        price5: formData.price5,
         status: formData.status
       };
       onSave(productData);
