@@ -216,7 +216,7 @@ export function useWarehouseTransfers() {
         .select('stock')
         .eq('almacen_id', warehouseId)
         .eq('product_id', productId)
-        .single();
+        .maybeSingle();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
         throw fetchError;
