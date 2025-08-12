@@ -622,12 +622,15 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
     
     {/* Botón Procesar */}
    {/* Botón Pagar */}
+{/* Botón Pagar */}
 <button
   onClick={handleProcessPayment}
   disabled={newPayment.amount <= 0 || newPayment.amount > selectedSale.balance}
-  className="bg-gradient-to-r from-green-200 to-green-300 hover:from-green-300 hover:to-green-400 disabled:from-gray-200 disabled:to-gray-300 text-green-800 disabled:text-gray-500 py-1 px-2 rounded-md font-semibold text-[11px] sm:text-sm shadow transition-all flex flex-col items-center min-h-[30px] sm:min-h-[36px]"
+  className="flex flex-col items-center justify-center gap-0.5 min-h-[36px] sm:min-h-[42px] px-3 rounded-lg font-medium text-xs sm:text-sm shadow-md transition-all
+             bg-gradient-to-r from-green-400 to-green-500 text-white hover:from-green-500 hover:to-green-600 
+             disabled:from-gray-300 disabled:to-gray-400 disabled:text-gray-700"
 >
-  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
   </svg>
   PAGAR
@@ -635,9 +638,10 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
 
 {/* Botón Guardar */}
 <button
-  className="bg-gradient-to-r from-orange-200 to-red-200 hover:from-orange-300 hover:to-red-300 text-orange-800 py-1 px-2 rounded-md font-semibold text-[11px] sm:text-sm shadow transition-all flex flex-col items-center min-h-[30px] sm:min-h-[36px]"
+  className="flex flex-col items-center justify-center gap-0.5 min-h-[36px] sm:min-h-[42px] px-3 rounded-lg font-medium text-xs sm:text-sm shadow-md transition-all
+             bg-gradient-to-r from-orange-400 to-red-400 text-white hover:from-orange-500 hover:to-red-500"
 >
-  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
   </svg>
   GUARDAR
@@ -649,13 +653,15 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
     setShowPaymentForm(false);
     setSelectedSale(null);
   }}
-  className="bg-white text-orange-700 border border-orange-600 py-1 px-2 rounded-md font-semibold text-[11px] sm:text-sm shadow hover:bg-orange-50 transition-all flex flex-col items-center min-h-[30px] sm:min-h-[36px]"
+  className="flex flex-col items-center justify-center gap-0.5 min-h-[36px] sm:min-h-[42px] px-3 rounded-lg font-medium text-xs sm:text-sm shadow-md transition-all
+             bg-white text-red-500 border border-red-500 hover:bg-red-50"
 >
-  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
   </svg>
   CANCELAR
 </button>
+
 
         </div>
       </div>
