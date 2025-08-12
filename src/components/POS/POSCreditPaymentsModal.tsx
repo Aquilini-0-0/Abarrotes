@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, CreditCard, DollarSign, Calendar, User, AlertCircle, Eye, CheckCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 interface CreditSale {
   id: string;
@@ -11,7 +12,10 @@ interface CreditSale {
   balance: number;
   status: 'pending' | 'partial' | 'paid';
   days_overdue: number;
+  amount_paid: number;
+  original_total: number;
   items?: any[];
+  payments?: Payment[];
 }
 
 interface Payment {
@@ -29,6 +33,7 @@ interface POSCreditPaymentsModalProps {
 }
 
 export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCreditPaymentsModalProps) {
+  const { user } = useAuth();
   const [creditSales, setCreditSales] = useState<CreditSale[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -64,9 +69,18 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
             quantity,
             price,
             total
+          ),
+          payments (
+            id,
+            amount,
+            payment_method,
+            reference,
+            date,
+            created_at
           )
         `)
-        .in('status', ['pending', 'overdue'])
+        .in('status', ['pending', 'draft'])
+        .gt('remaining_balance', 0)
         .order('date', { ascending: false });
 
       if (error) throw error;
@@ -76,6 +90,8 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
         const today = new Date();
         const diffTime = today.getTime() - saleDate.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const amountPaid = sale.amount_paid || 0;
+        const remainingBalance = sale.remaining_balance || sale.total;
 
         return {
           id: sale.id,
@@ -83,10 +99,13 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
           client_name: sale.client_name,
           date: sale.date,
           total: sale.total,
-          balance: sale.total, // En un sistema real, calcularíamos restando pagos
-          status: diffDays > 30 ? 'pending' : 'pending', // Mantener como pending por ahora
+          balance: remainingBalance,
+          amount_paid: amountPaid,
+          original_total: sale.total,
+          status: amountPaid > 0 && remainingBalance > 0 ? 'partial' : 'pending',
           days_overdue: Math.max(0, diffDays - 30), // Asumiendo 30 días de crédito
-          items: sale.sale_items || []
+          items: sale.sale_items || [],
+          payments: sale.payments || []
         };
       });
 
@@ -144,68 +163,46 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
     }
 
     try {
-      // 1. Crear registro del pago
-      const payment: Payment = {
-        id: `pay-${Date.now()}`,
-        sale_id: selectedSale.id,
-        amount: newPayment.amount,
-        payment_method: newPayment.payment_method,
-        date: new Date().toISOString().split('T')[0],
-        reference: newPayment.reference || `PAG-${Date.now().toString().slice(-6)}`
-      };
+      // Create payment record
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          sale_id: selectedSale.id,
+          amount: newPayment.amount,
+          payment_method: newPayment.payment_method,
+          reference: newPayment.reference || `PAY-${Date.now().toString().slice(-6)}`,
+          created_by: user?.id
+        });
 
-      // 2. Guardar el pago en el estado local
-      setPayments(prev => [payment, ...prev]);
+      if (paymentError) throw paymentError;
 
-      // 3. Calcular nuevo saldo y estado
-      const newBalance = selectedSale.balance - newPayment.amount;
-      const newStatus = newBalance <= 0.01 ? 'paid' : 'partial'; // Usar 0.01 para evitar problemas de precisión
+      // Calculate new totals
+      const newAmountPaid = selectedSale.amount_paid + newPayment.amount;
+      const newRemainingBalance = Math.max(0, selectedSale.original_total - newAmountPaid);
+      const newStatus = newRemainingBalance <= 0.01 ? 'paid' : 'pending';
 
-      // 4. Actualizar la venta en el estado local
-      setCreditSales(prev => prev.map(sale => 
-        sale.id === selectedSale.id 
-          ? { ...sale, balance: Math.max(0, newBalance), status: newStatus as any }
-          : sale
-      ));
+      // Update sale with payment info
+      const { error: updateError } = await supabase
+        .from('sales')
+        .update({
+          amount_paid: newAmountPaid,
+          remaining_balance: newRemainingBalance,
+          status: newStatus
+        })
+        .eq('id', selectedSale.id);
 
-      // 5. Actualizar en la base de datos
-      if (newBalance <= 0.01) {
-        // Marcar como pagada completamente
-        const { error: saleError } = await supabase
-          .from('sales')
-          .update({ status: 'paid' })
-          .eq('id', selectedSale.id);
+      if (updateError) throw updateError;
 
-        if (saleError) {
-          console.error('Error updating sale status:', saleError);
+      // Update client balance
+      if (newPayment.payment_method !== 'credit') {
+        const client = clients.find(c => c.id === selectedSale.client_id);
+        if (client) {
+          const newClientBalance = Math.max(0, client.balance - newPayment.amount);
+          await supabase
+            .from('clients')
+            .update({ balance: newClientBalance })
+            .eq('id', selectedSale.client_id);
         }
-      }
-
-      // 6. Actualizar saldo del cliente
-      const client = clients.find(c => c.id === selectedSale.client_id);
-      if (client) {
-        const newClientBalance = Math.max(0, client.balance - newPayment.amount);
-        const { error: clientError } = await supabase
-          .from('clients')
-          .update({ balance: newClientBalance })
-          .eq('id', selectedSale.client_id);
-
-        if (clientError) {
-          console.error('Error updating client balance:', clientError);
-        }
-
-        // Actualizar clientes en el estado local
-        setClients(prev => prev.map(c => 
-          c.id === selectedSale.client_id 
-            ? { ...c, balance: newClientBalance }
-            : c
-        ));
-      }
-
-      // 7. Crear movimiento de caja si es efectivo
-      if (newPayment.payment_method === 'cash') {
-        // En un sistema real, actualizaríamos el registro de caja
-        console.log('Movimiento de efectivo registrado:', newPayment.amount);
       }
 
       setNewPayment({
@@ -217,9 +214,9 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
       setSelectedSale(null);
       
       // Mensaje de confirmación más detallado
-      const message = newBalance <= 0.01 
+      const message = newRemainingBalance <= 0.01 
         ? `¡Pago procesado! La venta ha sido pagada completamente.`
-        : `¡Abono procesado! Saldo restante: $${newBalance.toFixed(2)}`;
+        : `¡Abono procesado! Saldo restante: $${newRemainingBalance.toFixed(2)}`;
       alert(message);
       
       // Refrescar datos
@@ -431,6 +428,11 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
                   </td>
                   <td className="p-1 sm:p-2 lg:p-3 text-right font-mono font-bold text-red-600">
                     ${sale.balance.toLocaleString('es-MX')}
+                    {sale.amount_paid > 0 && (
+                      <div className="text-xs text-blue-600">
+                        Pagado: ${sale.amount_paid.toLocaleString('es-MX')}
+                      </div>
+                    )}
                   </td>
                   <td className="p-1 sm:p-2 lg:p-3 text-center">
                     <span
@@ -516,10 +518,18 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
             </div>
             <div className="flex justify-between">
               <span className="text-gray-700">Total Venta:</span>
-              <span className="font-mono font-bold text-gray-900">
-                ${selectedSale.total.toLocaleString('es-MX')}
+              <span className="font-mono text-gray-900">
+                ${selectedSale.original_total.toLocaleString('es-MX')}
               </span>
             </div>
+            {selectedSale.amount_paid > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-700">Pagado:</span>
+                <span className="font-mono text-blue-600">
+                  ${selectedSale.amount_paid.toLocaleString('es-MX')}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between border-t border-gray-300 pt-2">
               <span className="text-gray-700 font-medium">Saldo Pendiente:</span>
               <span className="font-bold text-red-600">
@@ -528,6 +538,25 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
             </div>
           </div>
         </div>
+
+        {/* Payment History */}
+        {selectedSale.payments && selectedSale.payments.length > 0 && (
+          <div className="bg-blue-50 p-2 sm:p-4 rounded-lg">
+            <h5 className="font-semibold text-blue-900 mb-2 text-xs sm:text-sm">Historial de Pagos</h5>
+            <div className="space-y-1 text-xs">
+              {selectedSale.payments.map((payment: any, index: number) => (
+                <div key={index} className="flex justify-between">
+                  <span className="text-blue-700">
+                    {new Date(payment.date).toLocaleDateString('es-MX')} - {payment.payment_method}
+                  </span>
+                  <span className="font-mono text-blue-800">
+                    ${payment.amount.toLocaleString('es-MX')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Monto a Pagar */}
         <div>
@@ -689,7 +718,7 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
                     <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Total Venta:</span>
-                        <span className="font-mono">${selectedSale.total.toFixed(2)}</span>
+                        <span className="font-mono">${selectedSale.original_total.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Saldo Pendiente:</span>

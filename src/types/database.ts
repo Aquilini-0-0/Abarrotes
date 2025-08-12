@@ -160,6 +160,8 @@ export interface Database {
           client_name: string;
           date: string;
           total: number;
+          amount_paid: number | null;
+          remaining_balance: number | null;
           status: 'pending' | 'paid' | 'overdue';
           created_by: string | null;
           created_at: string;
@@ -171,6 +173,8 @@ export interface Database {
           client_name: string;
           date?: string;
           total?: number;
+          amount_paid?: number | null;
+          remaining_balance?: number | null;
           status?: 'pending' | 'paid' | 'overdue';
           created_by?: string | null;
           created_at?: string;
@@ -182,6 +186,8 @@ export interface Database {
           client_name?: string;
           date?: string;
           total?: number;
+          amount_paid?: number | null;
+          remaining_balance?: number | null;
           status?: 'pending' | 'paid' | 'overdue';
           created_by?: string | null;
           created_at?: string;
@@ -292,6 +298,38 @@ export interface Database {
           date?: string;
           reference?: string;
           user_name?: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+      };
+      payments: {
+        Row: {
+          id: string;
+          sale_id: string;
+          amount: number;
+          payment_method: 'cash' | 'card' | 'transfer' | 'credit';
+          reference: string;
+          date: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          sale_id: string;
+          amount: number;
+          payment_method?: 'cash' | 'card' | 'transfer' | 'credit';
+          reference?: string;
+          date?: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          sale_id?: string;
+          amount?: number;
+          payment_method?: 'cash' | 'card' | 'transfer' | 'credit';
+          reference?: string;
+          date?: string;
           created_by?: string | null;
           created_at?: string;
         };
