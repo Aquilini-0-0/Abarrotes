@@ -12,7 +12,7 @@ export function useProducts() {
       setLoading(true);
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select('id, name, code, line, subline, unit, stock, cost, price, status, created_at, updated_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;

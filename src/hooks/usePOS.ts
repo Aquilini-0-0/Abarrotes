@@ -40,7 +40,7 @@ export function usePOS() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select('id, name, code, line, subline, unit, stock, price, status')
         .eq('status', 'active')
         .order('name');
 
