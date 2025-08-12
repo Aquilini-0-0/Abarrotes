@@ -61,7 +61,7 @@ export function EstadoTraspaso() {
         product_id: newTraspaso.product_id,
         product_name: selectedProduct.name,
         quantity: newTraspaso.cantidad,
-        status: 'pending',
+        status: 'pendiente',
         date: new Date().toISOString().split('T')[0],
         reference: newTraspaso.reference || `TRP-${Date.now().toString().slice(-6)}`,
         notes: newTraspaso.notes,
