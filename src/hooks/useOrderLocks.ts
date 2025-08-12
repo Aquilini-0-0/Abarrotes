@@ -24,16 +24,22 @@ export function useOrderLocks() {
     
     // Cleanup locks on page unload
     const handleBeforeUnload = () => {
-      cleanupUserLocks();
+      cleanupUserLocks().catch(err => {
+        console.warn('Lock cleanup failed during page unload (non-critical):', err);
+      });
     };
     
     // Cleanup expired locks on component mount
-    cleanExpiredLocks();
+    cleanExpiredLocks().catch(err => {
+      console.warn('Expired lock cleanup failed on mount (non-critical):', err);
+    });
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      cleanupUserLocks();
+      cleanupUserLocks().catch(err => {
+        console.warn('Lock cleanup failed during component unmount (non-critical):', err);
+      });
     };
   }, [sessionId]);
 
@@ -208,7 +214,11 @@ export function useOrderLocks() {
 
   // Auto-cleanup expired locks every minute
   useEffect(() => {
-    const interval = setInterval(cleanExpiredLocks, 60000);
+    const interval = setInterval(() => {
+      cleanExpiredLocks().catch(err => {
+        console.warn('Periodic expired lock cleanup failed (non-critical):', err);
+      });
+    }, 60000);
     return () => clearInterval(interval);
   }, []);
 
