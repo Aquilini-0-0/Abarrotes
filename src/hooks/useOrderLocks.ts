@@ -138,6 +138,12 @@ export function useOrderLocks() {
   };
 
   const cleanupUserLocks = async () => {
+    // Skip cleanup if page is being unloaded to prevent "Failed to fetch" errors
+    if (document.visibilityState === 'hidden') {
+      console.warn('Skipping lock cleanup due to page unload - locks will expire automatically');
+      return;
+    }
+
     if (!user || !user.id || !sessionId) return;
 
     try {
