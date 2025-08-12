@@ -17,11 +17,11 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
     unit: product?.unit || '',
     stock: product?.stock || 0,
     cost: product?.cost || 0,
-    price1: product?.price || 0,
-    price2: product?.price ? product.price * 1.1 : 0,
-    price3: product?.price ? product.price * 1.2 : 0,
-    price4: product?.price ? product.price * 1.3 : 0,
-    price5: product?.price ? product.price * 1.4 : 0,
+    price1: product?.price1 || product?.price || 0,
+    price2: product?.price2 || 0,
+    price3: product?.price3 || 0,
+    price4: product?.price4 || 0,
+    price5: product?.price5 || 0,
     status: product?.status || 'active' as const
   });
 
