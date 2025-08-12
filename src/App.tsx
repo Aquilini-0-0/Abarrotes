@@ -35,6 +35,7 @@ import { ListadoRemisiones } from './pages/Ventas/ListadoRemisiones';
 import { ReporteInventarioVentas } from './pages/Ventas/ReporteInventarioVentas';
 import { ReporteVentasCaja } from './pages/Ventas/ReporteVentasCaja';
 import { EstadoCuentaClientes } from './pages/Ventas/EstadoCuentaClientes';
+import { ReporteCajas } from './pages/Ejecutivo/ReporteCajas';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -223,6 +224,11 @@ function AppRoutes() {
       <Route path="/ejecutivo/corte-caja" element={
         <PrivateRoute>
           <CorteCaja />
+        </PrivateRoute>
+      } />
+      <Route path="/ejecutivo/reporte-cajas" element={
+        <PrivateRoute>
+          <ReporteCajas />
         </PrivateRoute>
       } />
       

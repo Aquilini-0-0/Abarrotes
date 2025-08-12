@@ -3,6 +3,7 @@ import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useClients } from '../../hooks/useClients';
 import { Client } from '../../types';
+import { AutocompleteInput } from '../../components/Common/AutocompleteInput';
 import { Plus, MapPin, Phone, Mail, CreditCard } from 'lucide-react';
 
 export function Clientes() {
@@ -22,14 +23,28 @@ export function Clientes() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Submitting client data:', newClient);
+    
     try {
       if (editingClient) {
         await updateClient(editingClient.id, newClient);
         alert('Cliente actualizado exitosamente');
       } else {
+        // Validate required fields
+        if (!newClient.name.trim()) {
+          alert('El nombre del cliente es requerido');
+          return;
+        }
+        if (!newClient.rfc.trim()) {
+          alert('El RFC es requerido');
+          return;
+        }
+        
         await createClient(newClient);
         alert('Cliente creado exitosamente');
       }
+      
       setNewClient({
         name: '',
         rfc: '',
@@ -44,7 +59,7 @@ export function Clientes() {
       setEditingClient(null);
     } catch (err) {
       console.error('Error saving client:', err);
-      alert('Error al guardar el cliente');
+      alert('Error al guardar el cliente: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     }
   };
 

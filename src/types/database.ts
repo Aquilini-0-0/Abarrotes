@@ -501,6 +501,105 @@ export interface Database {
         updated_at?: string;
       };
     };
+    warehouses: {
+      Row: {
+        id: string;
+        name: string;
+        location: string;
+        active: boolean;
+        created_at: string;
+        updated_at: string;
+      };
+      Insert: {
+        id?: string;
+        name: string;
+        location?: string;
+        active?: boolean;
+        created_at?: string;
+        updated_at?: string;
+      };
+      Update: {
+        id?: string;
+        name?: string;
+        location?: string;
+        active?: boolean;
+        created_at?: string;
+        updated_at?: string;
+      };
+    };
+    warehouse_stock: {
+      Row: {
+        id: string;
+        warehouse_id: string;
+        product_id: string;
+        stock: number;
+        created_at: string;
+        updated_at: string;
+      };
+      Insert: {
+        id?: string;
+        warehouse_id: string;
+        product_id: string;
+        stock?: number;
+        created_at?: string;
+        updated_at?: string;
+      };
+      Update: {
+        id?: string;
+        warehouse_id?: string;
+        product_id?: string;
+        stock?: number;
+        created_at?: string;
+        updated_at?: string;
+      };
+    };
+    warehouse_transfers: {
+      Row: {
+        id: string;
+        from_warehouse_id: string;
+        to_warehouse_id: string;
+        product_id: string;
+        product_name: string;
+        quantity: number;
+        status: 'pending' | 'in_transit' | 'completed' | 'cancelled';
+        date: string;
+        reference: string;
+        notes: string;
+        created_by: string | null;
+        created_at: string;
+        updated_at: string;
+      };
+      Insert: {
+        id?: string;
+        from_warehouse_id: string;
+        to_warehouse_id: string;
+        product_id: string;
+        product_name: string;
+        quantity: number;
+        status?: 'pending' | 'in_transit' | 'completed' | 'cancelled';
+        date?: string;
+        reference?: string;
+        notes?: string;
+        created_by?: string | null;
+        created_at?: string;
+        updated_at?: string;
+      };
+      Update: {
+        id?: string;
+        from_warehouse_id?: string;
+        to_warehouse_id?: string;
+        product_id?: string;
+        product_name?: string;
+        quantity?: number;
+        status?: 'pending' | 'in_transit' | 'completed' | 'cancelled';
+        date?: string;
+        reference?: string;
+        notes?: string;
+        created_by?: string | null;
+        created_at?: string;
+        updated_at?: string;
+      };
+    };
     Views: {
       [_ in never]: never;
     };

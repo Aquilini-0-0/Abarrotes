@@ -73,6 +73,7 @@ const menuItems = [
       { name: 'Dashboard', path: '/ejecutivo/dashboard', icon: BarChart3 },
       { name: 'Análisis de Resultados', path: '/ejecutivo/analisis', icon: TrendingUp },
       { name: 'Corte de Caja', path: '/ejecutivo/corte-caja', icon: Calculator },
+      { name: 'Reporte de Cajas', path: '/ejecutivo/reporte-cajas', icon: Calculator },
     ]
   }
 ];
@@ -160,6 +161,11 @@ export function Sidebar() {
           >
             <LogOut size={16} />
             <span>Cerrar Sesión</span>
+      <Route path="/ejecutivo/reporte-cajas" element={
+        <PrivateRoute>
+          <ReporteCajas />
+        </PrivateRoute>
+      } />
           </button>
         </div>
       </nav>

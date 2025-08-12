@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useCatalogos } from '../../hooks/useCatalogos';
+import { useProducts } from '../../hooks/useProducts';
 import { Plus, Edit, Trash2, Settings, CreditCard } from 'lucide-react';
 
 export function Catalogos() {
@@ -18,9 +19,19 @@ export function Catalogos() {
     deleteCuenta 
   } = useCatalogos();
 
+  const { products, updateProduct } = useProducts();
   const [activeTab, setActiveTab] = useState<'conceptos' | 'cuentas'>('conceptos');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [showPriceForm, setShowPriceForm] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [newPrices, setNewPrices] = useState({
+    price1: 0,
+    price2: 0,
+    price3: 0,
+    price4: 0,
+    price5: 0
+  });
 
   const [newConcepto, setNewConcepto] = useState({
     nombre: '',
@@ -102,6 +113,24 @@ export function Catalogos() {
         console.error('Error deleting item:', err);
         alert('Error al eliminar el elemento');
       }
+    }
+  };
+
+  const handleUpdateProductPrices = async () => {
+    if (!selectedProduct) return;
+
+    try {
+      await updateProduct(selectedProduct.id, {
+        price: newPrices.price1 // Update main price with price1
+      });
+      
+      setShowPriceForm(false);
+      setSelectedProduct(null);
+      setNewPrices({ price1: 0, price2: 0, price3: 0, price4: 0, price5: 0 });
+      alert('Precios actualizados exitosamente');
+    } catch (err) {
+      console.error('Error updating prices:', err);
+      alert('Error al actualizar los precios');
     }
   };
 
@@ -286,6 +315,19 @@ export function Catalogos() {
                 <span>Cuentas Bancarias</span>
               </div>
             </button>
+            <button
+              onClick={() => setActiveTab('precios')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'precios'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Settings size={16} />
+                <span>Precios de Productos</span>
+              </div>
+            </button>
           </nav>
         </div>
 
@@ -296,12 +338,63 @@ export function Catalogos() {
               columns={conceptosColumns}
               title="Conceptos de Gastos"
             />
-          ) : (
+          ) : activeTab === 'cuentas' ? (
             <DataTable
               data={cuentas}
               columns={cuentasColumns}
               title="Cuentas Bancarias"
             />
+          ) : (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Gestión de Precios</h3>
+                <button
+                  onClick={() => setShowPriceForm(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  <Plus size={16} />
+                  <span>Actualizar Precios</span>
+                </button>
+              </div>
+              <DataTable
+                data={products}
+                columns={[
+                  { key: 'code', label: 'Código', sortable: true },
+                  { key: 'name', label: 'Producto', sortable: true },
+                  { key: 'line', label: 'Línea', sortable: true },
+                  { 
+                    key: 'price', 
+                    label: 'Precio Actual', 
+                    sortable: true,
+                    render: (value: number) => `$${value.toFixed(2)}`
+                  },
+                  {
+                    key: 'actions',
+                    label: 'Acciones',
+                    render: (_, product: any) => (
+                      <button
+                        onClick={() => {
+                          setSelectedProduct(product);
+                          setNewPrices({
+                            price1: product.price,
+                            price2: product.price * 1.1,
+                            price3: product.price * 1.2,
+                            price4: product.price * 1.3,
+                            price5: product.price * 1.4
+                          });
+                          setShowPriceForm(true);
+                        }}
+                        className="p-1 text-blue-600 hover:text-blue-800"
+                        title="Editar precios"
+                      >
+                        <Edit size={16} />
+                      </button>
+                    )
+                  }
+                ]}
+                title="Productos"
+              />
+            </div>
           )}
         </div>
       </div>
@@ -460,6 +553,113 @@ export function Catalogos() {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Price Update Modal */}
+      {showPriceForm && selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+            <div className="px-6 py-4 border-b border-gray-200 bg-blue-600 rounded-t-lg">
+              <h2 className="text-lg font-semibold text-white">
+                Actualizar Precios - {selectedProduct.name}
+              </h2>
+            </div>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Precio 1 (General)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={newPrices.price1}
+                      onChange={(e) => setNewPrices(prev => ({ ...prev, price1: parseFloat(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Precio 2 (Mayoreo)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={newPrices.price2}
+                      onChange={(e) => setNewPrices(prev => ({ ...prev, price2: parseFloat(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Precio 3 (Distribuidor)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={newPrices.price3}
+                      onChange={(e) => setNewPrices(prev => ({ ...prev, price3: parseFloat(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Precio 4 (VIP)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={newPrices.price4}
+                      onChange={(e) => setNewPrices(prev => ({ ...prev, price4: parseFloat(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Precio 5 (Especial)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={newPrices.price5}
+                      onChange={(e) => setNewPrices(prev => ({ ...prev, price5: parseFloat(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-sm text-gray-600">
+                      <p><strong>Producto:</strong> {selectedProduct.name}</p>
+                      <p><strong>Código:</strong> {selectedProduct.code}</p>
+                      <p><strong>Precio Actual:</strong> ${selectedProduct.price.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={handleUpdateProductPrices}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Actualizar Precios
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPriceForm(false);
+                    setSelectedProduct(null);
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
             </div>
           </div>
         </div>

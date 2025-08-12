@@ -186,6 +186,56 @@ export function useCFDI() {
     }
   };
 
+  const updateCFDI = async (cfdiId: string, updates: { productId: string; newPrice: number }) => {
+    try {
+      // Get the current CFDI data
+      const { data: saleData, error: saleError } = await supabase
+        .from('sales')
+        .select(`
+          *,
+          sale_items (*)
+        `)
+        .eq('id', cfdiId)
+        .single();
+
+      if (saleError) throw saleError;
+
+      // Update the specific item price
+      const { error: itemError } = await supabase
+        .from('sale_items')
+        .update({
+          price: updates.newPrice,
+          total: saleData.sale_items.find((item: any) => item.product_id === updates.productId)?.quantity * updates.newPrice
+        })
+        .eq('sale_id', cfdiId)
+        .eq('product_id', updates.productId);
+
+      if (itemError) throw itemError;
+
+      // Recalculate total
+      const { data: updatedItems, error: itemsError } = await supabase
+        .from('sale_items')
+        .select('total')
+        .eq('sale_id', cfdiId);
+
+      if (itemsError) throw itemsError;
+
+      const newTotal = updatedItems.reduce((sum, item) => sum + item.total, 0);
+
+      // Update sale total
+      const { error: updateError } = await supabase
+        .from('sales')
+        .update({ total: newTotal })
+        .eq('id', cfdiId);
+
+      if (updateError) throw updateError;
+
+      await fetchCFDI();
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Error updating CFDI');
+    }
+  };
+
   useEffect(() => {
     fetchCFDI();
   }, []);
@@ -197,6 +247,7 @@ export function useCFDI() {
     createCFDI,
     timbrarFactura,
     cancelarFactura,
+    updateCFDI,
     refetch: fetchCFDI
   };
 }

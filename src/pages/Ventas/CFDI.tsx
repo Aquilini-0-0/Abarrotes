@@ -7,11 +7,17 @@ import { useProducts } from '../../hooks/useProducts';
 import { Plus, FileText, Download, Eye, CheckCircle } from 'lucide-react';
 
 export function CFDI() {
-  const { facturas, loading, error, createCFDI, timbrarFactura, cancelarFactura } = useCFDI();
+  const { facturas, loading, error, createCFDI, timbrarFactura, cancelarFactura, updateCFDI } = useCFDI();
   const { clients } = useClients();
   const { products } = useProducts();
   
   const [showForm, setShowForm] = useState(false);
+  const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [selectedCFDI, setSelectedCFDI] = useState<CFDIInterface | null>(null);
+  const [updateData, setUpdateData] = useState({
+    productId: '',
+    newPrice: 0
+  });
   const [newFactura, setNewFactura] = useState({
     cliente_id: '',
     items: [{ producto_id: '', cantidad: 0, precio_unitario: 0 }]
@@ -106,6 +112,22 @@ export function CFDI() {
     }
   };
 
+  const handleUpdateCFDI = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCFDI) return;
+
+    try {
+      await updateCFDI(selectedCFDI.id, updateData);
+      setShowUpdateForm(false);
+      setSelectedCFDI(null);
+      setUpdateData({ productId: '', newPrice: 0 });
+      alert('CFDI actualizado exitosamente');
+    } catch (err) {
+      console.error('Error updating CFDI:', err);
+      alert('Error al actualizar el CFDI');
+    }
+  };
+
   const columns = [
     { key: 'serie', label: 'Serie', sortable: true },
     { key: 'folio', label: 'Folio', sortable: true },
@@ -150,6 +172,16 @@ export function CFDI() {
             title="Ver"
           >
             <Eye size={16} />
+          </button>
+          <button
+            onClick={() => {
+              setSelectedCFDI(factura);
+              setShowUpdateForm(true);
+            }}
+            className="p-1 text-purple-600 hover:text-purple-800"
+            title="Actualizar"
+          >
+            <Edit size={16} />
           </button>
           {factura.estado === 'borrador' && (
             <button
@@ -285,6 +317,77 @@ export function CFDI() {
             />
           </Card>
         </div>
+
+        {showUpdateForm && selectedCFDI && (
+          <Card title="Actualizar CFDI">
+            <form onSubmit={handleUpdateCFDI} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  CFDI Seleccionado
+                </label>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="font-medium">{selectedCFDI.cliente_nombre}</p>
+                  <p className="text-sm text-gray-600">
+                    Folio: {selectedCFDI.serie}-{selectedCFDI.folio} | Total: ${selectedCFDI.total.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Producto a Actualizar
+                </label>
+                <select
+                  value={updateData.productId}
+                  onChange={(e) => setUpdateData(prev => ({ ...prev, productId: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Seleccionar producto</option>
+                  {selectedCFDI.items.map(item => (
+                    <option key={item.producto_id} value={item.producto_id}>
+                      {item.producto_nombre} - Precio actual: ${item.precio_unitario.toFixed(2)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nuevo Precio
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={updateData.newPrice}
+                  onChange={(e) => setUpdateData(prev => ({ ...prev, newPrice: parseFloat(e.target.value) || 0 }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="0"
+                  required
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Actualizar CFDI
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUpdateForm(false);
+                    setSelectedCFDI(null);
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </Card>
+        )}
 
         <div className="space-y-6">
           {showForm && (

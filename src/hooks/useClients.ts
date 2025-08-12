@@ -39,13 +39,20 @@ export function useClients() {
 
   const createClient = async (clientData: Omit<Client, 'id'>) => {
     try {
+      console.log('Creating client with data:', clientData);
+      
       const { data, error } = await supabase
         .from('clients')
         .insert([clientData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error creating client:', error);
+        throw error;
+      }
+
+      console.log('Client created successfully:', data);
 
       const newClient: Client = {
         id: data.id,
@@ -62,6 +69,7 @@ export function useClients() {
       setClients(prev => [newClient, ...prev]);
       return newClient;
     } catch (err) {
+      console.error('Error in createClient function:', err);
       throw new Error(err instanceof Error ? err.message : 'Error creating client');
     }
   };

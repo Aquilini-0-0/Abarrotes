@@ -2,61 +2,32 @@ import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useProducts } from '../../hooks/useProducts';
+import { useWarehouseTransfers } from '../../hooks/useWarehouseTransfers';
+import { AutocompleteInput } from '../../components/Common/AutocompleteInput';
 import { Plus, ArrowRightLeft, Package, CheckCircle, Clock, XCircle } from 'lucide-react';
-
-interface Traspaso {
-  id: string;
-  folio: string;
-  fecha: string;
-  almacen_origen: string;
-  almacen_destino: string;
-  producto: string;
-  cantidad: number;
-  estatus: 'pendiente' | 'en_transito' | 'completado' | 'cancelado';
-  usuario: string;
-  fecha_creacion: string;
-  observaciones: string;
-}
 
 export function EstadoTraspaso() {
   const { products } = useProducts();
+  const { 
+    warehouses, 
+    warehouseStock, 
+    transfers, 
+    loading, 
+    error, 
+    createTransfer, 
+    updateTransferStatus,
+    getWarehouseStock 
+  } = useWarehouseTransfers();
   
-  const [traspasos, setTraspasos] = useState<Traspaso[]>([
-    {
-      id: '1',
-      folio: 'TRP-001',
-      fecha: '2025-01-15',
-      almacen_origen: 'BODEGA-PRINCIPAL',
-      almacen_destino: 'SUCURSAL-CENTRO',
-      producto: 'Aceite Comestible 1L',
-      cantidad: 50,
-      estatus: 'completado',
-      usuario: 'Admin',
-      fecha_creacion: '2025-01-15',
-      observaciones: 'Traspaso regular'
-    },
-    {
-      id: '2',
-      folio: 'TRP-002',
-      fecha: '2025-01-16',
-      almacen_origen: 'BODEGA-PRINCIPAL',
-      almacen_destino: 'SUCURSAL-NORTE',
-      producto: 'Arroz Blanco 1Kg',
-      cantidad: 100,
-      estatus: 'en_transito',
-      usuario: 'Gerente',
-      fecha_creacion: '2025-01-16',
-      observaciones: 'Urgente'
-    }
-  ]);
 
   const [showForm, setShowForm] = useState(false);
   const [newTraspaso, setNewTraspaso] = useState({
-    almacen_origen: '',
-    almacen_destino: '',
-    producto: '',
+    from_warehouse_id: '',
+    to_warehouse_id: '',
+    product_id: '',
     cantidad: 0,
-    observaciones: ''
+    reference: '',
+    notes: ''
   });
 
   const [filtros, setFiltros] = useState({
@@ -67,106 +38,144 @@ export function EstadoTraspaso() {
     fecha_fin: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (newTraspaso.almacen_origen === newTraspaso.almacen_destino) {
+    if (newTraspaso.from_warehouse_id === newTraspaso.to_warehouse_id) {
       alert('El almacén de origen y destino no pueden ser el mismo');
       return;
     }
 
-    const traspaso: Traspaso = {
-      id: (traspasos.length + 1).toString(),
-      folio: `TRP-${(traspasos.length + 1).toString().padStart(3, '0')}`,
-      fecha: new Date().toISOString().split('T')[0],
-      almacen_origen: newTraspaso.almacen_origen,
-      almacen_destino: newTraspaso.almacen_destino,
-      producto: newTraspaso.producto,
-      cantidad: newTraspaso.cantidad,
-      estatus: 'pendiente',
-      usuario: 'Usuario Actual',
-      fecha_creacion: new Date().toISOString().split('T')[0],
-      observaciones: newTraspaso.observaciones
-    };
+    const selectedProduct = products.find(p => p.id === newTraspaso.product_id);
+    if (!selectedProduct) {
+      alert('Debe seleccionar un producto válido');
+      return;
+    }
 
-    setTraspasos(prev => [traspaso, ...prev]);
-    setNewTraspaso({
-      almacen_origen: '',
-      almacen_destino: '',
-      producto: '',
-      cantidad: 0,
-      observaciones: ''
-    });
-    setShowForm(false);
-    alert('Traspaso creado exitosamente');
+    try {
+      await createTransfer({
+        from_warehouse_id: newTraspaso.from_warehouse_id,
+        to_warehouse_id: newTraspaso.to_warehouse_id,
+        product_id: newTraspaso.product_id,
+        product_name: selectedProduct.name,
+        quantity: newTraspaso.cantidad,
+        status: 'pending',
+        date: new Date().toISOString().split('T')[0],
+        reference: newTraspaso.reference || `TRP-${Date.now().toString().slice(-6)}`,
+        notes: newTraspaso.notes,
+        created_by: user?.id || ''
+      });
+
+      setNewTraspaso({
+        from_warehouse_id: '',
+        to_warehouse_id: '',
+        product_id: '',
+        cantidad: 0,
+        reference: '',
+        notes: ''
+      });
+      setShowForm(false);
+      alert('Traspaso creado exitosamente');
+    } catch (err) {
+      console.error('Error creating transfer:', err);
+      alert('Error al crear el traspaso');
+    }
   };
 
-  const updateEstatus = (traspasoId: string, nuevoEstatus: Traspaso['estatus']) => {
-    setTraspasos(prev => prev.map(t => 
-      t.id === traspasoId ? { ...t, estatus: nuevoEstatus } : t
-    ));
+  const updateEstatus = async (transferId: string, newStatus: WarehouseTransfer['status']) => {
+    try {
+      await updateTransferStatus(transferId, newStatus);
+      alert('Estado actualizado exitosamente');
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert('Error al actualizar el estado');
+    }
   };
 
-  const traspasosFiltrados = traspasos.filter(traspaso => {
-    if (filtros.almacen_origen && traspaso.almacen_origen !== filtros.almacen_origen) return false;
-    if (filtros.almacen_destino && traspaso.almacen_destino !== filtros.almacen_destino) return false;
-    if (filtros.estatus && traspaso.estatus !== filtros.estatus) return false;
-    if (filtros.fecha_ini && traspaso.fecha < filtros.fecha_ini) return false;
-    if (filtros.fecha_fin && traspaso.fecha > filtros.fecha_fin) return false;
+  const traspasosFiltrados = transfers.filter(transfer => {
+    if (filtros.almacen_origen && transfer.from_warehouse_name !== filtros.almacen_origen) return false;
+    if (filtros.almacen_destino && transfer.to_warehouse_name !== filtros.almacen_destino) return false;
+    if (filtros.estatus && transfer.status !== filtros.estatus) return false;
+    if (filtros.fecha_ini && transfer.date < filtros.fecha_ini) return false;
+    if (filtros.fecha_fin && transfer.date > filtros.fecha_fin) return false;
     return true;
   });
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const columns = [
-    { key: 'folio', label: 'Folio', sortable: true },
+    { key: 'reference', label: 'Referencia', sortable: true },
     { 
-      key: 'fecha', 
+      key: 'date', 
       label: 'Fecha', 
       sortable: true,
       render: (value: string) => new Date(value).toLocaleDateString('es-MX')
     },
-    { key: 'almacen_origen', label: 'Almacén Origen', sortable: true },
-    { key: 'almacen_destino', label: 'Almacén Destino', sortable: true },
-    { key: 'producto', label: 'Producto', sortable: true },
+    { key: 'from_warehouse_name', label: 'Almacén Origen', sortable: true },
+    { key: 'to_warehouse_name', label: 'Almacén Destino', sortable: true },
+    { key: 'product_name', label: 'Producto', sortable: true },
     { 
-      key: 'cantidad', 
+      key: 'quantity', 
       label: 'Cantidad', 
       sortable: true,
       render: (value: number) => value.toLocaleString('es-MX')
     },
     {
-      key: 'estatus',
+      key: 'status',
       label: 'Estatus',
       render: (value: string) => (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          value === 'completado' ? 'bg-green-100 text-green-800' :
-          value === 'en_transito' ? 'bg-blue-100 text-blue-800' :
-          value === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+          value === 'completed' ? 'bg-green-100 text-green-800' :
+          value === 'in_transit' ? 'bg-blue-100 text-blue-800' :
+          value === 'pending' ? 'bg-yellow-100 text-yellow-800' :
           'bg-red-100 text-red-800'
         }`}>
-          {value === 'completado' ? 'Completado' :
-           value === 'en_transito' ? 'En Tránsito' :
-           value === 'pendiente' ? 'Pendiente' : 'Cancelado'}
+          {value === 'completed' ? 'Completado' :
+           value === 'in_transit' ? 'En Tránsito' :
+           value === 'pending' ? 'Pendiente' : 'Cancelado'}
         </span>
       )
     },
-    { key: 'usuario', label: 'Usuario', sortable: true },
+    { key: 'created_by', label: 'Usuario', sortable: true },
     {
       key: 'actions',
       label: 'Acciones',
-      render: (_, traspaso: Traspaso) => (
+      render: (_, transfer: WarehouseTransfer) => (
         <div className="flex items-center space-x-2">
-          {traspaso.estatus === 'pendiente' && (
+          {transfer.status === 'pending' && (
             <button
-              onClick={() => updateEstatus(traspaso.id, 'en_transito')}
+              onClick={() => updateEstatus(transfer.id, 'in_transit')}
               className="p-1 text-blue-600 hover:text-blue-800"
               title="Marcar en tránsito"
             >
               <Clock size={16} />
             </button>
           )}
-          {traspaso.estatus === 'en_transito' && (
+          {transfer.status === 'in_transit' && (
             <button
-              onClick={() => updateEstatus(traspaso.id, 'completado')}
+              onClick={() => updateEstatus(transfer.id, 'completed')}
               className="p-1 text-green-600 hover:text-green-800"
               title="Marcar completado"
             >
@@ -174,7 +183,7 @@ export function EstadoTraspaso() {
             </button>
           )}
           <button
-            onClick={() => updateEstatus(traspaso.id, 'cancelado')}
+            onClick={() => updateEstatus(transfer.id, 'cancelled')}
             className="p-1 text-red-600 hover:text-red-800"
             title="Cancelar"
           >
@@ -186,8 +195,8 @@ export function EstadoTraspaso() {
   ];
 
   const totalTraspasos = traspasosFiltrados.length;
-  const traspasosCompletados = traspasosFiltrados.filter(t => t.estatus === 'completado').length;
-  const traspasosPendientes = traspasosFiltrados.filter(t => t.estatus === 'pendiente').length;
+  const traspasosCompletados = traspasosFiltrados.filter(t => t.status === 'completed').length;
+  const traspasosPendientes = traspasosFiltrados.filter(t => t.status === 'pending').length;
 
   return (
     <div className="space-y-6">
@@ -249,7 +258,7 @@ export function EstadoTraspaso() {
             </div>
             <div>
               <div className="text-2xl font-bold text-purple-600">
-                {traspasosFiltrados.filter(t => t.estatus === 'en_transito').length}
+                {traspasosFiltrados.filter(t => t.status === 'in_transit').length}
               </div>
               <div className="text-sm text-gray-500">En movimiento</div>
             </div>
@@ -272,9 +281,9 @@ export function EstadoTraspaso() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Todos</option>
-              <option value="BODEGA-PRINCIPAL">BODEGA-PRINCIPAL</option>
-              <option value="ALMACEN-A">ALMACEN-A</option>
-              <option value="ALMACEN-B">ALMACEN-B</option>
+              {warehouses.map(warehouse => (
+                <option key={warehouse.id} value={warehouse.name}>{warehouse.name}</option>
+              ))}
             </select>
           </div>
 
@@ -288,9 +297,9 @@ export function EstadoTraspaso() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Todos</option>
-              <option value="SUCURSAL-CENTRO">SUCURSAL-CENTRO</option>
-              <option value="SUCURSAL-NORTE">SUCURSAL-NORTE</option>
-              <option value="SUCURSAL-SUR">SUCURSAL-SUR</option>
+              {warehouses.map(warehouse => (
+                <option key={warehouse.id} value={warehouse.name}>{warehouse.name}</option>
+              ))}
             </select>
           </div>
 
@@ -304,10 +313,10 @@ export function EstadoTraspaso() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Todos</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="en_transito">En Tránsito</option>
-              <option value="completado">Completado</option>
-              <option value="cancelado">Cancelado</option>
+              <option value="pending">Pendiente</option>
+              <option value="in_transit">En Tránsito</option>
+              <option value="completed">Completado</option>
+              <option value="cancelled">Cancelado</option>
             </select>
           </div>
 
@@ -371,15 +380,15 @@ export function EstadoTraspaso() {
                     Almacén Origen *
                   </label>
                   <select
-                    value={newTraspaso.almacen_origen}
-                    onChange={(e) => setNewTraspaso(prev => ({ ...prev, almacen_origen: e.target.value }))}
+                    value={newTraspaso.from_warehouse_id}
+                    onChange={(e) => setNewTraspaso(prev => ({ ...prev, from_warehouse_id: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   >
                     <option value="">Seleccionar origen</option>
-                    <option value="BODEGA-PRINCIPAL">BODEGA-PRINCIPAL</option>
-                    <option value="ALMACEN-A">ALMACEN-A</option>
-                    <option value="ALMACEN-B">ALMACEN-B</option>
+                    {warehouses.map(warehouse => (
+                      <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -388,15 +397,15 @@ export function EstadoTraspaso() {
                     Almacén Destino *
                   </label>
                   <select
-                    value={newTraspaso.almacen_destino}
-                    onChange={(e) => setNewTraspaso(prev => ({ ...prev, almacen_destino: e.target.value }))}
+                    value={newTraspaso.to_warehouse_id}
+                    onChange={(e) => setNewTraspaso(prev => ({ ...prev, to_warehouse_id: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   >
                     <option value="">Seleccionar destino</option>
-                    <option value="SUCURSAL-CENTRO">SUCURSAL-CENTRO</option>
-                    <option value="SUCURSAL-NORTE">SUCURSAL-NORTE</option>
-                    <option value="SUCURSAL-SUR">SUCURSAL-SUR</option>
+                    {warehouses.map(warehouse => (
+                      <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -404,19 +413,16 @@ export function EstadoTraspaso() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Producto *
                   </label>
-                  <select
-                    value={newTraspaso.producto}
-                    onChange={(e) => setNewTraspaso(prev => ({ ...prev, producto: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">Seleccionar producto</option>
-                    {products.map(product => (
-                      <option key={product.id} value={product.name}>
-                        {product.name} - Stock: {product.stock}
-                      </option>
-                    ))}
-                  </select>
+                  <AutocompleteInput
+                    options={products.map(product => ({
+                      id: product.id,
+                      label: `${product.name} - Stock: ${getWarehouseStock(newTraspaso.from_warehouse_id, product.id)}`,
+                      value: product.id
+                    }))}
+                    value={newTraspaso.product_id}
+                    onChange={(value) => setNewTraspaso(prev => ({ ...prev, product_id: value }))}
+                    placeholder="Buscar producto..."
+                  />
                 </div>
 
                 <div>
@@ -429,21 +435,39 @@ export function EstadoTraspaso() {
                     onChange={(e) => setNewTraspaso(prev => ({ ...prev, cantidad: parseInt(e.target.value) || 0 }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     min="1"
+                    max={newTraspaso.from_warehouse_id && newTraspaso.product_id ? getWarehouseStock(newTraspaso.from_warehouse_id, newTraspaso.product_id) : undefined}
                     required
                   />
+                  {newTraspaso.from_warehouse_id && newTraspaso.product_id && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Stock disponible: {getWarehouseStock(newTraspaso.from_warehouse_id, newTraspaso.product_id)}
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="mt-6">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Referencia
+                  </label>
+                  <input
+                    type="text"
+                    value={newTraspaso.reference}
+                    onChange={(e) => setNewTraspaso(prev => ({ ...prev, reference: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="TRP-001"
+                  />
+                </div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Observaciones
+                  Notas
                 </label>
                 <textarea
-                  value={newTraspaso.observaciones}
-                  onChange={(e) => setNewTraspaso(prev => ({ ...prev, observaciones: e.target.value }))}
+                  value={newTraspaso.notes}
+                  onChange={(e) => setNewTraspaso(prev => ({ ...prev, notes: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
-                  placeholder="Observaciones del traspaso..."
+                  placeholder="Notas del traspaso..."
                 />
               </div>
 
