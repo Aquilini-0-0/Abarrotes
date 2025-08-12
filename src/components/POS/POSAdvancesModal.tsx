@@ -246,14 +246,6 @@ return (
               <option value="cancelled">Cancelados</option>
             </select>
           </div>
-
-          <button
-            onClick={() => setShowForm(true)}
-            className="w-full sm:w-auto flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:opacity-90 transition-colors text-sm"
-          >
-            <Plus size={14} className="sm:w-4 sm:h-4" />
-            <span>Nuevo Anticipo</span>
-          </button>
         </div>
 
         {/* Table */}
