@@ -621,40 +621,42 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
   <div className="grid grid-cols-3 gap-1 sm:gap-2">
     
     {/* Botón Procesar */}
-    <button
-      onClick={handleProcessPayment}
-      disabled={newPayment.amount <= 0 || newPayment.amount > selectedSale.balance}
-      className="bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 disabled:from-gray-200 disabled:to-gray-300 text-green-700 disabled:text-gray-500 py-1 sm:py-2 px-1 sm:px-3 rounded-md font-semibold text-[10px] sm:text-xs shadow-sm transition-all flex flex-col items-center min-h-[32px] sm:min-h-[40px]"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 sm:w-4 sm:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-      </svg>
-      PAGAR
-    </button>
+   {/* Botón Pagar */}
+<button
+  onClick={handleProcessPayment}
+  disabled={newPayment.amount <= 0 || newPayment.amount > selectedSale.balance}
+  className="bg-gradient-to-r from-green-200 to-green-300 hover:from-green-300 hover:to-green-400 disabled:from-gray-200 disabled:to-gray-300 text-green-800 disabled:text-gray-500 py-1 px-2 rounded-md font-semibold text-[11px] sm:text-sm shadow transition-all flex flex-col items-center min-h-[30px] sm:min-h-[36px]"
+>
+  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+  </svg>
+  PAGAR
+</button>
 
-    {/* Botón Guardar */}
-    <button
-      className="bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 text-orange-700 py-1 sm:py-2 px-1 sm:px-3 rounded-md font-semibold text-[10px] sm:text-xs shadow-sm flex flex-col items-center min-h-[32px] sm:min-h-[40px]"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 sm:w-4 sm:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-      </svg>
-      GUARDAR
-    </button>
+{/* Botón Guardar */}
+<button
+  className="bg-gradient-to-r from-orange-200 to-red-200 hover:from-orange-300 hover:to-red-300 text-orange-800 py-1 px-2 rounded-md font-semibold text-[11px] sm:text-sm shadow transition-all flex flex-col items-center min-h-[30px] sm:min-h-[36px]"
+>
+  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+  </svg>
+  GUARDAR
+</button>
 
-    {/* Botón Cancelar */}
-    <button
-      onClick={() => {
-        setShowPaymentForm(false);
-        setSelectedSale(null);
-      }}
-      className="bg-white text-orange-600 border border-orange-600 py-1 sm:py-2 px-1 sm:px-3 rounded-md font-semibold text-[10px] sm:text-xs shadow-sm hover:bg-orange-50 flex flex-col items-center min-h-[32px] sm:min-h-[40px]"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 sm:w-4 sm:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-      </svg>
-      CANCELAR
-    </button>
+{/* Botón Cancelar */}
+<button
+  onClick={() => {
+    setShowPaymentForm(false);
+    setSelectedSale(null);
+  }}
+  className="bg-white text-orange-700 border border-orange-600 py-1 px-2 rounded-md font-semibold text-[11px] sm:text-sm shadow hover:bg-orange-50 transition-all flex flex-col items-center min-h-[30px] sm:min-h-[36px]"
+>
+  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 sm:w-4 sm:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+  </svg>
+  CANCELAR
+</button>
+
         </div>
       </div>
     </div>
