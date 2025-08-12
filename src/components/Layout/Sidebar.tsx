@@ -122,7 +122,6 @@ export function Sidebar() {
         {menuItems.map((section, index) => (
           <div key={index} className="mb-6">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                        onClick={() => setIsMobileMenuOpen(false)}
               {section.title}
             </h3>
             <ul className="space-y-1">
@@ -161,11 +160,6 @@ export function Sidebar() {
           >
             <LogOut size={16} />
             <span>Cerrar Sesión</span>
-      <Route path="/ejecutivo/reporte-cajas" element={
-        <PrivateRoute>
-          <ReporteCajas />
-        </PrivateRoute>
-      } />
           </button>
         </div>
       </nav>
