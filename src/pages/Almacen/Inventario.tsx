@@ -99,12 +99,6 @@ export function Inventario() {
       sortable: true,
       render: (value: any) => `$${Number(value || 0).toFixed(2)}`
     },
-    { 
-      key: 'price', 
-      label: 'Precio', 
-      sortable: true,
-      render: (value: any) => `$${Number(value || 0).toFixed(2)}`
-    },
     {
       key: 'status',
       label: 'Estado',
