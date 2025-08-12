@@ -70,8 +70,8 @@ export function useInventoryMovements() {
       } else if (movementData.type === 'salida' || movementData.type === 'merma') {
         newStock -= movementData.quantity;
       } else if (movementData.type === 'ajuste') {
-        // For adjustments, the quantity represents the new stock level
-        newStock = movementData.quantity;
+        // For adjustments, the quantity represents the adjustment amount
+        newStock += movementData.quantity;
       }
 
       // Update the product stock
@@ -81,6 +81,8 @@ export function useInventoryMovements() {
         .eq('id', movementData.product_id);
 
       if (updateError) throw updateError;
+
+      console.log(`Stock updated for product ${movementData.product_name}: ${product.stock} → ${Math.max(0, newStock)}`);
 
       const newMovement: InventoryMovement = {
         id: data.id,

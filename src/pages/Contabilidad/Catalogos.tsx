@@ -129,6 +129,9 @@ export function Catalogos() {
         price5: newPrices.price5
       });
       
+      // Force refresh of products data
+      await refetch();
+      
       setShowPriceForm(false);
       setSelectedProduct(null);
       setNewPrices({ price1: 0, price2: 0, price3: 0, price4: 0, price5: 0 });

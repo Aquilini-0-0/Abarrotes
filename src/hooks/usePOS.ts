@@ -283,28 +283,43 @@ export function usePOS() {
         const newTotal = order.total;
         
         // Determine new status based on payment state and total changes
-        let newStatus = 'pending'; // Default to pending
+        let newStatus = order.payment_method === 'credit' ? 'pending' : 'paid';
         let newAmountPaid = amountPaid;
-        let newRemainingBalance = newTotal;
+        let newRemainingBalance = order.payment_method === 'credit' ? newTotal : 0;
         
         if (wasFullyPaid) {
           if (newTotal === previousTotal) {
             // Case A: No changes to total, keep as paid
             newStatus = 'paid';
+            newAmountPaid = newTotal;
             newRemainingBalance = 0;
           } else if (newTotal > previousTotal) {
-            // Case B: Total increased, mark as pending with difference to pay
-            newStatus = 'pending';
-            newRemainingBalance = newTotal - amountPaid;
+            // Case B: Total increased
+            if (order.payment_method === 'credit') {
+              newStatus = 'pending';
+              newRemainingBalance = newTotal - amountPaid;
+            } else {
+              newStatus = 'paid';
+              newAmountPaid = newTotal;
+              newRemainingBalance = 0;
+            }
           } else {
-            // Total decreased but was paid, keep as paid
+            // Case C: Total decreased but was paid, keep as paid
             newStatus = 'paid';
+            newAmountPaid = newTotal;
             newRemainingBalance = 0;
           }
         } else {
-          // Was not fully paid, calculate remaining balance
-          newRemainingBalance = newTotal - amountPaid;
-          newStatus = newRemainingBalance <= 0.01 ? 'paid' : 'pending';
+          // Was not fully paid
+          if (order.payment_method === 'credit') {
+            newStatus = 'pending';
+            newRemainingBalance = newTotal - amountPaid;
+          } else {
+            // Non-credit payment, mark as paid
+            newStatus = 'paid';
+            newAmountPaid = newTotal;
+            newRemainingBalance = 0;
+          }
         }
 
         // Update existing order
@@ -335,16 +350,9 @@ export function usePOS() {
         if (deleteItemsError) throw deleteItemsError;
       } else {
         // Determine initial status based on payment method
-        let initialStatus = 'pending';
-        let initialAmountPaid = 0;
-        let initialRemainingBalance = order.total;
-        
-        // If it's a cash payment (not credit), mark as paid immediately
-        if (order.payment_method && order.payment_method !== 'credit') {
-          initialStatus = 'paid';
-          initialAmountPaid = order.total;
-          initialRemainingBalance = 0;
-        }
+        let initialStatus = order.payment_method === 'credit' ? 'pending' : 'paid';
+        let initialAmountPaid = order.payment_method === 'credit' ? 0 : order.total;
+        let initialRemainingBalance = order.payment_method === 'credit' ? order.total : 0;
         
         // Create new sale record
         const { data: newSale, error: saleError } = await supabase
@@ -413,6 +421,9 @@ export function usePOS() {
               .eq('id', item.product_id);
           }
         }
+        
+        // Refresh products data to reflect stock changes
+        await fetchProducts();
       }
 
       await fetchOrders();

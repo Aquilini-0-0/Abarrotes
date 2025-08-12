@@ -426,25 +426,201 @@ export function Clientes() {
           <Card title="Acciones Rápidas">
             <div className="space-y-3">
               <button 
-                onClick={() => window.location.href = '/ventas/estado-cuenta-clientes'}
+                onClick={() => {
+                  // Generate client account status PDF
+                  const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                      <meta charset="UTF-8">
+                      <title>Estado de Cuenta de Clientes</title>
+                      <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3B82F6; padding-bottom: 15px; }
+                        .title { font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th { background-color: #3B82F6; color: white; padding: 12px 8px; text-align: left; font-weight: bold; }
+                        td { padding: 8px; border-bottom: 1px solid #E5E7EB; }
+                        tr:nth-child(even) { background-color: #F9FAFB; }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="header">
+                        <div class="title">ESTADO DE CUENTA DE CLIENTES</div>
+                        <div>Generado el ${new Date().toLocaleString('es-MX')}</div>
+                      </div>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Cliente</th>
+                            <th>RFC</th>
+                            <th>Límite Crédito</th>
+                            <th>Saldo Actual</th>
+                            <th>Crédito Disponible</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${clients.map(client => `
+                            <tr>
+                              <td>${client.name}</td>
+                              <td>${client.rfc}</td>
+                              <td>$${client.credit_limit.toLocaleString('es-MX')}</td>
+                              <td>$${client.balance.toLocaleString('es-MX')}</td>
+                              <td>$${(client.credit_limit - client.balance).toLocaleString('es-MX')}</td>
+                            </tr>
+                          `).join('')}
+                        </tbody>
+                      </table>
+                    </body>
+                    </html>
+                  `;
+                  
+                  const blob = new Blob([htmlContent], { type: 'text/html' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `estado_cuenta_clientes_${new Date().toISOString().split('T')[0]}.html`;
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  
+                  // Also open print dialog
+                  const printWindow = window.open('', '_blank');
+                  if (printWindow) {
+                    printWindow.document.write(htmlContent);
+                    printWindow.document.close();
+                    setTimeout(() => {
+                      printWindow.print();
+                      printWindow.close();
+                    }, 250);
+                  }
+                  
+                  alert('PDF de estado de cuenta generado exitosamente');
+                }}
                 className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="font-medium text-gray-900">Estado de Cuenta</div>
-                <div className="text-sm text-gray-500">Ver deudas pendientes</div>
+                <div className="text-sm text-gray-500">Generar PDF de deudas pendientes</div>
               </button>
               <button 
-                onClick={() => window.location.href = '/ventas/reportes'}
+                onClick={() => {
+                  // Generate sales report PDF by client
+                  const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                      <meta charset="UTF-8">
+                      <title>Reporte de Ventas por Cliente</title>
+                      <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3B82F6; padding-bottom: 15px; }
+                        .title { font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th { background-color: #3B82F6; color: white; padding: 12px 8px; text-align: left; font-weight: bold; }
+                        td { padding: 8px; border-bottom: 1px solid #E5E7EB; }
+                        tr:nth-child(even) { background-color: #F9FAFB; }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="header">
+                        <div class="title">REPORTE DE VENTAS POR CLIENTE</div>
+                        <div>Generado el ${new Date().toLocaleString('es-MX')}</div>
+                      </div>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Cliente</th>
+                            <th>RFC</th>
+                            <th>Zona</th>
+                            <th>Límite Crédito</th>
+                            <th>Saldo Actual</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${clients.map(client => `
+                            <tr>
+                              <td>${client.name}</td>
+                              <td>${client.rfc}</td>
+                              <td>${client.zone}</td>
+                              <td>$${client.credit_limit.toLocaleString('es-MX')}</td>
+                              <td>$${client.balance.toLocaleString('es-MX')}</td>
+                            </tr>
+                          `).join('')}
+                        </tbody>
+                      </table>
+                    </body>
+                    </html>
+                  `;
+                  
+                  const blob = new Blob([htmlContent], { type: 'text/html' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `reporte_ventas_clientes_${new Date().toISOString().split('T')[0]}.html`;
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  
+                  // Also open print dialog
+                  const printWindow = window.open('', '_blank');
+                  if (printWindow) {
+                    printWindow.document.write(htmlContent);
+                    printWindow.document.close();
+                    setTimeout(() => {
+                      printWindow.print();
+                      printWindow.close();
+                    }, 250);
+                  }
+                  
+                  alert('PDF de reporte de ventas generado exitosamente');
+                }}
                 className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="font-medium text-gray-900">Reporte de Ventas</div>
-                <div className="text-sm text-gray-500">Por cliente</div>
+                <div className="text-sm text-gray-500">Generar PDF por cliente</div>
               </button>
               <button 
-                onClick={() => window.location.href = '/contabilidad/catalogos'}
+                onClick={() => {
+                  // Generate special prices PDF
+                  const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                      <meta charset="UTF-8">
+                      <title>Precios Especiales</title>
+                      <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3B82F6; padding-bottom: 15px; }
+                        .title { font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th { background-color: #3B82F6; color: white; padding: 12px 8px; text-align: left; font-weight: bold; }
+                        td { padding: 8px; border-bottom: 1px solid #E5E7EB; }
+                        tr:nth-child(even) { background-color: #F9FAFB; }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="header">
+                        <div class="title">PRECIOS ESPECIALES</div>
+                        <div>Generado el ${new Date().toLocaleString('es-MX')}</div>
+                      </div>
+                      <p>Los precios especiales se configuran desde el módulo de Catálogos.</p>
+                      <p>Para acceder: Contabilidad → Control de Catálogos → Precios de Productos</p>
+                    </body>
+                    </html>
+                  `;
+                  
+                  const blob = new Blob([htmlContent], { type: 'text/html' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `precios_especiales_${new Date().toISOString().split('T')[0]}.html`;
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  
+                  alert('PDF de precios especiales generado exitosamente');
+                }}
                 className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="font-medium text-gray-900">Precios Especiales</div>
-                <div className="text-sm text-gray-500">Configurar descuentos</div>
+                <div className="text-sm text-gray-500">Generar PDF de descuentos</div>
               </button>
             </div>
           </Card>

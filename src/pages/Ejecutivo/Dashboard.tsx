@@ -246,43 +246,11 @@ export function Dashboard() {
 
           <Card title="Acciones Rápidas">
             <div className="space-y-3">
-              <button 
-                onClick={() => window.location.href = '/ejecutivo/corte-caja'}
-                className="w-full text-left px-3 lg:px-4 py-2 lg:py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="font-medium text-gray-900">Corte de Caja</div>
-                <div className="text-xs lg:text-sm text-gray-500">Generar reporte diario</div>
-              </button>
-              <button 
-                onClick={() => {
-                  // Create backup functionality
-                  const backupData = {
-                    timestamp: new Date().toISOString(),
-                    products: products.length,
-                    sales: sales.length,
-                    clients: clients.length
-                  };
-                  const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `backup_${new Date().toISOString().split('T')[0]}.json`;
-                  a.click();
-                  window.URL.revokeObjectURL(url);
-                  alert('Backup generado exitosamente');
-                }}
-                className="w-full text-left px-3 lg:px-4 py-2 lg:py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="font-medium text-gray-900">Backup de Datos</div>
-                <div className="text-xs lg:text-sm text-gray-500">Respaldar información</div>
-              </button>
-              <button 
-                onClick={() => window.location.href = '/ejecutivo/analisis'}
-                className="w-full text-left px-3 lg:px-4 py-2 lg:py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="font-medium text-gray-900">Reporte Ejecutivo</div>
-                <div className="text-xs lg:text-sm text-gray-500">Generar PDF mensual</div>
-              </button>
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <p className="text-blue-800 font-medium text-center">
+                  Acciones rápidas removidas para simplificar la interfaz
+                </p>
+              </div>
             </div>
           </Card>
         </div>

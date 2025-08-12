@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useProducts } from './useProducts';
 
 export interface ConceptoGasto {
   id: string;
@@ -23,6 +24,7 @@ export function useCatalogos() {
   const [cuentas, setCuentas] = useState<CuentaBancaria[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { refetch: refetchProducts } = useProducts();
 
   const fetchCatalogos = async () => {
     try {

@@ -207,21 +207,45 @@ export function POSLayout() {
   const handlePayOrder = async (paymentData: any) => {
     if (!currentOrder) return;
 
-    // Check credit limit before payment if it's a credit sale
-    if (paymentData.method === 'credit' && selectedClient) {
-      const totalAfterSale = selectedClient.balance + currentOrder.total;
-      if (totalAfterSale > selectedClient.credit_limit) {
-        setShowCreditAuthModal(true);
+    try {
+      // Determine if this is an existing order being paid
+      const isExistingOrder = !currentOrder.id.startsWith('temp-');
+      
+      // For existing orders, use processPayment to handle partial/full payments
+      if (isExistingOrder) {
+        const paymentAmount = paymentData.method === 'mixed' 
+          ? paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer + paymentData.breakdown.credit
+          : currentOrder.total;
+          
+        await processPayment(currentOrder.id, {
+          amount: paymentAmount,
+          method: paymentData.method,
+          reference: paymentData.reference
+        });
+        
+        // Update last order
+        setLastOrder({
+          id: currentOrder.id,
+          client_name: currentOrder.client_name,
+          total: currentOrder.total,
+          items_count: currentOrder.items.length,
+          date: new Date().toISOString(),
+          status: 'paid'
+        });
+        
+        markTabAsSaved(activeTabId);
+        createNewTab();
+        setShowPaymentModal(false);
+        alert('Pago procesado exitosamente');
         return;
       }
-    }
-
-    try {
+      
+      // For new orders, save with payment method
       const orderToSave = {
         ...currentOrder,
         payment_method: paymentData.method,
         is_credit: paymentData.method === 'credit',
-        status: 'draft' // Let the saveOrder function determine the correct status
+        status: paymentData.method === 'credit' ? 'pending' : 'paid'
       } as any;
 
       const savedOrder = await saveOrder(orderToSave);
@@ -233,7 +257,7 @@ export function POSLayout() {
         total: orderToSave.total,
         items_count: orderToSave.items.length,
         date: new Date().toISOString(),
-        status: orderToSave.status
+        status: savedOrder.status
       });
       
       // Mark tab as saved and create new tab
