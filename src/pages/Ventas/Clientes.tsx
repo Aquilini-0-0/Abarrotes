@@ -577,51 +577,7 @@ export function Clientes() {
                 <div className="font-medium text-gray-900">Reporte de Ventas</div>
                 <div className="text-sm text-gray-500">Generar PDF por cliente</div>
               </button>
-              <button 
-                onClick={() => {
-                  // Generate special prices PDF
-                  const htmlContent = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                      <meta charset="UTF-8">
-                      <title>Precios Especiales</title>
-                      <style>
-                        body { font-family: Arial, sans-serif; margin: 20px; }
-                        .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3B82F6; padding-bottom: 15px; }
-                        .title { font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                        th { background-color: #3B82F6; color: white; padding: 12px 8px; text-align: left; font-weight: bold; }
-                        td { padding: 8px; border-bottom: 1px solid #E5E7EB; }
-                        tr:nth-child(even) { background-color: #F9FAFB; }
-                      </style>
-                    </head>
-                    <body>
-                      <div class="header">
-                        <div class="title">PRECIOS ESPECIALES</div>
-                        <div>Generado el ${new Date().toLocaleString('es-MX')}</div>
-                      </div>
-                      <p>Los precios especiales se configuran desde el módulo de Catálogos.</p>
-                      <p>Para acceder: Contabilidad → Control de Catálogos → Precios de Productos</p>
-                    </body>
-                    </html>
-                  `;
-                  
-                  const blob = new Blob([htmlContent], { type: 'text/html' });
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `precios_especiales_${new Date().toISOString().split('T')[0]}.html`;
-                  a.click();
-                  window.URL.revokeObjectURL(url);
-                  
-                  alert('PDF de precios especiales generado exitosamente');
-                }}
-                className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="font-medium text-gray-900">Precios Especiales</div>
-                <div className="text-sm text-gray-500">Generar PDF de descuentos</div>
-              </button>
+            
             </div>
           </Card>
         </div>
