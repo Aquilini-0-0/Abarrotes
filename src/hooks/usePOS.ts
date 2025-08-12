@@ -268,6 +268,45 @@ export function usePOS() {
       
       // Check if this is an existing order (not temp)
       if (!isNewOrder) {
+        // Get current order data to compare totals
+        const { data: currentOrder, error: fetchError } = await supabase
+          .from('sales')
+          .select('total, amount_paid, status')
+          .eq('id', order.id)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        const previousTotal = currentOrder.total;
+        const amountPaid = currentOrder.amount_paid || 0;
+        const wasFullyPaid = currentOrder.status === 'paid';
+        const newTotal = order.total;
+        
+        // Determine new status based on payment state and total changes
+        let newStatus = 'pending'; // Default to pending
+        let newAmountPaid = amountPaid;
+        let newRemainingBalance = newTotal;
+        
+        if (wasFullyPaid) {
+          if (newTotal === previousTotal) {
+            // Case A: No changes to total, keep as paid
+            newStatus = 'paid';
+            newRemainingBalance = 0;
+          } else if (newTotal > previousTotal) {
+            // Case B: Total increased, mark as pending with difference to pay
+            newStatus = 'pending';
+            newRemainingBalance = newTotal - amountPaid;
+          } else {
+            // Total decreased but was paid, keep as paid
+            newStatus = 'paid';
+            newRemainingBalance = 0;
+          }
+        } else {
+          // Was not fully paid, calculate remaining balance
+          newRemainingBalance = newTotal - amountPaid;
+          newStatus = newRemainingBalance <= 0.01 ? 'paid' : 'pending';
+        }
+
         // Update existing order
         const { data: updatedSale, error: updateError } = await supabase
           .from('sales')
@@ -276,8 +315,9 @@ export function usePOS() {
             client_name: order.client_name,
             date: order.date,
             total: order.total,
-            remaining_balance: order.total,
-            status: 'pending' // Always save as pending, payment is separate
+            amount_paid: newAmountPaid,
+            remaining_balance: newRemainingBalance,
+            status: newStatus
           })
           .eq('id', order.id)
           .select()
@@ -302,7 +342,9 @@ export function usePOS() {
             client_name: order.client_name,
             date: order.date,
             total: order.total,
-            status: order.payment_method === 'credit' || order.is_credit ? 'pending' : 'paid',
+            status: 'pending', // Always save new orders as pending
+            amount_paid: 0,
+            remaining_balance: order.total,
             created_by: order.created_by
           })
           .select()
@@ -328,8 +370,8 @@ export function usePOS() {
 
       if (itemsError) throw itemsError;
 
-      // Note: Inventory movements and client balance updates will happen when payment is processed
-      // This keeps order saving separate from payment processing
+      // Note: Inventory movements only happen when payment is processed
+      // Saving an order doesn't affect inventory until payment is made
 
       await fetchOrders();
       return saleData;

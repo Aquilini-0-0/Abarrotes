@@ -113,15 +113,8 @@ export function POSOrderPanel({
   };
 
   const handleSaveClick = () => {
-    // Check credit limit if it's a credit sale
-    if (isCredit && client && order) {
-      const totalAfterSale = client.balance + order.total;
-      if (totalAfterSale > client.credit_limit) {
-        setPendingAction('save');
-        setShowCreditAuthModal(true);
-        return;
-      }
-    }
+    // Save order without payment processing
+    // Orders are saved as "pending" by default
     onSave();
   };
 
