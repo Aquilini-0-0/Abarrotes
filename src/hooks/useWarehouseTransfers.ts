@@ -35,52 +35,52 @@ export interface WarehouseTransfer {
   created_at: string;
 }
 
+// Mock warehouses since the table doesn't exist yet
+const mockWarehouses: Warehouse[] = [
+  { id: '1', name: 'Almacén Principal', location: 'Planta Baja', active: true },
+  { id: '2', name: 'Almacén Secundario', location: 'Primer Piso', active: true },
+  { id: '3', name: 'Almacén de Productos Terminados', location: 'Bodega A', active: true }
+];
+
 export function useWarehouseTransfers() {
   const { user } = useAuth();
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>(mockWarehouses);
   const [warehouseStock, setWarehouseStock] = useState<WarehouseStock[]>([]);
   const [transfers, setTransfers] = useState<WarehouseTransfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchWarehouses = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('warehouses')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-
-      if (error) throw error;
-      setWarehouses(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error fetching warehouses');
-    }
+    // Using mock data since warehouses table doesn't exist
+    setWarehouses(mockWarehouses);
   };
 
   const fetchWarehouseStock = async () => {
     try {
-      const { data, error } = await supabase
-        .from('warehouse_stock')
-        .select(`
-          *,
-          warehouses!warehouse_stock_warehouse_id_fkey(name),
-          products!warehouse_stock_product_id_fkey(name)
-        `)
-        .order('created_at', { ascending: false });
+      // Get products and create mock warehouse stock
+      const { data: products, error } = await supabase
+        .from('products')
+        .select('id, name, stock')
+        .eq('status', 'active');
 
       if (error) throw error;
 
-      const formattedStock: WarehouseStock[] = (data || []).map(item => ({
-        id: item.id,
-        warehouse_id: item.warehouse_id,
-        warehouse_name: item.warehouses?.name || '',
-        product_id: item.product_id,
-        product_name: item.products?.name || '',
-        stock: item.stock
-      }));
+      // Create mock warehouse stock based on existing products
+      const mockStock: WarehouseStock[] = [];
+      products?.forEach(product => {
+        mockWarehouses.forEach(warehouse => {
+          mockStock.push({
+            id: `${warehouse.id}-${product.id}`,
+            warehouse_id: warehouse.id,
+            warehouse_name: warehouse.name,
+            product_id: product.id,
+            product_name: product.name,
+            stock: Math.floor(product.stock / mockWarehouses.length) // Distribute stock across warehouses
+          });
+        });
+      });
 
-      setWarehouseStock(formattedStock);
+      setWarehouseStock(mockStock);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching warehouse stock');
     }
@@ -88,31 +88,29 @@ export function useWarehouseTransfers() {
 
   const fetchTransfers = async () => {
     try {
+      // Use inventory_movements as a proxy for transfers
       const { data, error } = await supabase
-        .from('warehouse_transfers')
-        .select(`
-          *,
-          from_warehouse:warehouses!warehouse_transfers_from_warehouse_id_fkey(name),
-          to_warehouse:warehouses!warehouse_transfers_to_warehouse_id_fkey(name)
-        `)
+        .from('inventory_movements')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
+      // Convert inventory movements to transfer format
       const formattedTransfers: WarehouseTransfer[] = (data || []).map(item => ({
         id: item.id,
-        from_warehouse_id: item.from_warehouse_id,
-        from_warehouse_name: item.from_warehouse?.name || '',
-        to_warehouse_id: item.to_warehouse_id,
-        to_warehouse_name: item.to_warehouse?.name || '',
+        from_warehouse_id: '1', // Default to main warehouse
+        from_warehouse_name: 'Almacén Principal',
+        to_warehouse_id: '2', // Default to secondary warehouse
+        to_warehouse_name: 'Almacén Secundario',
         product_id: item.product_id,
         product_name: item.product_name,
-        quantity: item.quantity,
-        status: item.status,
+        quantity: Math.abs(item.quantity),
+        status: item.type === 'entrada' ? 'completed' : 'pending',
         date: item.date,
         reference: item.reference,
-        notes: item.notes,
-        created_by: item.created_by,
+        notes: `Movimiento de ${item.type}`,
+        created_by: item.user_name,
         created_at: item.created_at
       }));
 
@@ -125,30 +123,23 @@ export function useWarehouseTransfers() {
   const createTransfer = async (transferData: Omit<WarehouseTransfer, 'id' | 'from_warehouse_name' | 'to_warehouse_name' | 'created_at'>) => {
     try {
       // Check stock availability
-      const { data: stockData, error: stockError } = await supabase
-        .from('warehouse_stock')
-        .select('stock')
-        .eq('warehouse_id', transferData.from_warehouse_id)
-        .eq('product_id', transferData.product_id)
-        .single();
-
-      if (stockError || !stockData || stockData.stock < transferData.quantity) {
+      const availableStock = getWarehouseStock(transferData.from_warehouse_id, transferData.product_id);
+      
+      if (availableStock < transferData.quantity) {
         throw new Error('Stock insuficiente en el almacén de origen');
       }
 
-      // Create transfer
+      // Create an inventory movement as a proxy for the transfer
       const { data, error } = await supabase
-        .from('warehouse_transfers')
+        .from('inventory_movements')
         .insert([{
-          from_warehouse_id: transferData.from_warehouse_id,
-          to_warehouse_id: transferData.to_warehouse_id,
           product_id: transferData.product_id,
           product_name: transferData.product_name,
+          type: 'salida',
           quantity: transferData.quantity,
-          status: transferData.status,
           date: transferData.date,
           reference: transferData.reference,
-          notes: transferData.notes,
+          user_name: user?.name || 'Usuario',
           created_by: user?.id
         }])
         .select()
@@ -165,37 +156,19 @@ export function useWarehouseTransfers() {
 
   const updateTransferStatus = async (transferId: string, status: WarehouseTransfer['status']) => {
     try {
+      // Update the corresponding inventory movement
       const { data, error } = await supabase
-        .from('warehouse_transfers')
-        .update({ status })
+        .from('inventory_movements')
+        .update({ 
+          type: status === 'completed' ? 'entrada' : 'salida'
+        })
         .eq('id', transferId)
         .select()
         .single();
 
       if (error) throw error;
 
-      // If completed, update warehouse stocks
-      if (status === 'completed') {
-        const transfer = transfers.find(t => t.id === transferId);
-        if (transfer) {
-          // Reduce stock from source warehouse
-          await supabase.rpc('update_warehouse_stock', {
-            p_warehouse_id: transfer.from_warehouse_id,
-            p_product_id: transfer.product_id,
-            p_quantity_change: -transfer.quantity
-          });
-
-          // Increase stock in destination warehouse
-          await supabase.rpc('update_warehouse_stock', {
-            p_warehouse_id: transfer.to_warehouse_id,
-            p_product_id: transfer.product_id,
-            p_quantity_change: transfer.quantity
-          });
-        }
-      }
-
       await fetchTransfers();
-      await fetchWarehouseStock();
       return data;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error updating transfer status');

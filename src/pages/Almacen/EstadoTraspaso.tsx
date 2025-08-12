@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useProducts } from '../../hooks/useProducts';
-import { useWarehouseTransfers } from '../../hooks/useWarehouseTransfers';
+import { useWarehouseTransfers, type WarehouseTransfer } from '../../hooks/useWarehouseTransfers';
 import { AutocompleteInput } from '../../components/Common/AutocompleteInput';
+import { useAuth } from '../../context/AuthContext';
 import { Plus, ArrowRightLeft, Package, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 export function EstadoTraspaso() {
+  const { user } = useAuth();
   const { products } = useProducts();
   const { 
     warehouses, 
@@ -78,7 +80,7 @@ export function EstadoTraspaso() {
       alert('Traspaso creado exitosamente');
     } catch (err) {
       console.error('Error creating transfer:', err);
-      alert('Error al crear el traspaso');
+      alert(err instanceof Error ? err.message : 'Error al crear el traspaso');
     }
   };
 
