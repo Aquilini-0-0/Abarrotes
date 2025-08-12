@@ -132,29 +132,40 @@ export function useOrderLocks() {
   };
 
   const cleanupUserLocks = async () => {
-    if (!user) return;
+    if (!user || !user.id || !sessionId) return;
 
     try {
-      // Only attempt cleanup if we have a valid session
-      if (user.id && sessionId) {
-        const { error } = await supabase
-          .from('order_locks')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('session_id', sessionId);
+      // Check if Supabase is available before attempting cleanup
+      if (!supabase) {
+        console.warn('Supabase client not available for lock cleanup');
+        return;
+      }
 
-        if (error) {
-          console.warn('Could not cleanup locks (non-critical):', error.message);
-        }
+      const { error } = await supabase
+        .from('order_locks')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('session_id', sessionId);
+
+      if (error) {
+        console.warn('Could not cleanup locks (non-critical):', error.message);
       }
     } catch (err) {
-      // Silently handle cleanup errors to prevent breaking the app
-      // This is not critical functionality and shouldn't block the user
-      console.warn('Could not cleanup locks (non-critical):', err instanceof Error ? err.message : 'Unknown error');
+      // Handle network errors gracefully - this is non-critical functionality
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        console.warn('Network error during lock cleanup (non-critical) - continuing without cleanup');
+      } else {
+        console.warn('Could not cleanup locks (non-critical):', err instanceof Error ? err.message : 'Unknown error');
+      }
     }
   };
 
   const cleanExpiredLocks = async () => {
+    if (!supabase) {
+      console.warn('Supabase client not available for expired lock cleanup');
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('order_locks')
@@ -166,7 +177,12 @@ export function useOrderLocks() {
       }
       await fetchLocks();
     } catch (err) {
-      console.warn('Could not clean expired locks (non-critical):', err instanceof Error ? err.message : 'Unknown error');
+      // Handle network errors gracefully
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        console.warn('Network error during expired lock cleanup (non-critical) - continuing without cleanup');
+      } else {
+        console.warn('Could not clean expired locks (non-critical):', err instanceof Error ? err.message : 'Unknown error');
+      }
     }
   };
 
