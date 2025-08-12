@@ -24,14 +24,14 @@ export function useProducts() {
         line: item.line,
         subline: item.subline,
         unit: item.unit,
-        stock: item.stock,
-        cost: item.cost,
-        price: item.price,
-        price1: item.price1 || item.price,
-        price2: item.price2 || item.price,
-        price3: item.price3 || item.price,
-        price4: item.price4 || item.price,
-        price5: item.price5 || item.price,
+        stock: Number(item.stock) || 0,
+        cost: Number(item.cost) || 0,
+        price: Number(item.price) || 0,
+        price1: Number(item.price1) || Number(item.price) || 0,
+        price2: Number(item.price2) || Number(item.price) || 0,
+        price3: Number(item.price3) || Number(item.price) || 0,
+        price4: Number(item.price4) || Number(item.price) || 0,
+        price5: Number(item.price5) || Number(item.price) || 0,
         status: item.status
       }));
 
@@ -60,9 +60,9 @@ export function useProducts() {
         line: data.line,
         subline: data.subline,
         unit: data.unit,
-        stock: data.stock,
-        cost: data.cost,
-        price: data.price,
+        stock: Number(data.stock) || 0,
+        cost: Number(data.cost) || 0,
+        price: Number(data.price) || 0,
         status: data.status
       };
 
@@ -91,9 +91,9 @@ export function useProducts() {
         line: data.line,
         subline: data.subline,
         unit: data.unit,
-        stock: data.stock,
-        cost: data.cost,
-        price: data.price,
+        stock: Number(data.stock) || 0,
+        cost: Number(data.cost) || 0,
+        price: Number(data.price) || 0,
         status: data.status
       };
 
