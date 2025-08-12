@@ -1,12 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { FileText, User, ShoppingCart, DollarSign, Clock, Package } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useAutoSync } from '../../hooks/useAutoSync';
 
 export function HeaderOnly() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [lastUpdate, setLastUpdate] = useState<string>('');
+
+  // Auto-sync for real-time updates
+  useAutoSync({
+    onDataUpdate: () => {
+      fetchOrders();
+      setLastUpdate(new Date().toLocaleTimeString('es-MX'));
+    },
+    interval: 2000, // Update every 2 seconds for real-time feel
+    tables: ['sales', 'sale_items']
+  });
 
   // Fetch orders directly without authentication dependency
   const fetchOrders = async () => {
@@ -22,11 +34,15 @@ export function HeaderOnly() {
             quantity,
             price,
             total
+          ),
+          payments (
+            amount
           )
         `)
-        .in('status', ['pending', 'draft']) // Only show unpaid orders
+        .in('status', ['pending', 'draft'])
+        .gt('remaining_balance', 0) // Only show orders with remaining balance
         .order('created_at', { ascending: false })
-        .limit(10); // Show up to 10 pending orders
+        .limit(15); // Show up to 15 pending orders
 
       if (error) {
         console.error('Error fetching orders:', error);
@@ -40,11 +56,18 @@ export function HeaderOnly() {
       const formattedOrders = (data || []).map((order: any) => ({
         id: order.id,
         client_name: order.client_name,
-        total: order.total,
+        total: order.remaining_balance || order.total,
+        original_total: order.total,
+        amount_paid: order.amount_paid || 0,
         items_count: order.sale_items?.length || 0,
         date: order.created_at,
         status: order.status,
-        folio: order.id.slice(-6).toUpperCase()
+        folio: order.id.slice(-6).toUpperCase(),
+        has_payments: (order.payments?.length || 0) > 0,
+        time_created: new Date(order.created_at).toLocaleTimeString('es-MX', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })
       }));
       
       setPendingOrders(formattedOrders);
@@ -69,13 +92,6 @@ export function HeaderOnly() {
   // Initial fetch and periodic refresh
   useEffect(() => {
     fetchOrders();
-    
-    // Refresh every 3 seconds for real-time updates without flashing
-    const refreshInterval = setInterval(() => {
-      fetchOrders();
-    }, 3000);
-    
-    return () => clearInterval(refreshInterval);
   }, []);
 
   if (loading) {
@@ -122,7 +138,7 @@ export function HeaderOnly() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-6xl font-bold text-gray-800 mb-4">
-            DURAN - PEDIDOS PENDIENTES
+            DURAN - PEDIDOS PENDIENTES {lastUpdate && `(${lastUpdate})`}
           </h1>
           <div className="text-2xl text-gray-600 font-medium">
             {currentTime.toLocaleString('es-MX', {
@@ -157,7 +173,7 @@ export function HeaderOnly() {
                     <th className="text-left p-6 text-gray-700 font-bold text-xl">CLIENTE</th>
                     <th className="text-center p-6 text-gray-700 font-bold text-xl">HORA</th>
                     <th className="text-center p-6 text-gray-700 font-bold text-xl">FOLIO</th>
-                    <th className="text-right p-6 text-gray-700 font-bold text-xl">TOTAL</th>
+                    <th className="text-right p-6 text-gray-700 font-bold text-xl">SALDO</th>
                     <th className="text-center p-6 text-gray-700 font-bold text-xl">ESTADO</th>
                   </tr>
                 </thead>
@@ -171,14 +187,16 @@ export function HeaderOnly() {
                     >
                       <td className="p-6">
                         <div className="text-2xl font-bold text-gray-800">{order.client_name}</div>
-                        <div className="text-sm text-gray-500">{order.items_count} productos</div>
+                        <div className="text-sm text-gray-500">
+                          {order.items_count} productos
+                          {order.has_payments && (
+                            <span className="ml-2 text-blue-600">• Con abonos</span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-6 text-center">
                         <div className="text-2xl font-bold text-blue-600 font-mono">
-                          {new Date(order.date).toLocaleTimeString('es-MX', { 
-                            hour: '2-digit', 
-                            minute: '2-digit'
-                          })}
+                          {order.time_created}
                         </div>
                       </td>
                       <td className="p-6 text-center">
@@ -190,6 +208,14 @@ export function HeaderOnly() {
                         <div className="text-3xl font-bold text-green-600 font-mono">
                           ${order.total.toLocaleString('es-MX')}
                         </div>
+                        {order.amount_paid > 0 && (
+                          <div className="text-sm text-blue-600">
+                            Pagado: ${order.amount_paid.toLocaleString('es-MX')}
+                          </div>
+                        )}
+                        {order.original_total !== order.total && (
+                          <div className="text-xs text-gray-500">Total: ${order.original_total.toLocaleString('es-MX')}</div>
+                        )}
                       </td>
                       <td className="p-6 text-center">
                         <div className={`inline-flex items-center px-6 py-3 rounded-2xl text-lg font-bold ${
@@ -222,7 +248,8 @@ export function HeaderOnly() {
         {/* Footer */}
         <div className="text-center mt-8">
           <div className="text-gray-500 text-lg">
-            Actualización automática cada 3 segundos • {pendingOrders.length} pedidos pendientes
+            Actualización automática cada 2 segundos • {pendingOrders.length} pedidos pendientes
+            {lastUpdate && ` • Última actualización: ${lastUpdate}`}
           </div>
         </div>
       </div>

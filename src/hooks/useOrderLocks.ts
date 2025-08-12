@@ -26,6 +26,9 @@ export function useOrderLocks() {
     const handleBeforeUnload = () => {
       cleanupUserLocks();
     };
+    
+    // Cleanup expired locks on component mount
+    cleanExpiredLocks();
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
@@ -151,6 +154,22 @@ export function useOrderLocks() {
     }
   };
 
+  const cleanExpiredLocks = async () => {
+    try {
+      const { error } = await supabase
+        .from('order_locks')
+        .delete()
+        .lt('expires_at', new Date().toISOString());
+
+      if (error) {
+        console.warn('Could not clean expired locks (non-critical):', error.message);
+      }
+      await fetchLocks();
+    } catch (err) {
+      console.warn('Could not clean expired locks (non-critical):', err instanceof Error ? err.message : 'Unknown error');
+    }
+  };
+
   const isOrderLocked = (orderId: string): { locked: boolean; lockedBy?: string } => {
     const lock = locks.find(l => l.order_id === orderId);
     if (!lock) return { locked: false };
@@ -169,20 +188,6 @@ export function useOrderLocks() {
     }
 
     return { locked: true, lockedBy: lock.user_name };
-  };
-
-  const cleanExpiredLocks = async () => {
-    try {
-      const { error } = await supabase
-        .from('order_locks')
-        .delete()
-        .lt('expires_at', new Date().toISOString());
-
-      if (error) throw error;
-      await fetchLocks();
-    } catch (err) {
-      console.error('Error cleaning expired locks:', err);
-    }
   };
 
   // Auto-cleanup expired locks every minute

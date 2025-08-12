@@ -1,36 +1,47 @@
 import React, { useState } from 'react';
 import { X, CreditCard, DollarSign, Smartphone, Calculator, AlertTriangle, Lock } from 'lucide-react';
-import { POSOrder, POSClient, PaymentBreakdown } from '../../types/pos';
+import { POSOrder, POSClient, PaymentBreakdown, Payment } from '../../types/pos';
 
 interface POSPaymentModalProps {
   order: POSOrder;
   client: POSClient | null;
   onClose: () => void;
   onConfirm: (paymentData: any) => void;
+  onProcessPayment?: (orderId: string, paymentData: any) => Promise<any>;
 }
 
-export function POSPaymentModal({ order, client, onClose, onConfirm }: POSPaymentModalProps) {
+export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPayment }: POSPaymentModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer' | 'credit' | 'mixed'>('cash');
   const [paymentBreakdown, setPaymentBreakdown] = useState<PaymentBreakdown>({
-    cash: order.total,
+    cash: order.total || 0,
     card: 0,
     transfer: 0,
     credit: 0
   });
-  const [cashReceived, setCashReceived] = useState(order.total);
+  const [cashReceived, setCashReceived] = useState(order.total || 0);
+  const [paymentAmount, setPaymentAmount] = useState(order.total || 0);
+  const [isPartialPayment, setIsPartialPayment] = useState(false);
   const [printTicket, setPrintTicket] = useState(true);
   const [printA4, setPrintA4] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCreditAuthModal, setShowCreditAuthModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
 
-  const change = cashReceived - order.total;
-  const totalPayment = paymentBreakdown.cash + paymentBreakdown.card + paymentBreakdown.transfer + paymentBreakdown.credit;
-  const paymentComplete = Math.abs(totalPayment - order.total) < 0.01;
+  const orderTotal = order.total || 0;
+  const change = cashReceived - paymentAmount;
+  const totalPayment = paymentMethod === 'mixed' 
+    ? paymentBreakdown.cash + paymentBreakdown.card + paymentBreakdown.transfer + paymentBreakdown.credit
+    : paymentAmount;
+  const paymentComplete = Math.abs(totalPayment - paymentAmount) < 0.01;
   
   // Check if credit exceeds limit
-  const creditExceeded = client && paymentMethod === 'credit' && 
-    (client.balance + order.total) > client.credit_limit;
+  const creditExceeded = client && (paymentMethod === 'credit' || paymentBreakdown.credit > 0) && 
+    (client.balance + paymentAmount) > client.credit_limit;
+
+  // Show payment history if order has payments
+  const hasPayments = order.payments && order.payments.length > 0;
+  const totalPaid = order.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+  const remainingBalance = orderTotal - totalPaid;
 
   const validateAdminPassword = (password: string) => {
     return password === 'admin123'; // En producción, validar contra la base de datos

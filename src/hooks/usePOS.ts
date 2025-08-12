@@ -255,25 +255,6 @@ export function usePOS() {
   // Save order to database
   const saveOrder = async (order: POSOrder) => {
     try {
-      // For existing orders, calculate what has already been paid
-      let alreadyPaid = 0;
-      if (!order.id.startsWith('temp-')) {
-        // This is an existing order being updated
-        // In a real system, we would query payments table to get already paid amount
-        // For now, we'll assume if status was 'partial', some amount was already paid
-        const { data: existingOrder } = await supabase
-          .from('sales')
-          .select('total, status')
-          .eq('id', order.id)
-          .single();
-        
-        if (existingOrder && existingOrder.status === 'partial') {
-          // Assume 50% was already paid for demo purposes
-          // In production, calculate from payments table
-          alreadyPaid = existingOrder.total * 0.5;
-        }
-      }
-
       // Validate stock for all items before saving
       for (const item of order.items) {
         const product = products.find(p => p.id === item.product_id);
@@ -283,9 +264,10 @@ export function usePOS() {
       }
 
       let saleData;
+      let isNewOrder = order.id.startsWith('temp-');
       
       // Check if this is an existing order (not temp)
-      if (!order.id.startsWith('temp-')) {
+      if (!isNewOrder) {
         // Update existing order
         const { data: updatedSale, error: updateError } = await supabase
           .from('sales')
@@ -294,7 +276,8 @@ export function usePOS() {
             client_name: order.client_name,
             date: order.date,
             total: order.total,
-            status: order.payment_method === 'credit' || order.is_credit ? 'pending' : 'paid'
+            remaining_balance: order.total,
+            status: 'pending' // Always save as pending, payment is separate
           })
           .eq('id', order.id)
           .select()
@@ -345,10 +328,74 @@ export function usePOS() {
 
       if (itemsError) throw itemsError;
 
-      // Create inventory movements and update stock
-      // Only update stock if order is paid, not for saved/draft orders
-      if (order.status === 'paid') {
-        for (const item of order.items) {
+      // Note: Inventory movements and client balance updates will happen when payment is processed
+      // This keeps order saving separate from payment processing
+
+      await fetchOrders();
+      return saleData;
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Error saving order');
+    }
+  };
+
+  // Process payment for an order
+  const processPayment = async (orderId: string, paymentData: {
+    amount: number;
+    method: 'cash' | 'card' | 'transfer' | 'credit';
+    reference?: string;
+  }) => {
+    try {
+      // Get current order data
+      const { data: orderData, error: orderError } = await supabase
+        .from('sales')
+        .select(`
+          *,
+          sale_items (
+            product_id,
+            product_name,
+            quantity,
+            price,
+            total
+          )
+        `)
+        .eq('id', orderId)
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create payment record
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          sale_id: orderId,
+          amount: paymentData.amount,
+          payment_method: paymentData.method,
+          reference: paymentData.reference || `PAY-${Date.now().toString().slice(-6)}`,
+          created_by: user?.id
+        });
+
+      if (paymentError) throw paymentError;
+
+      // Calculate new totals
+      const newAmountPaid = (orderData.amount_paid || 0) + paymentData.amount;
+      const newRemainingBalance = Math.max(0, orderData.total - newAmountPaid);
+      const newStatus = newRemainingBalance <= 0.01 ? 'paid' : 'pending';
+
+      // Update order with payment info
+      const { error: updateError } = await supabase
+        .from('sales')
+        .update({
+          amount_paid: newAmountPaid,
+          remaining_balance: newRemainingBalance,
+          status: newStatus
+        })
+        .eq('id', orderId);
+
+      if (updateError) throw updateError;
+
+      // If fully paid, create inventory movements and update stock
+      if (newStatus === 'paid') {
+        for (const item of orderData.sale_items) {
           // Create inventory movement
           await supabase
             .from('inventory_movements')
@@ -357,12 +404,13 @@ export function usePOS() {
               product_name: item.product_name,
               type: 'salida',
               quantity: item.quantity,
-              date: order.date,
-              reference: `POS-${saleData.id.slice(-6)}`,
-              user_name: user?.name || 'POS User'
+              date: orderData.date,
+              reference: `POS-${orderId.slice(-6)}`,
+              user_name: user?.name || 'POS User',
+              created_by: user?.id
             });
 
-          // Update product stock immediately
+          // Update product stock
           const { data: product } = await supabase
             .from('products')
             .select('stock')
@@ -379,27 +427,25 @@ export function usePOS() {
       }
 
       // Update client balance if credit sale
-      if (order.is_credit && order.client_id) {
+      if (paymentData.method === 'credit' && orderData.client_id) {
         const { data: client } = await supabase
           .from('clients')
           .select('balance')
-          .eq('id', order.client_id)
+          .eq('id', orderData.client_id)
           .single();
 
         if (client) {
-          // Only add the remaining amount to be paid, not the full total
-          const amountToAdd = order.total - alreadyPaid;
           await supabase
             .from('clients')
-            .update({ balance: client.balance + amountToAdd })
-            .eq('id', order.client_id);
+            .update({ balance: client.balance + paymentData.amount })
+            .eq('id', orderData.client_id);
         }
       }
 
       await fetchOrders();
-      return saleData;
+      return { newAmountPaid, newRemainingBalance, newStatus };
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : 'Error saving order');
+      throw new Error(err instanceof Error ? err.message : 'Error processing payment');
     }
   };
 
@@ -417,6 +463,14 @@ export function usePOS() {
             quantity,
             price,
             total
+          ),
+          payments (
+            id,
+            amount,
+            payment_method,
+            reference,
+            date,
+            created_at
           )
         `)
         .eq('created_by', user?.id)
@@ -439,16 +493,17 @@ export function usePOS() {
           unit_price: item.price,
           total: item.total
         })),
-        subtotal: sale.total,
+        subtotal: sale.total - (sale.amount_paid || 0),
         discount_total: 0,
-        total: sale.total,
-        status: sale.status === 'paid' ? 'paid' : 'pending',
-        is_credit: sale.status === 'pending',
+        total: sale.remaining_balance || sale.total,
+        status: sale.status,
+        is_credit: sale.status === 'pending' && (sale.amount_paid || 0) === 0,
         is_invoice: false,
         is_quote: false,
         is_external: false,
         created_by: sale.created_by,
-        created_at: sale.created_at
+        created_at: sale.created_at,
+        payments: sale.payments || []
       }));
 
       setOrders(posOrders);
@@ -468,7 +523,9 @@ export function usePOS() {
           total_sales: 0,
           total_cash: 0,
           total_card: 0,
-          total_transfer: 0,
+          amount_paid: 0,
+          remaining_balance: order.total,
+          status: 'pending', // Always save as pending initially
           status: 'open'
         })
         .select()
@@ -538,6 +595,7 @@ export function usePOS() {
     closeCashRegister,
     updateProductPrices,
     getEffectivePrice,
-    refetch: refreshAllData
+    refetch: refreshAllData,
+    processPayment
   };
 }

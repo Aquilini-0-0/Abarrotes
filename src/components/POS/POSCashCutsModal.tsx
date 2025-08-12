@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calculator, Calendar, DollarSign, TrendingUp, TrendingDown, Download, Eye } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 interface CashCut {
   id: string;
@@ -21,6 +23,7 @@ interface POSCashCutsModalProps {
 }
 
 export function POSCashCutsModal({ onClose }: POSCashCutsModalProps) {
+  const { user } = useAuth();
   const [cashCuts, setCashCuts] = useState<CashCut[]>([]);
   const [selectedCut, setSelectedCut] = useState<CashCut | null>(null);
   const [showDetail, setShowDetail] = useState(false);
@@ -33,55 +36,44 @@ export function POSCashCutsModal({ onClose }: POSCashCutsModalProps) {
 
   const fetchCashCuts = async () => {
     try {
-      // Simulamos datos de cortes de caja - en producción vendrían de la base de datos
-      const mockCashCuts: CashCut[] = [
-        {
-          id: '1',
-          date: '2025-01-15',
-          opening_amount: 5000.00,
-          closing_amount: 18500.00,
-          total_sales: 25300.00,
-          total_cash: 15000.00,
-          total_card: 8500.00,
-          total_transfer: 1800.00,
-          total_expenses: 2300.00,
-          difference: 0.00,
-          user_name: 'Juan Pérez',
-          created_at: '2025-01-15T18:30:00'
-        },
-        {
-          id: '2',
-          date: '2025-01-14',
-          opening_amount: 4500.00,
-          closing_amount: 16200.00,
-          total_sales: 22800.00,
-          total_cash: 13500.00,
-          total_card: 7800.00,
-          total_transfer: 1500.00,
-          total_expenses: 1800.00,
-          difference: -200.00,
-          user_name: 'María García',
-          created_at: '2025-01-14T19:15:00'
-        },
-        {
-          id: '3',
-          date: '2025-01-13',
-          opening_amount: 5000.00,
-          closing_amount: 19800.00,
-          total_sales: 28500.00,
-          total_cash: 16800.00,
-          total_card: 9200.00,
-          total_transfer: 2500.00,
-          total_expenses: 2000.00,
-          difference: 100.00,
-          user_name: 'Carlos López',
-          created_at: '2025-01-13T20:00:00'
-        }
-      ];
+      setLoading(true);
       
-      setCashCuts(mockCashCuts);
+      // Fetch real cash register data from database
+      const { data, error } = await supabase
+        .from('cash_registers')
+        .select(`
+          *,
+          users!cash_registers_user_id_fkey(name)
+        `)
+        .eq('user_id', user?.id)
+        .order('opened_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedCashCuts: CashCut[] = data.map(register => {
+        const openingDate = new Date(register.opened_at).toISOString().split('T')[0];
+        const difference = register.closing_amount ? register.closing_amount - (register.opening_amount + register.total_cash) : 0;
+        
+        return {
+          id: register.id,
+          date: openingDate,
+          opening_amount: register.opening_amount,
+          closing_amount: register.closing_amount || 0,
+          total_sales: register.total_sales,
+          total_cash: register.total_cash,
+          total_card: register.total_card,
+          total_transfer: register.total_transfer,
+          total_expenses: 0, // Would need to calculate from expenses table
+          difference: difference,
+          user_name: register.users?.name || 'Usuario',
+          created_at: register.opened_at
+        };
+      });
+      
+      setCashCuts(formattedCashCuts);
     } catch (err) {
       console.error('Error fetching cash cuts:', err);
+      setCashCuts([]);
     } finally {
       setLoading(false);
     }

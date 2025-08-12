@@ -59,6 +59,17 @@ export interface POSOrder {
   route?: string;
   created_by: string;
   created_at: string;
+  payments?: Payment[];
+}
+
+export interface Payment {
+  id: string;
+  sale_id: string;
+  amount: number;
+  payment_method: 'cash' | 'card' | 'transfer' | 'credit';
+  reference: string;
+  date: string;
+  created_at: string;
 }
 
 export interface CashRegister {

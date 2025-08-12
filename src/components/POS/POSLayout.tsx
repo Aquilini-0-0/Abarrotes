@@ -38,7 +38,8 @@ export function POSLayout() {
     closeCashRegister,
     updateProductPrices,
     getEffectivePrice,
-    refetch
+    refetch,
+    processPayment
   } = usePOS();
 
   const {
