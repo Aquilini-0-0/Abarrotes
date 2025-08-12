@@ -204,6 +204,20 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                   />
                   {errors.cost && <p className="text-red-500 text-xs mt-1">{errors.cost}</p>}
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Estado
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => handleChange('status', e.target.value as 'active' | 'disabled')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="active">Activo</option>
+                    <option value="disabled">Deshabilitado</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -494,20 +508,6 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Estado
-            </label>
-            <select
-              value={formData.status}
-              onChange={(e) => handleChange('status', e.target.value as 'active' | 'disabled')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="active">Activo</option>
-              <option value="disabled">Deshabilitado</option>
-            </select>
           </div>
 
           <div className="flex items-center justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
