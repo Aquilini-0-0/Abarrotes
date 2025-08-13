@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { supabase } from '../../lib/supabase';
@@ -22,14 +22,7 @@ export function MovimientosEfectivo() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Auto-sync for real-time updates
-  useAutoSync({
-    onDataUpdate: fetchMovimientos,
-    interval: 5000, // Update every 5 seconds
-    tables: ['cash_movements']
-  });
-
-  const fetchMovimientos = async () => {
+  const fetchMovimientos = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -57,11 +50,18 @@ export function MovimientosEfectivo() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Auto-sync for real-time updates
+  useAutoSync({
+    onDataUpdate: fetchMovimientos,
+    interval: 5000, // Update every 5 seconds
+    tables: ['cash_movements']
+  });
 
   useEffect(() => {
     fetchMovimientos();
-  }, []);
+  }, [fetchMovimientos]);
 
   const getTipoLabel = (tipo: string) => {
     switch (tipo) {
