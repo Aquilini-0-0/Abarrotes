@@ -728,12 +728,12 @@ export function ListadoCompras() {
                         step="0.01"
                         value={newDetalle[`precio${nivel}` as keyof DetalleCompra] as number}
                         onChange={(e) => handleInputChange(`precio${nivel}`, parseFloat(e.target.value) || 0)}
-                        className={`w-full px-4 py-3 text-lg font-bold border-2 rounded-lg focus:outline-none focus:ring-3 focus:ring-yellow-300 transition-all ${
-                          newDetalle.precio3 > 0 && newDetalle.precio3 <= newDetalle.costo_unitario ? 'border-red-400 bg-red-50' : 'border-yellow-200 bg-yellow-50'
+                        className={`w-full px-4 py-3 text-lg font-bold border-2 rounded-lg focus:outline-none focus:ring-3 focus:ring-purple-300 transition-all ${
+                          newDetalle[`precio${nivel}` as keyof DetalleCompra] as number > 0 && (newDetalle[`precio${nivel}` as keyof DetalleCompra] as number) <= newDetalle.costo_unitario ? 'border-red-400 bg-red-50' : 'border-purple-200 bg-purple-50'
                         }`}
                         placeholder="0.00"
                       />
-                      {newDetalle.precio3 > 0 && newDetalle.precio3 <= newDetalle.costo_unitario && (
+                      {(newDetalle[`precio${nivel}` as keyof DetalleCompra] as number) > 0 && (newDetalle[`precio${nivel}` as keyof DetalleCompra] as number) <= newDetalle.costo_unitario && (
                         <p className="text-red-500 text-xs mt-2 font-medium">Debe ser mayor al costo</p>
                       )}
                       <div className="text-xs text-gray-500 mt-1">
