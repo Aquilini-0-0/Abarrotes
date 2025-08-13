@@ -541,15 +541,36 @@ export function ListadoCompras() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Marca
+                      Proveedor *
                     </label>
-                    <input
-                      type="text"
+                    <AutocompleteInput
+                      options={suppliers.map(supplier => ({
+                        id: supplier.id,
+                        label: `${supplier.name} - ${supplier.rfc}`,
+                        value: supplier.id
+                      }))}
+                      value={newDetalle.proveedor_id}
+                      onChange={(value) => handleInputChange('proveedor_id', value)}
+                      placeholder="Buscar proveedor..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Marca/Línea
+                    </label>
+                    <select
                       value={newDetalle.marca}
                       onChange={(e) => handleInputChange('marca', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Marca del producto"
-                    />
+                    >
+                      <option value="">Seleccionar línea</option>
+                      <option value="Aceites">Aceites</option>
+                      <option value="Granos">Granos</option>
+                      <option value="Lácteos">Lácteos</option>
+                      <option value="Abarrotes">Abarrotes</option>
+                      <option value="Bebidas">Bebidas</option>
+                    </select>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
