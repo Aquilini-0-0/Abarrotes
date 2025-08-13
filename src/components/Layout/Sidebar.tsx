@@ -54,7 +54,7 @@ const menuItems = [
     items: [
       { name: 'CFDI', path: '/ventas/cfdi', icon: FileText },
       { name: 'Clientes', path: '/ventas/clientes', icon: Users },
-      { name: 'Precios de Ventas', path: '/ventas/precios', icon: CreditCard },
+  
       { name: 'Reportes de Ventas', path: '/ventas/reportes', icon: BarChart3 },
       { name: 'Listado de Remisiones', path: '/ventas/listado-remisiones', icon: FileText },
     ]
