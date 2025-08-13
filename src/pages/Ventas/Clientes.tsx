@@ -4,7 +4,7 @@ import { DataTable } from '../../components/Common/DataTable';
 import { useClients } from '../../hooks/useClients';
 import { Client } from '../../types';
 import { AutocompleteInput } from '../../components/Common/AutocompleteInput';
-import { Plus, MapPin, Phone, Mail, CreditCard } from 'lucide-react';
+import { Plus, MapPin, Phone, Mail, CreditCard, Edit, Trash2 } from 'lucide-react';
 
 export function Clientes() {
   const { clients, loading, error, createClient, updateClient, deleteClient } = useClients();
@@ -152,6 +152,28 @@ export function Clientes() {
           ${(value ?? 0).toLocaleString('es-MX')}
         </span>
       )
+    },
+    {
+      key: 'actions',
+      label: 'Acciones',
+      render: (_, client: any) => (
+        <div className="flex space-x-2">
+          <button
+            onClick={() => handleEdit(client)}
+            className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded"
+            title="Editar cliente"
+          >
+            <Edit size={16} />
+          </button>
+          <button
+            onClick={() => handleDelete(client.id)}
+            className="p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded"
+            title="Eliminar cliente"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      )
     }
   ];
 
@@ -243,6 +265,34 @@ export function Clientes() {
           {showForm && (
             <Card title={editingClient ? "Editar Cliente" : "Nuevo Cliente"}>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}
+                  </h3>
+                  {editingClient && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForm(false);
+                        setEditingClient(null);
+                        setNewClient({
+                          name: '',
+                          rfc: '',
+                          address: '',
+                          phone: '',
+                          email: '',
+                          zone: '',
+                          credit_limit: 0,
+                          balance: 0
+                        });
+                      }}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      Cancelar edición
+                    </button>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Nombre del Cliente *
