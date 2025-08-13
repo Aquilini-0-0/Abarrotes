@@ -178,7 +178,7 @@ export function EstadoCuentaClientes() {
       key: 'limite_credito', 
       label: 'Límite Crédito', 
       sortable: true,
-      render: (value: number) => `$${value.toLocaleString('es-MX')}`
+      render: (value: number) => `$${(value ?? 0).toLocaleString('es-MX')}`
     },
     { 
       key: 'saldo_actual', 
@@ -186,7 +186,7 @@ export function EstadoCuentaClientes() {
       sortable: true,
       render: (value: number) => (
         <span className={`font-semibold ${value > 0 ? 'text-red-600' : 'text-green-600'}`}>
-          ${value.toLocaleString('es-MX')}
+          ${(value ?? 0).toLocaleString('es-MX')}
         </span>
       )
     },
@@ -196,7 +196,7 @@ export function EstadoCuentaClientes() {
       sortable: true,
       render: (value: number) => (
         <span className={`font-semibold ${value > 0 ? 'text-green-600' : 'text-red-600'}`}>
-          ${value.toLocaleString('es-MX')}
+          ${(value ?? 0).toLocaleString('es-MX')}
         </span>
       )
     },
