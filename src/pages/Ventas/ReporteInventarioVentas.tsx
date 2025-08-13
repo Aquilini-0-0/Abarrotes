@@ -404,7 +404,11 @@ export function ReporteInventarioVentas() {
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-green-600">
-                    ${products.reduce((sum, p) => sum + (p.stock * p.price), 0).toLocaleString('es-MX')}
+                    ${products.reduce((sum, p) => {
+                      const stock = Number(p.stock) || 0;
+                      const price = Number(p.price5) || 0;
+                      return sum + (stock * price);
+                    }, 0).toLocaleString('es-MX')}
                   </div>
                 </div>
               </div>
@@ -416,7 +420,11 @@ export function ReporteInventarioVentas() {
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-yellow-600">
-                    ${(products.reduce((sum, p) => sum + (p.stock * p.price), 0) - valorTotal).toLocaleString('es-MX')}
+                    ${(products.reduce((sum, p) => {
+                      const stock = Number(p.stock) || 0;
+                      const price = Number(p.price5) || 0;
+                      return sum + (stock * price);
+                    }, 0) - valorTotal).toLocaleString('es-MX')}
                   </div>
                 </div>
               </div>
