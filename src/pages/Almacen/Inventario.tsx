@@ -25,8 +25,6 @@ export function Inventario() {
       setShowForm(false);
       setEditingProduct(undefined);
       
-      // Force page refresh to return to inventory list
-      window.location.href = '/Inventario';
     } catch (err) {
       console.error('Error saving product:', err);
       alert('Error al guardar el producto');
