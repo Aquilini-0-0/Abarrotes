@@ -57,10 +57,10 @@ export function ReporteInventario() {
       render: (value: number) => `$${value.toFixed(2)}`
     },
     { 
-      key: 'price', 
+      key: 'price5', 
       label: 'Precio Venta', 
       sortable: true,
-      render: (value: number) => `$${value.toFixed(2)}`
+      render: (value: number) => `$${(value || 0).toFixed(2)}`
     },
     {
       key: 'valor_inventario',

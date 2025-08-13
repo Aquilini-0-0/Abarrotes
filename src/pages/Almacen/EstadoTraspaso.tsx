@@ -149,14 +149,14 @@ export function EstadoTraspaso() {
       label: 'Estatus',
       render: (value: string) => (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          value === 'completed' ? 'bg-green-100 text-green-800' :
-          value === 'in_transit' ? 'bg-blue-100 text-blue-800' :
-          value === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+          value === 'completado' ? 'bg-green-100 text-green-800' :
+          value === 'en_transito' ? 'bg-blue-100 text-blue-800' :
+          value === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
           'bg-red-100 text-red-800'
         }`}>
-          {value === 'completed' ? 'Completado' :
-           value === 'in_transit' ? 'En Tránsito' :
-           value === 'pending' ? 'Pendiente' : 'Cancelado'}
+          {value === 'completado' ? 'Completado' :
+           value === 'en_transito' ? 'En Tránsito' :
+           value === 'pendiente' ? 'Pendiente' : 'Cancelado'}
         </span>
       )
     },
@@ -166,31 +166,24 @@ export function EstadoTraspaso() {
       label: 'Acciones',
       render: (_, transfer: WarehouseTransfer) => (
         <div className="flex items-center space-x-2">
-          {transfer.status === 'pending' && (
+          {transfer.status === 'pendiente' && (
             <button
-              onClick={() => updateEstatus(transfer.id, 'in_transit')}
-              className="p-1 text-blue-600 hover:text-blue-800"
-              title="Marcar en tránsito"
-            >
-              <Clock size={16} />
-            </button>
-          )}
-          {transfer.status === 'in_transit' && (
-            <button
-              onClick={() => updateEstatus(transfer.id, 'completed')}
+              onClick={() => updateEstatus(transfer.id, 'completado')}
               className="p-1 text-green-600 hover:text-green-800"
-              title="Marcar completado"
+              title="Marcar como transferido"
             >
               <CheckCircle size={16} />
             </button>
           )}
-          <button
-            onClick={() => updateEstatus(transfer.id, 'cancelled')}
-            className="p-1 text-red-600 hover:text-red-800"
-            title="Cancelar"
-          >
-            <XCircle size={16} />
-          </button>
+          {(transfer.status === 'pendiente' || transfer.status === 'en_transito') && (
+            <button
+              onClick={() => updateEstatus(transfer.id, 'cancelado')}
+              className="p-1 text-red-600 hover:text-red-800"
+              title="Cancelar traspaso"
+            >
+              <XCircle size={16} />
+            </button>
+          )}
         </div>
       )
     }

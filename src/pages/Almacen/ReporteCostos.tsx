@@ -23,11 +23,11 @@ export function ReporteCostos() {
 
   const productosConCostos = products.map(product => ({
     ...product,
-    margen_unitario: product.price - product.cost,
-    margen_porcentaje: product.cost > 0 ? ((product.price - product.cost) / product.cost) * 100 : 0,
+    margen_unitario: (product.price5 || 0) - product.cost,
+    margen_porcentaje: product.cost > 0 ? (((product.price5 || 0) - product.cost) / product.cost) * 100 : 0,
     valor_inventario_costo: product.stock * product.cost,
-    valor_inventario_venta: product.stock * product.price,
-    utilidad_potencial: product.stock * (product.price - product.cost)
+    valor_inventario_venta: product.stock * (product.price5 || 0),
+    utilidad_potencial: product.stock * ((product.price5 || 0) - product.cost)
   }));
 
   const productosFiltrados = productosConCostos.filter(product => {

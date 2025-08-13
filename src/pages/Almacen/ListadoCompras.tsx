@@ -4,6 +4,7 @@ import { DataTable } from '../../components/Common/DataTable';
 import { usePurchaseOrders } from '../../hooks/usePurchaseOrders';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { useProducts } from '../../hooks/useProducts';
+import { AutocompleteInput } from '../../components/Common/AutocompleteInput';
 import { Plus, Edit, FileText, Trash2, ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
 
 interface CompraDetallada {
@@ -63,6 +64,7 @@ export function ListadoCompras() {
     producto: '',
     codigo_barras: '',
     marca: '',
+    proveedor_id: '',
     cantidad: 1,
     unidad_medida: '',
     costo_unitario: 0,
@@ -128,28 +130,59 @@ export function ListadoCompras() {
   const handleSubmitDetalle = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validación: costo debe ser menor que precio
-    if (newDetalle.costo_unitario >= newDetalle.precio1) {
-      alert('ADVERTENCIA: El costo unitario debe ser menor que el precio de venta');
+    // Validaciones de precios
+    const precios = [newDetalle.precio1, newDetalle.precio2, newDetalle.precio3, newDetalle.precio4, newDetalle.precio5];
+    for (let i = 0; i < precios.length; i++) {
+      if (precios[i] > 0 && precios[i] <= newDetalle.costo_unitario) {
+        alert(`El precio ${i + 1} debe ser mayor al costo unitario ($${newDetalle.costo_unitario.toFixed(2)})`);
+        return;
+      }
+    }
+
+    if (newDetalle.precio1 <= 0) {
+      alert('El precio 1 es obligatorio y debe ser mayor a 0');
       return;
     }
 
-    // Buscar el producto por nombre para obtener el product_id
-    const foundProduct = products.find(p => 
-      p.name.toLowerCase() === newDetalle.producto.toLowerCase() ||
-      p.code === newDetalle.codigo_barras
-    );
+    const selectedSupplier = suppliers.find(s => s.id === newDetalle.proveedor_id);
+    if (!selectedSupplier) {
+      alert('Debe seleccionar un proveedor válido');
+      return;
+    }
 
     try {
+      // Crear el producto primero
+      const { data: newProduct, error: productError } = await supabase
+        .from('products')
+        .insert({
+          name: newDetalle.producto,
+          code: newDetalle.codigo_barras || `PROD-${Date.now()}`,
+          line: newDetalle.marca,
+          subline: '',
+          unit: newDetalle.unidad_medida,
+          stock: newDetalle.cantidad,
+          cost: newDetalle.costo_unitario,
+          price1: newDetalle.precio1,
+          price2: newDetalle.precio2,
+          price3: newDetalle.precio3,
+          price4: newDetalle.precio4,
+          price5: newDetalle.precio5,
+          status: 'active'
+        })
+        .select()
+        .single();
+
+      if (productError) throw productError;
+
       // Crear la compra
       const orderData = {
-        supplier_id: null,
-        supplier_name: newDetalle.marca,
+        supplier_id: newDetalle.proveedor_id,
+        supplier_name: selectedSupplier.name,
         date: new Date().toISOString().split('T')[0],
         total: newDetalle.importe,
         status: 'received' as const,
         items: [{
-          product_id: foundProduct ? foundProduct.id : null,
+          product_id: newProduct.id,
           product_name: newDetalle.producto,
           quantity: newDetalle.cantidad,
           cost: newDetalle.costo_unitario,
@@ -159,10 +192,24 @@ export function ListadoCompras() {
 
       await createOrder(orderData);
       
+      // Crear movimiento de inventario
+      await supabase
+        .from('inventory_movements')
+        .insert({
+          product_id: newProduct.id,
+          product_name: newDetalle.producto,
+          type: 'entrada',
+          quantity: newDetalle.cantidad,
+          date: new Date().toISOString().split('T')[0],
+          reference: `COMPRA-${Date.now().toString().slice(-6)}`,
+          user_name: 'Sistema Compras'
+        });
+
       setNewDetalle({
         producto: '',
         codigo_barras: '',
         marca: '',
+        proveedor_id: '',
         cantidad: 1,
         unidad_medida: '',
         costo_unitario: 0,

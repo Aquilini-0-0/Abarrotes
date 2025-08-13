@@ -155,7 +155,7 @@ export function useWarehouseTransfers() {
           fecha: transferData.date,
           referencia: transferData.reference,
           notas: transferData.notes,
-          estatus: transferData.status,
+          estatus: 'pendiente',
           created_by: user?.id
         }])
         .select()
@@ -163,25 +163,8 @@ export function useWarehouseTransfers() {
 
       if (error) throw error;
 
-      // Update stock in origin warehouse (reduce)
-      await updateWarehouseStock(transferData.from_warehouse_id, transferData.product_id, -transferData.quantity);
-
-      // Update stock in destination warehouse (increase)
-      await updateWarehouseStock(transferData.to_warehouse_id, transferData.product_id, transferData.quantity);
-
-      // Create inventory movement record
-      await supabase
-        .from('inventory_movements')
-        .insert({
-          product_id: transferData.product_id,
-          product_name: transferData.product_name,
-          type: 'salida',
-          quantity: transferData.quantity,
-          date: transferData.date,
-          reference: `TRASPASO-${data.id.slice(-6)}`,
-          user_name: user?.name || 'Sistema Traspasos',
-          created_by: user?.id
-        });
+      // Don't update stock until transfer is completed
+      // Stock will be updated when status changes to 'completado'
 
       await fetchTransfers();
       return data;
@@ -192,6 +175,15 @@ export function useWarehouseTransfers() {
 
   const updateTransferStatus = async (transferId: string, status: WarehouseTransfer['status']) => {
     try {
+      // Get transfer data before updating
+      const { data: transferData, error: fetchError } = await supabase
+        .from('traspasos_almacenes')
+        .select('*')
+        .eq('id', transferId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       const { data, error } = await supabase
         .from('traspasos_almacenes')
         .update({ estatus: status })
@@ -200,6 +192,29 @@ export function useWarehouseTransfers() {
         .single();
 
       if (error) throw error;
+
+      // Update stock only when transfer is completed
+      if (status === 'completado') {
+        // Update stock in origin warehouse (reduce)
+        await updateWarehouseStock(transferData.almacen_origen_id, transferData.product_id, -transferData.cantidad);
+
+        // Update stock in destination warehouse (increase)
+        await updateWarehouseStock(transferData.almacen_destino_id, transferData.product_id, transferData.cantidad);
+
+        // Create inventory movement record
+        await supabase
+          .from('inventory_movements')
+          .insert({
+            product_id: transferData.product_id,
+            product_name: transferData.product_name || 'Producto',
+            type: 'salida',
+            quantity: transferData.cantidad,
+            date: transferData.fecha,
+            reference: `TRASPASO-${transferId.slice(-6)}`,
+            user_name: user?.name || 'Sistema Traspasos',
+            created_by: user?.id
+          });
+      }
 
       await fetchTransfers();
       return data;
