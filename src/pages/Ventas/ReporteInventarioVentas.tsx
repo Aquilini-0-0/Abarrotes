@@ -160,14 +160,19 @@ export function ReporteInventarioVentas() {
       key: 'price', 
       label: 'Precio Venta', 
       sortable: true,
-      render: (value: number) => `$${value.toFixed(2)}`
+      render: (value: number) => `$${(value || 0).toFixed(2)}`
     },
     {
       key: 'valor_inventario',
       label: 'Valor Total',
       render: (_, product: any) => (
         <span className="font-semibold text-blue-600">
-          ${(product.stock * product.cost).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+          ${(() => {
+            const stock = Number(product.stock) || 0;
+            const cost = Number(product.cost) || 0;
+            const total = stock * cost;
+            return isNaN(total) ? 0 : total;
+          })().toLocaleString('es-MX', { minimumFractionDigits: 2 })}
         </span>
       )
     },
