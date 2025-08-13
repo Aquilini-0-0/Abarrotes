@@ -26,7 +26,7 @@ export function Inventario() {
       setEditingProduct(undefined);
       
       // Force page refresh to return to inventory list
-      window.location.reload();
+      window.location.href = '/Inventario.tsx';
     } catch (err) {
       console.error('Error saving product:', err);
       alert('Error al guardar el producto');
