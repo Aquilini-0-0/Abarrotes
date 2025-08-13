@@ -541,36 +541,15 @@ export function ListadoCompras() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Proveedor *
+                      Marca
                     </label>
-                    <AutocompleteInput
-                      options={suppliers.map(supplier => ({
-                        id: supplier.id,
-                        label: `${supplier.name} - ${supplier.rfc}`,
-                        value: supplier.id
-                      }))}
-                      value={newDetalle.proveedor_id}
-                      onChange={(value) => handleInputChange('proveedor_id', value)}
-                      placeholder="Buscar proveedor..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Marca/Línea
-                    </label>
-                    <select
+                    <input
+                      type="text"
                       value={newDetalle.marca}
                       onChange={(e) => handleInputChange('marca', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Seleccionar línea</option>
-                      <option value="Aceites">Aceites</option>
-                      <option value="Granos">Granos</option>
-                      <option value="Lácteos">Lácteos</option>
-                      <option value="Abarrotes">Abarrotes</option>
-                      <option value="Bebidas">Bebidas</option>
-                    </select>
+                      placeholder="Marca del producto"
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -738,8 +717,35 @@ export function ListadoCompras() {
               {/* Sección de 5 Precios */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">5 Precios Posibles del Producto</h3>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                  {[1, 2, 3, 4, 5].map(nivel => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Precio 1 - Principal */}
+                  <div className="bg-white p-4 rounded-lg border-2 border-blue-300 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="text-sm font-bold text-blue-700">
+                        Precio 1 (Principal) *
+                      </label>
+                      <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold">
+                        BASE
+                      </span>
+                    </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={newDetalle.precio1}
+                      onChange={(e) => handleInputChange('precio1', parseFloat(e.target.value) || 0)}
+                      className={`w-full px-4 py-3 text-lg font-bold border-2 rounded-lg focus:outline-none focus:ring-3 focus:ring-blue-300 transition-all ${
+                        newDetalle.precio1 <= newDetalle.costo_unitario ? 'border-red-400 bg-red-50' : 'border-blue-200 bg-blue-50'
+                      }`}
+                      min="0"
+                      placeholder="0.00"
+                    />
+                    {newDetalle.precio1 <= newDetalle.costo_unitario && newDetalle.precio1 > 0 && (
+                      <p className="text-red-500 text-xs mt-2 font-medium">Debe ser mayor al costo</p>
+                    )}
+                    <p className="text-xs text-blue-600 mt-2 font-medium">Precio para clientes generales</p>
+                  </div>
+
+                  {[2, 3, 4, 5].map(nivel => (
                     <div key={nivel} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                       <label className="block text-sm font-bold text-gray-700 mb-2">
                         Precio {nivel}
@@ -753,8 +759,7 @@ export function ListadoCompras() {
                         placeholder="0.00"
                       />
                       <div className="text-xs text-gray-500 mt-1">
-                        {nivel === 1 ? 'General' : 
-                         nivel === 2 ? 'Mayoreo' : 
+                        {nivel === 2 ? 'Mayoreo' : 
                          nivel === 3 ? 'Distribuidor' : 
                          nivel === 4 ? 'VIP' : 'Especial'}
                       </div>
