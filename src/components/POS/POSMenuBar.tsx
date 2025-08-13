@@ -198,7 +198,7 @@ export function POSMenuBar({
                 </button>
               </div>
             </div>
-            
+            */}
 
             {/* Cerrar sesión */}
             <div className="relative group">
