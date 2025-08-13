@@ -207,6 +207,7 @@ export function EstadoCuentaClientes() {
       render: (value: string) => {
         if (!value) return 'N/A';
         const date = new Date(value);
+        if (date === null || date === undefined) { return 'N/A'; }
         return (isNaN(date.getTime()) || !(date instanceof Date)) ? 'N/A' : date.toLocaleDateString('es-MX');
       }
     },
