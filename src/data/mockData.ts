@@ -10,7 +10,7 @@ export const mockProducts: Product[] = [
     unit: 'Litro',
     stock: 150,
     cost: 45.50,
-    price: 65.00,
+    price1: 65.00,
     status: 'active'
   },
   {
@@ -22,7 +22,7 @@ export const mockProducts: Product[] = [
     unit: 'Kilogramo',
     stock: 200,
     cost: 22.00,
-    price: 35.00,
+    price1: 35.00,
     status: 'active'
   },
   {
@@ -34,7 +34,7 @@ export const mockProducts: Product[] = [
     unit: 'Litro',
     stock: 80,
     cost: 18.50,
-    price: 28.00,
+    price1: 28.00,
     status: 'active'
   }
 ];

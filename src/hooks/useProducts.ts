@@ -26,12 +26,11 @@ export function useProducts() {
         unit: item.unit,
         stock: Number(item.stock) || 0,
         cost: Number(item.cost) || 0,
-        price: Number(item.price) || 0,
         price1: Number(item.price1) || Number(item.price) || 0,
-        price2: Number(item.price2) || Number(item.price) || 0,
-        price3: Number(item.price3) || Number(item.price) || 0,
-        price4: Number(item.price4) || Number(item.price) || 0,
-        price5: Number(item.price5) || Number(item.price) || 0,
+        price2: Number(item.price2) || Number(item.price1) || 0,
+        price3: Number(item.price3) || Number(item.price1) || 0,
+        price4: Number(item.price4) || Number(item.price1) || 0,
+        price5: Number(item.price5) || Number(item.price1) || 0,
         status: item.status
       }));
 

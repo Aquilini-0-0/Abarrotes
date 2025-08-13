@@ -40,7 +40,7 @@ export function usePOS() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, code, line, subline, unit, stock, price, price1, price2, price3, price4, price5, status')
+        .select('id, name, code, line, subline, unit, stock, price1, price2, price3, price4, price5, status')
         .eq('status', 'active')
         .order('name');
 
@@ -55,11 +55,11 @@ export function usePOS() {
         unit: product.unit,
         stock: product.stock,
         prices: {
-          price1: product.price1 || product.price,
-          price2: product.price2 || product.price * 1.1,
-          price3: product.price3 || product.price * 1.2,
-          price4: product.price4 || product.price * 1.3,
-          price5: product.price5 || product.price * 1.4,
+          price1: product.price1 || 0,
+          price2: product.price2 || (product.price1 || 0) * 1.1,
+          price3: product.price3 || (product.price1 || 0) * 1.2,
+          price4: product.price4 || (product.price1 || 0) * 1.3,
+          price5: product.price5 || (product.price1 || 0) * 1.4,
         },
         status: product.status,
         has_tara: product.line === 'Granos' || product.line === 'Aceites' // Example logic

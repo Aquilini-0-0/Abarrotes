@@ -15,7 +15,6 @@ export interface Product {
   unit: string;
   stock: number;
   cost: number;
-  price?: number;
   price1?: number;
   price2?: number;
   price3?: number;

@@ -36,7 +36,7 @@ export function PreciosVentas() {
             </div>
             <div>
               <div className="text-2xl font-bold text-green-600">
-                ${products.length > 0 ? (products.reduce((sum, p) => sum + p.price, 0) / products.length).toFixed(2) : '0.00'}
+                ${products.length > 0 ? (products.reduce((sum, p) => sum + (p.price1 || 0), 0) / products.length).toFixed(2) : '0.00'}
               </div>
               <div className="text-sm text-gray-500">Por producto</div>
             </div>
@@ -87,7 +87,7 @@ export function PreciosVentas() {
                     <div className="text-sm text-gray-500">Código: {product.code} | Línea: {product.line}</div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-green-600">${product.price.toFixed(2)}</div>
+                    <div className="font-bold text-green-600">${(product.price1 || 0).toFixed(2)}</div>
                     <div className="text-xs text-gray-500">precio actual</div>
                   </div>
                 </div>
@@ -100,7 +100,7 @@ export function PreciosVentas() {
           <Card title="Productos Más Caros">
             <div className="space-y-3">
               {products
-                .sort((a, b) => b.price - a.price)
+                .sort((a, b) => (b.price1 || 0) - (a.price1 || 0))
                 .slice(0, 5)
                 .map(product => (
                   <div key={product.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -110,7 +110,7 @@ export function PreciosVentas() {
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-red-600">
-                        ${product.price.toFixed(2)}
+                        ${(product.price1 || 0).toFixed(2)}
                       </div>
                       <div className="text-xs text-gray-500">
                         precio actual
@@ -124,7 +124,7 @@ export function PreciosVentas() {
           <Card title="Productos Más Baratos">
             <div className="space-y-3">
               {products
-                .sort((a, b) => a.price - b.price)
+                .sort((a, b) => (a.price1 || 0) - (b.price1 || 0))
                 .slice(0, 3)
                 .map(product => (
                   <div key={product.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -134,7 +134,7 @@ export function PreciosVentas() {
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-green-600">
-                        ${product.price.toFixed(2)}
+                        ${(product.price1 || 0).toFixed(2)}
                       </div>
                       <div className="text-xs text-gray-500">precio actual</div>
                     </div>
