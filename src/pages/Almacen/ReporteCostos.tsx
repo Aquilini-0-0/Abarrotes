@@ -111,12 +111,7 @@ export function ReporteCostos() {
       sortable: true,
       render: (value: number) => (
         <span className={`font-semibold ${value > 0 ? 'text-green-600' : 'text-red-600'}`}>
-          ${(() => {
-            const stock = Number(product.stock) || 0;
-            const cost = Number(product.cost) || 0;
-            const total = stock * cost;
-            return isNaN(total) ? 0 : total;
-          })().toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+          ${(value || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
         </span>
       )
     }
