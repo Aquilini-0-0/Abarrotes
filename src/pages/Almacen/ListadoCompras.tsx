@@ -6,7 +6,7 @@ import { useSuppliers } from '../../hooks/useSuppliers';
 import { useProducts } from '../../hooks/useProducts';
 import { AutocompleteInput } from '../../components/Common/AutocompleteInput';
 import { supabase } from '../../lib/supabase';
-import { Plus, Edit, FileText, Trash2, ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
+import { Plus, Edit, FileText, Trash2, ChevronLeft, ChevronRight, SkipForward, X } from 'lucide-react';
 
 interface Proveedor {
   id: string;
