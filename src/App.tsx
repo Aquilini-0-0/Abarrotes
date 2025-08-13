@@ -36,6 +36,7 @@ import { ReporteInventarioVentas } from './pages/Ventas/ReporteInventarioVentas'
 import { ReporteVentasCaja } from './pages/Ventas/ReporteVentasCaja';
 import { EstadoCuentaClientes } from './pages/Ventas/EstadoCuentaClientes';
 import { ReporteCajas } from './pages/Ejecutivo/ReporteCajas';
+import { MovimientosEfectivo } from './pages/Contabilidad/MovimientosEfectivo';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -185,6 +186,11 @@ function AppRoutes() {
       <Route path="/contabilidad/gastos" element={
         <ProtectedERPRoute>
           <Gastos />
+        </ProtectedERPRoute>
+      } />
+      <Route path="/contabilidad/movimientos-efectivo" element={
+        <ProtectedERPRoute>
+          <MovimientosEfectivo />
         </ProtectedERPRoute>
       } />
       

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
-import { useSales } from '../../hooks/useSales';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { useAutoSync } from '../../hooks/useAutoSync';
 import { Calculator, DollarSign, TrendingUp, Eye, Download, Calendar, User } from 'lucide-react';
 
 interface CashRegisterReport {
@@ -19,12 +20,14 @@ interface CashRegisterReport {
   diferencia: number;
   numero_tickets: number;
   ticket_promedio: number;
-  ventas_detalle: any[];
+  status: string;
 }
 
 export function ReporteCajas() {
-  const { sales, loading, error } = useSales();
   const { user } = useAuth();
+  const [reportesCaja, setReportesCaja] = useState<CashRegisterReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const [filtros, setFiltros] = useState({
     caja: '',
@@ -36,41 +39,61 @@ export function ReporteCajas() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState<CashRegisterReport | null>(null);
 
-  // Generate cash register reports from sales data
-  const reportesCaja: CashRegisterReport[] = [
-    {
-      id: '1',
-      caja: 'CAJA-01',
-      usuario: 'Juan Pérez',
-      fecha: '2025-01-15',
-      apertura: 5000.00,
-      cierre: 18500.00,
-      ventas_efectivo: 15000.00,
-      ventas_tarjeta: 8500.00,
-      ventas_transferencia: 3200.00,
-      total_ventas: 26700.00,
-      diferencia: -200.00,
-      numero_tickets: 45,
-      ticket_promedio: 593.33,
-      ventas_detalle: sales.slice(0, 10)
-    },
-    {
-      id: '2',
-      caja: 'CAJA-02',
-      usuario: 'María García',
-      fecha: '2025-01-15',
-      apertura: 4500.00,
-      cierre: 16800.00,
-      ventas_efectivo: 12800.00,
-      ventas_tarjeta: 9200.00,
-      ventas_transferencia: 2800.00,
-      total_ventas: 24800.00,
-      diferencia: 500.00,
-      numero_tickets: 38,
-      ticket_promedio: 652.63,
-      ventas_detalle: sales.slice(5, 15)
+  // Auto-sync for real-time updates
+  useAutoSync({
+    onDataUpdate: fetchReportes,
+    interval: 3000, // Update every 3 seconds
+    tables: ['cash_registers', 'sales']
+  });
+
+  const fetchReportes = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('cash_registers')
+        .select(`
+          *,
+          users!cash_registers_user_id_fkey(name)
+        `)
+        .order('opened_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedReports: CashRegisterReport[] = data.map(register => {
+        const openingDate = new Date(register.opened_at).toISOString().split('T')[0];
+        const difference = register.closing_amount ? register.closing_amount - (register.opening_amount + register.total_cash) : 0;
+        const numeroTickets = Math.floor(register.total_sales / 500); // Estimate tickets
+        const ticketPromedio = numeroTickets > 0 ? register.total_sales / numeroTickets : 0;
+        
+        return {
+          id: register.id,
+          caja: `CAJA-${register.id.slice(-2).toUpperCase()}`,
+          usuario: register.users?.name || 'Usuario',
+          fecha: openingDate,
+          apertura: register.opening_amount,
+          cierre: register.closing_amount || 0,
+          ventas_efectivo: register.total_cash,
+          ventas_tarjeta: register.total_card,
+          ventas_transferencia: register.total_transfer,
+          total_ventas: register.total_sales,
+          diferencia: difference,
+          numero_tickets: numeroTickets,
+          ticket_promedio: ticketPromedio,
+          status: register.status
+        };
+      });
+      
+      setReportesCaja(formattedReports);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error fetching cash registers');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  React.useEffect(() => {
+    fetchReportes();
+  }, []);
 
   const reportesFiltrados = reportesCaja.filter(reporte => {
     if (filtros.caja && reporte.caja !== filtros.caja) return false;
@@ -111,25 +134,59 @@ ESTADÍSTICAS:
 - Número de Tickets:      ${reporte.numero_tickets}
 - Ticket Promedio:        $${reporte.ticket_promedio.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
 
-DETALLE DE VENTAS:
-${reporte.ventas_detalle.map((venta, index) => `
-${index + 1}. Cliente: ${venta.client_name}
-   Fecha: ${new Date(venta.date).toLocaleDateString('es-MX')}
-   Total: $${venta.total.toFixed(2)}
-   Estado: ${venta.status === 'paid' ? 'Pagado' : 'Pendiente'}
-`).join('')}
+CÓDIGO DE BARRAS: ${reporte.id}
 
 ================================================
 Generado el ${new Date().toLocaleString('es-MX')}
     `;
 
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `reporte_caja_${reporte.caja}_${reporte.fecha}.txt`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+    // Create print window
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>Reporte ${reporte.caja}</title>
+          <style>
+            body { 
+              font-family: 'Courier New', monospace; 
+              font-size: 12px; 
+              margin: 20px;
+              max-width: 300px;
+            }
+            .header { text-align: center; font-weight: bold; margin-bottom: 10px; }
+            .separator { text-align: center; margin: 10px 0; }
+            .total { font-weight: bold; font-size: 14px; }
+            .footer { text-align: center; margin-top: 15px; font-size: 10px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">REPORTE DE CAJA: ${reporte.caja}</div>
+          <div class="header">FECHA: ${new Date(reporte.fecha).toLocaleDateString('es-MX')}</div>
+          <div class="header">USUARIO: ${reporte.usuario}</div>
+          <br>
+          <div class="separator">=====================================</div>
+          <div>APERTURA: $${reporte.apertura.toFixed(2)}</div>
+          <div>CIERRE: $${reporte.cierre.toFixed(2)}</div>
+          <div>VENTAS EFECTIVO: $${reporte.ventas_efectivo.toFixed(2)}</div>
+          <div>VENTAS TARJETA: $${reporte.ventas_tarjeta.toFixed(2)}</div>
+          <div>VENTAS TRANSFERENCIA: $${reporte.ventas_transferencia.toFixed(2)}</div>
+          <div class="separator">=====================================</div>
+          <div class="total">TOTAL VENTAS: $${reporte.total_ventas.toFixed(2)}</div>
+          <div class="total">DIFERENCIA: $${reporte.diferencia.toFixed(2)}</div>
+          <div class="total">TICKETS: ${reporte.numero_tickets}</div>
+          <div class="total">PROMEDIO: $${reporte.ticket_promedio.toFixed(2)}</div>
+          <br>
+          <div class="footer">SISTEMA ERP DURAN</div>
+          <div class="footer">REPORTE GENERADO AUTOMÁTICAMENTE</div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
   };
 
   const columns = [
@@ -183,6 +240,17 @@ Generado el ${new Date().toLocaleString('es-MX')}
       render: (value: number) => (
         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
           {value}
+        </span>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Estado',
+      render: (value: string) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          value === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+        }`}>
+          {value === 'open' ? 'Abierta' : 'Cerrada'}
         </span>
       )
     },
@@ -517,48 +585,10 @@ Generado el ${new Date().toLocaleString('es-MX')}
               {/* Sales Detail */}
               <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                 <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                  <h3 className="font-semibold text-gray-900">Detalle de Ventas ({selectedReport.ventas_detalle.length})</h3>
+                  <h3 className="font-semibold text-gray-900">Detalle de Ventas</h3>
                 </div>
-                <div className="max-h-96 overflow-y-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 sticky top-0">
-                      <tr>
-                        <th className="text-left p-3 text-gray-700 font-semibold">Folio</th>
-                        <th className="text-left p-3 text-gray-700 font-semibold">Cliente</th>
-                        <th className="text-left p-3 text-gray-700 font-semibold">Fecha</th>
-                        <th className="text-right p-3 text-gray-700 font-semibold">Total</th>
-                        <th className="text-center p-3 text-gray-700 font-semibold">Estado</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedReport.ventas_detalle.map((venta, index) => (
-                        <tr key={venta.id} className={`border-b border-gray-200 ${
-                          index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                        }`}>
-                          <td className="p-3 font-mono text-blue-600">
-                            #{venta.id.slice(-6).toUpperCase()}
-                          </td>
-                          <td className="p-3 text-gray-900">{venta.client_name}</td>
-                          <td className="p-3 text-gray-700">
-                            {new Date(venta.date).toLocaleDateString('es-MX')}
-                          </td>
-                          <td className="p-3 text-right font-mono font-bold text-green-600">
-                            ${venta.total.toFixed(2)}
-                          </td>
-                          <td className="p-3 text-center">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              venta.status === 'paid' ? 'bg-green-100 text-green-800' :
-                              venta.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {venta.status === 'paid' ? 'Pagado' : 
-                               venta.status === 'pending' ? 'Pendiente' : 'Vencido'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="p-4 text-center text-gray-500">
+                  <p>Detalle de ventas disponible en el módulo de ventas</p>
                 </div>
               </div>
 
