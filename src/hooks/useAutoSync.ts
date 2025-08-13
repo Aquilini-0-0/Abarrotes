@@ -25,19 +25,25 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
           const tableName = typeof tableConfig === 'string' ? tableConfig : tableConfig.name;
           const timestampColumn = typeof tableConfig === 'string' ? 'updated_at' : (tableConfig.timestampColumn || 'updated_at');
           
-          const { data, error } = await supabase
-            .from(tableName)
-            .select(timestampColumn)
-            .order(timestampColumn, { ascending: false })
-            .limit(1)
-            .maybeSingle();
+          try {
+            const { data, error } = await supabase
+              .from(tableName)
+              .select(timestampColumn)
+              .order(timestampColumn, { ascending: false })
+              .limit(1)
+              .maybeSingle();
 
-          if (error) continue;
+            if (error) continue;
 
-          const lastUpdate = data?.[timestampColumn];
-          if (lastUpdate && lastUpdate !== lastUpdateRef.current[tableName]) {
-            lastUpdateRef.current[tableName] = lastUpdate;
-            hasUpdates = true;
+            const lastUpdate = data?.[timestampColumn];
+            if (lastUpdate && lastUpdate !== lastUpdateRef.current[tableName]) {
+              lastUpdateRef.current[tableName] = lastUpdate;
+              hasUpdates = true;
+            }
+          } catch (tableError) {
+            // Skip this table if there's an error
+            console.warn(`Error checking updates for table ${tableName}:`, tableError);
+            continue;
           }
         }
 
@@ -45,7 +51,12 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
           onDataUpdate();
         }
       } catch (err) {
-        console.error('Error checking for updates:', err);
+        // Silently handle network errors to prevent console spam
+        if (err instanceof TypeError && err.message.includes('fetch')) {
+          // Network error - this is expected when Supabase is not configured
+          return;
+        }
+        console.warn('Error checking for updates:', err);
       }
     };
 
@@ -80,25 +91,19 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
               setTimeout(onDataUpdate, 100);
             }
           }
-        try {
-          const { data, error } = await supabase
-            .from(tableName)
-            .select(timestampColumn)
-            .order(timestampColumn, { ascending: false })
-            .limit(1)
-            .maybeSingle();
+        )
+        .subscribe();
+
+      subscriptions.push(subscription);
+    });
+
     return () => {
-          if (error) continue;
+      subscriptions.forEach(sub => {
         supabase.removeChannel(sub);
-          const lastUpdate = data?.[timestampColumn];
-          if (lastUpdate && lastUpdate !== lastUpdateRef.current[tableName]) {
-            lastUpdateRef.current[tableName] = lastUpdate;
-            hasUpdates = true;
-          }
-        } catch (tableError) {
-          // Skip this table if there's an error
-          console.warn(`Error checking updates for table ${tableName}:`, tableError);
-          continue;
+      });
+    };
+  }, [tables, onDataUpdate]);
+
   return {
     // Expose method to manually trigger sync
     triggerSync: () => {
@@ -106,10 +111,5 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
         onDataUpdate();
       }
     }
-      // Silently handle network errors to prevent console spam
-      if (err instanceof TypeError && err.message.includes('fetch')) {
-        // Network error - this is expected when Supabase is not configured
-        return;
-      }
-      console.warn('Error checking for updates:', err);
+  };
 }

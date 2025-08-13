@@ -41,7 +41,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
       detectSessionInUrl: true
     }
   });
-}
 
   // Helper functions for common operations
   export const getCurrentUser = async () => {
