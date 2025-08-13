@@ -141,14 +141,14 @@ export function Clientes() {
     { 
       key: 'credit_limit', 
       label: 'Límite de Crédito',
-      render: (value: number) => `$${value.toLocaleString('es-MX')}`
+      render: (value: number) => `$${(value ?? 0).toLocaleString('es-MX')}`
     },
     { 
       key: 'balance', 
       label: 'Saldo',
       render: (value: number) => (
-        <span className={value > 0 ? 'text-red-600 font-semibold' : 'text-green-600'}>
-          ${value.toLocaleString('es-MX')}
+        <span className={(value ?? 0) > 0 ? 'text-red-600 font-semibold' : 'text-green-600'}>
+          ${(value ?? 0).toLocaleString('es-MX')}
         </span>
       )
     }
