@@ -188,6 +188,7 @@ export function POSMenuBar({
                   <FileText size={14} />
                   <span>Vales por Devolución</span>
                 </button>
+                {/*
                 <button 
                   onClick={onOpenAdvances}
                   className="w-full text-left px-2 py-1 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center space-x-2 rounded"
@@ -197,6 +198,7 @@ export function POSMenuBar({
                 </button>
               </div>
             </div>
+            
 
             {/* Cerrar sesión */}
             <div className="relative group">
