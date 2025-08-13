@@ -17,7 +17,7 @@ export function POSPrintPricesModal({ onClose }: POSPrintPricesModalProps) {
 
   const handlePrintPrices = () => {
     const priceList = filteredProducts.map(product => 
-      `$${product.price.toFixed(2)} - ${product.name.toUpperCase()}`
+      `$${(product.price1 || 0).toFixed(2)} - ${product.name.toUpperCase()}`
     ).join('\n');
 
     const ticketContent = `
@@ -56,7 +56,7 @@ Generado: ${new Date().toLocaleString('es-MX')}
           <div class="header">LISTA DE PRECIOS</div>
           <div class="header">================</div>
           ${filteredProducts.map(product => 
-            `<div class="price-line">$${product.price.toFixed(2)} - ${product.name.toUpperCase()}</div>`
+            `<div class="price-line">$${(product.price1 || 0).toFixed(2)} - ${product.name.toUpperCase()}</div>`
           ).join('')}
           <div class="footer">================</div>
           <div class="footer">Total productos: ${filteredProducts.length}</div>
@@ -143,19 +143,19 @@ Generado: ${new Date().toLocaleString('es-MX')}
                         <div className="text-xs text-gray-500">{product.code}</div>
                       </td>
                       <td className="p-3 text-right font-mono text-green-600 font-bold">
-                        ${product.price.toFixed(2)}
+                        ${(product.price1 || 0).toFixed(2)}
                       </td>
                       <td className="p-3 text-right font-mono text-blue-600 font-bold">
-                        ${(product.price * 1.1).toFixed(2)}
+                        ${(product.price2 || 0).toFixed(2)}
                       </td>
                       <td className="p-3 text-right font-mono text-purple-600 font-bold">
-                        ${(product.price * 1.2).toFixed(2)}
+                        ${(product.price3 || 0).toFixed(2)}
                       </td>
                       <td className="p-3 text-right font-mono text-yellow-600 font-bold">
-                        ${(product.price * 1.3).toFixed(2)}
+                        ${(product.price4 || 0).toFixed(2)}
                       </td>
                       <td className="p-3 text-right font-mono text-red-600 font-bold">
-                        ${(product.price * 1.4).toFixed(2)}
+                        ${(product.price5 || 0).toFixed(2)}
                       </td>
                       <td className="p-3 text-center">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
