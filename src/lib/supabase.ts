@@ -4,8 +4,15 @@ import { Database } from '../types/database';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+let supabase: any;
+let getCurrentUser: () => Promise<any>;
+let signOut: () => Promise<void>;
+let signInWithEmail: (email: string, password: string) => Promise<any>;
+let signUpWithEmail: (email: string, password: string, userData: any) => Promise<any>;
+
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Missing Supabase environment variables. Please click "Connect to Supabase" button to configure.');
+  
   // Create a dummy client to prevent crashes
   const dummyClient = {
     auth: {
@@ -28,13 +35,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
     removeChannel: () => {}
   };
   
-  export const supabase = dummyClient as any;
-  export const getCurrentUser = async () => { throw new Error('Supabase not configured'); };
-  export const signOut = async () => { throw new Error('Supabase not configured'); };
-  export const signInWithEmail = async () => { throw new Error('Supabase not configured'); };
-  export const signUpWithEmail = async () => { throw new Error('Supabase not configured'); };
+  supabase = dummyClient;
+  getCurrentUser = async () => { throw new Error('Supabase not configured'); };
+  signOut = async () => { throw new Error('Supabase not configured'); };
+  signInWithEmail = async () => { throw new Error('Supabase not configured'); };
+  signUpWithEmail = async () => { throw new Error('Supabase not configured'); };
 } else {
-  export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
@@ -43,18 +50,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
   });
 
   // Helper functions for common operations
-  export const getCurrentUser = async () => {
+  getCurrentUser = async () => {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error) throw error;
     return user;
   };
 
-  export const signOut = async () => {
+  signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
 
-  export const signInWithEmail = async (email: string, password: string) => {
+  signInWithEmail = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -63,7 +70,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
     return data;
   };
 
-  export const signUpWithEmail = async (email: string, password: string, userData: any) => {
+  signUpWithEmail = async (email: string, password: string, userData: any) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -75,3 +82,5 @@ if (!supabaseUrl || !supabaseAnonKey) {
     return data;
   };
 }
+
+export { supabase, getCurrentUser, signOut, signInWithEmail, signUpWithEmail };
