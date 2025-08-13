@@ -134,16 +134,22 @@ export function ListadoCompras() {
       return;
     }
 
+    // Buscar el producto por nombre para obtener el product_id
+    const foundProduct = products.find(p => 
+      p.name.toLowerCase() === newDetalle.producto.toLowerCase() ||
+      p.code === newDetalle.codigo_barras
+    );
+
     try {
       // Crear la compra
       const orderData = {
-        supplier_id: '',
+        supplier_id: null,
         supplier_name: newDetalle.marca,
         date: new Date().toISOString().split('T')[0],
         total: newDetalle.importe,
         status: 'received' as const,
         items: [{
-          product_id: '',
+          product_id: foundProduct ? foundProduct.id : null,
           product_name: newDetalle.producto,
           quantity: newDetalle.cantidad,
           cost: newDetalle.costo_unitario,
