@@ -246,7 +246,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                   type="number"
                   step="0.01"
                   value={formData.price1}
-                  onChange={(e) => handleChange('price1', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => handleChange('price1', parseFloat(e.target.value))}
                   className={`w-full px-4 py-3 text-lg font-bold border-2 rounded-lg focus:outline-none focus:ring-3 focus:ring-blue-300 transition-all ${
                     errors.price1 ? 'border-red-400 bg-red-50' : 'border-blue-200 bg-blue-50'
                   }`}
@@ -271,7 +271,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                   type="number"
                   step="0.01"
                   value={formData.price2}
-                  onChange={(e) => handleChange('price2', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => handleChange('price2', parseFloat(e.target.value))}
                   className="w-full px-4 py-3 text-lg font-bold border-2 border-green-200 bg-green-50 rounded-lg focus:outline-none focus:ring-3 focus:ring-green-300 transition-all"
                   min="0"
                   placeholder="0.00"
@@ -293,7 +293,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                   type="number"
                   step="0.01"
                   value={formData.price3}
-                  onChange={(e) => handleChange('price3', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => handleChange('price3', parseFloat(e.target.value))}
                   className="w-full px-4 py-3 text-lg font-bold border-2 border-yellow-200 bg-yellow-50 rounded-lg focus:outline-none focus:ring-3 focus:ring-yellow-300 transition-all"
                   min="0"
                   placeholder="0.00"
@@ -315,7 +315,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                   type="number"
                   step="0.01"
                   value={formData.price4}
-                  onChange={(e) => handleChange('price4', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => handleChange('price4', parseFloat(e.target.value))}
                   className="w-full px-4 py-3 text-lg font-bold border-2 border-purple-200 bg-purple-50 rounded-lg focus:outline-none focus:ring-3 focus:ring-purple-300 transition-all"
                   min="0"
                   placeholder="0.00"
@@ -337,7 +337,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                   type="number"
                   step="0.01"
                   value={formData.price5}
-                  onChange={(e) => handleChange('price5', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => handleChange('price5', parseFloat(e.target.value))}
                   className="w-full px-4 py-3 text-lg font-bold border-2 border-red-200 bg-red-50 rounded-lg focus:outline-none focus:ring-3 focus:ring-red-300 transition-all"
                   min="0"
                   placeholder="0.00"
