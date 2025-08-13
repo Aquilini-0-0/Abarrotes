@@ -62,7 +62,7 @@ const menuItems = [
   {
     title: 'Ventas - Reportes',
     items: [
-      { name: 'Reporte de Inventario', path: '/ventas/reporte-inventario', icon: Warehouse },
+     
        { name: 'Reporte de Cajas', path: '/ejecutivo/reporte-cajas', icon: Calculator },
       { name: 'Estado de Cuenta Clientes', path: '/ventas/estado-cuenta-clientes', icon: Users },
     ]
