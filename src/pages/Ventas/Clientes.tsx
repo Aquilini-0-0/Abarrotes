@@ -529,9 +529,9 @@ export function Clientes() {
                               <td>${client.name}</td>
                               <td>${client.rfc}</td>
                               <td>${client.zone}</td>
-                              <td class="total">$${client.credit_limit.toLocaleString('es-MX')}</td>
-                              <td class="${client.balance > 0 ? 'debt' : 'total'}">$${client.balance.toLocaleString('es-MX')}</td>
-                              <td class="total">$${(client.credit_limit - client.balance).toLocaleString('es-MX')}</td>
+                              <td class="total">$${(client.credit_limit ?? 0).toLocaleString('es-MX')}</td>
+                              <td class="${(client.balance ?? 0) > 0 ? 'debt' : 'total'}">$${(client.balance ?? 0).toLocaleString('es-MX')}</td>
+                              <td class="total">$${((client.credit_limit ?? 0) - (client.balance ?? 0)).toLocaleString('es-MX')}</td>
                             </tr>
                           `).join('')}
                         </tbody>
@@ -718,7 +718,7 @@ export function Clientes() {
                               <td>${client.rfc}</td>
                               <td>${client.zone}</td>
                               <td class="price">Precio ${client.default_price_level || 1}</td>
-                              <td class="price">$${client.credit_limit.toLocaleString('es-MX')}</td>
+                              <td class="price">$${(client.credit_limit ?? 0).toLocaleString('es-MX')}</td>
                             </tr>
                           `).join('')}
                         </tbody>
