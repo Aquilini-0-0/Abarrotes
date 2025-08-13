@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useCallback } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { supabase } from '../../lib/supabase';
@@ -39,14 +40,7 @@ export function ReporteCajas() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState<CashRegisterReport | null>(null);
 
-  // Auto-sync for real-time updates
-  useAutoSync({
-    onDataUpdate: fetchReportes,
-    interval: 3000, // Update every 3 seconds
-    tables: ['cash_registers', 'sales']
-  });
-
-  const fetchReportes = async () => {
+  const fetchReportes = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -89,11 +83,18 @@ export function ReporteCajas() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Auto-sync for real-time updates
+  useAutoSync({
+    onDataUpdate: fetchReportes,
+    interval: 3000, // Update every 3 seconds
+    tables: ['cash_registers', 'sales']
+  });
 
   React.useEffect(() => {
     fetchReportes();
-  }, []);
+  }, [fetchReportes]);
 
   const reportesFiltrados = reportesCaja.filter(reporte => {
     if (filtros.caja && reporte.caja !== filtros.caja) return false;
