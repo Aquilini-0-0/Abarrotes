@@ -453,18 +453,18 @@ export function EstadoCuentaClientes() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Límite de Crédito:</span>
-                      <span className="font-mono text-blue-600">${selectedCliente.limite_credito.toLocaleString('es-MX')}</span>
+                      <span className="font-mono text-blue-600">${(selectedCliente.limite_credito ?? 0).toLocaleString('es-MX')}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Saldo Actual:</span>
-                      <span className={`font-mono ${selectedCliente.saldo_actual > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        ${selectedCliente.saldo_actual.toLocaleString('es-MX')}
+                      <span className={`font-mono ${(selectedCliente.saldo_actual ?? 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        ${(selectedCliente.saldo_actual ?? 0).toLocaleString('es-MX')}
                       </span>
                     </div>
                     <div className="flex justify-between border-t pt-2">
                       <span className="font-semibold text-gray-900">Crédito Disponible:</span>
-                      <span className={`font-bold ${selectedCliente.credito_disponible > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        ${selectedCliente.credito_disponible.toLocaleString('es-MX')}
+                      <span className={`font-bold ${(selectedCliente.credito_disponible ?? 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        ${(selectedCliente.credito_disponible ?? 0).toLocaleString('es-MX')}
                       </span>
                     </div>
                   </div>
