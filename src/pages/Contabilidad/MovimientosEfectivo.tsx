@@ -56,7 +56,7 @@ export function MovimientosEfectivo() {
   useAutoSync({
     onDataUpdate: fetchMovimientos,
     interval: 5000, // Update every 5 seconds
-    tables: ['cash_movements']
+    tables: [{ name: 'cash_movements', timestampColumn: 'created_at' }]
   });
 
   useEffect(() => {
