@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Bell, User } from 'lucide-react';
+import { Search, Bell, User, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAutoSync } from '../../hooks/useAutoSync';
 import { supabase } from '../../lib/supabase';
@@ -19,6 +19,7 @@ export function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
@@ -105,6 +106,25 @@ export function Header() {
     fetchNotifications();
   }, [fetchNotifications]);
 
+  const handleManualSync = async () => {
+    setSyncing(true);
+    try {
+      // Trigger a manual refresh of all data
+      await fetchNotifications();
+      
+      // Dispatch a custom event that other components can listen to
+      window.dispatchEvent(new CustomEvent('manualSync'));
+      
+      // Show success feedback
+      setTimeout(() => {
+        setSyncing(false);
+      }, 1000);
+    } catch (err) {
+      console.error('Error during manual sync:', err);
+      setSyncing(false);
+    }
+  };
+
   const markAsRead = (notificationId: string) => {
     setNotifications(prev => prev.map(notif => 
       notif.id === notificationId ? { ...notif, read: true } : notif
@@ -148,6 +168,20 @@ export function Header() {
         </div>
 
         <div className="flex items-center space-x-2 lg:space-x-4">
+          {/* Sync Button */}
+          <button 
+            onClick={handleManualSync}
+            disabled={syncing}
+            className={`p-2 rounded-lg transition-colors ${
+              syncing 
+                ? 'text-blue-600 bg-blue-50' 
+                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+            }`}
+            title="Sincronizar datos"
+          >
+            <RefreshCw size={20} className={syncing ? 'animate-spin' : ''} />
+          </button>
+
           <div className="relative">
             <button 
               onClick={() => setShowNotifications(!showNotifications)}

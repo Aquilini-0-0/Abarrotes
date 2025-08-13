@@ -92,6 +92,27 @@ export function POSLayout() {
   const [pendingAction, setPendingAction] = useState<'save' | 'pay' | null>(null);
   const [pendingPaymentData, setPendingPaymentData] = useState<any>(null);
 
+  // Handle browser back button for POS
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      // Prevent default back navigation
+      event.preventDefault();
+      
+      // Redirect to login
+      window.location.href = '/login';
+    };
+
+    // Add event listener for browser back button
+    window.addEventListener('popstate', handlePopState);
+    
+    // Push a state to handle back button
+    window.history.pushState(null, '', window.location.pathname);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
   // Auto-sync for real-time updates
   useAutoSync({
     onDataUpdate: refetch,
