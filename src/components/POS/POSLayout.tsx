@@ -233,7 +233,7 @@ export function POSLayout() {
         });
         
         markTabAsSaved(activeTabId);
-        createNewTab();
+        closeTab(activeTabId); // Close the tab after payment
         setShowPaymentModal(false);
         
         if (result.newStatus === 'paid') {
@@ -266,7 +266,7 @@ export function POSLayout() {
         });
         
         markTabAsSaved(activeTabId);
-        createNewTab();
+        closeTab(activeTabId); // Close the tab after payment
         setShowPaymentModal(false);
         
         if (result.newStatus === 'paid') {
@@ -310,6 +310,7 @@ export function POSLayout() {
 
         const savedOrder = await saveOrder({ ...currentOrder, status: 'draft' });
         markTabAsSaved(activeTabId);
+        closeTab(activeTabId); // Close the tab after saving
         alert('Pedido guardado');
       } catch (err) {
         console.error('Error saving order:', err);
@@ -369,7 +370,7 @@ export function POSLayout() {
         });
         
         markTabAsSaved(activeTabId);
-        createNewTab();
+        closeTab(activeTabId); // Close the tab after payment
         setShowPaymentModal(false);
         alert('Pedido procesado con autorización de administrador');
       } catch (err) {

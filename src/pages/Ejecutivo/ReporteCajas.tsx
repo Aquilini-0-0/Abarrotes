@@ -39,6 +39,8 @@ export function ReporteCajas() {
 
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState<CashRegisterReport | null>(null);
+  const [salesDetail, setSalesDetail] = useState<any[]>([]);
+  const [loadingSalesDetail, setLoadingSalesDetail] = useState(false);
 
   const fetchReportes = useCallback(async () => {
     try {
@@ -110,6 +112,51 @@ export function ReporteCajas() {
   const handleViewDetail = (reporte: CashRegisterReport) => {
     setSelectedReport(reporte);
     setShowDetailModal(true);
+    fetchSalesDetail(reporte);
+  };
+  
+  const fetchSalesDetail = async (reporte: CashRegisterReport) => {
+    setLoadingSalesDetail(true);
+    try {
+      // Get the cash register data to find opened_at and closed_at times
+      const { data: cashRegister, error: cashError } = await supabase
+        .from('cash_registers')
+        .select('opened_at, closed_at')
+        .eq('id', reporte.id)
+        .single();
+
+      if (cashError) throw cashError;
+
+      // Query sales that occurred during the cash register session
+      let query = supabase
+        .from('sales')
+        .select(`
+          *,
+          sale_items (
+            product_name,
+            quantity,
+            price,
+            total
+          )
+        `)
+        .gte('created_at', cashRegister.opened_at);
+
+      // If cash register is closed, filter by closed_at time
+      if (cashRegister.closed_at) {
+        query = query.lte('created_at', cashRegister.closed_at);
+      }
+
+      const { data: sales, error: salesError } = await query.order('created_at', { ascending: false });
+
+      if (salesError) throw salesError;
+
+      setSalesDetail(sales || []);
+    } catch (err) {
+      console.error('Error fetching sales detail:', err);
+      setSalesDetail([]);
+    } finally {
+      setLoadingSalesDetail(false);
+    }
   };
 
   const handleExportReport = (reporte: CashRegisterReport) => {
@@ -591,8 +638,81 @@ Generado el ${new Date().toLocaleString('es-MX')}
                 <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
                   <h3 className="font-semibold text-gray-900">Detalle de Ventas</h3>
                 </div>
-                <div className="p-4 text-center text-gray-500">
-                  <p>Detalle de ventas disponible en el módulo de ventas</p>
+                <div className="p-4">
+                  {loadingSalesDetail ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="text-gray-500 mt-2">Cargando ventas...</p>
+                    </div>
+                  ) : salesDetail.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">
+                      <p>No se encontraron ventas durante esta sesión de caja</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="text-left p-2 text-gray-700 font-semibold">Folio</th>
+                            <th className="text-left p-2 text-gray-700 font-semibold">Cliente</th>
+                            <th className="text-left p-2 text-gray-700 font-semibold">Hora</th>
+                            <th className="text-right p-2 text-gray-700 font-semibold">Total</th>
+                            <th className="text-center p-2 text-gray-700 font-semibold">Estado</th>
+                            <th className="text-center p-2 text-gray-700 font-semibold">Productos</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {salesDetail.map((sale, index) => (
+                            <tr key={sale.id} className={`border-b border-gray-200 ${
+                              index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                            }`}>
+                              <td className="p-2 font-mono text-blue-600">
+                                #{sale.id.slice(-6).toUpperCase()}
+                              </td>
+                              <td className="p-2 text-gray-900">{sale.client_name}</td>
+                              <td className="p-2 text-gray-700">
+                                {new Date(sale.created_at).toLocaleTimeString('es-MX', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                })}
+                              </td>
+                              <td className="p-2 text-right font-mono text-green-600 font-bold">
+                                ${sale.total.toLocaleString('es-MX')}
+                              </td>
+                              <td className="p-2 text-center">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  sale.status === 'paid' ? 'bg-green-100 text-green-800' :
+                                  sale.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {sale.status === 'paid' ? 'Pagado' : 
+                                   sale.status === 'pending' ? 'Pendiente' : 'Guardado'}
+                                </span>
+                              </td>
+                              <td className="p-2 text-center">
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                                  {sale.sale_items?.length || 0} items
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot className="bg-gray-100">
+                          <tr>
+                            <td colSpan={3} className="p-2 text-right font-semibold text-gray-900">
+                              TOTAL VENTAS:
+                            </td>
+                            <td className="p-2 text-right font-bold text-green-600">
+                              ${salesDetail.reduce((sum, sale) => sum + sale.total, 0).toLocaleString('es-MX')}
+                            </td>
+                            <td colSpan={2} className="p-2 text-center text-gray-600">
+                              {salesDetail.length} ventas
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </div>
 
