@@ -166,22 +166,7 @@ export function ReporteAjustes() {
                   <option value="merma">Merma</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Producto
-                </label>
-                <select
-                  value={filtros.producto}
-                  onChange={(e) => setFiltros(prev => ({ ...prev, producto: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Todos los productos</option>
-                  {Array.from(new Set(movements.map(m => ({ id: m.product_id, name: m.product_name }))))
-                    .map(product => (
-                      <option key={product.id} value={product.id}>{product.name}</option>
-                    ))}
-                </select>
-              </div>
+             
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Fecha Inicio
