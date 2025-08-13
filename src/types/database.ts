@@ -43,7 +43,11 @@ export interface Database {
           unit: string;
           stock: number;
           cost: number;
-          price: number;
+          price1: number;
+          price2: number;
+          price3: number;
+          price4: number;
+          price5: number;
           status: 'active' | 'disabled';
           created_at: string;
           updated_at: string;
@@ -57,7 +61,11 @@ export interface Database {
           unit?: string;
           stock?: number;
           cost?: number;
-          price?: number;
+          price1?: number;
+          price2?: number;
+          price3?: number;
+          price4?: number;
+          price5?: number;
           status?: 'active' | 'disabled';
           created_at?: string;
           updated_at?: string;
@@ -71,7 +79,11 @@ export interface Database {
           unit?: string;
           stock?: number;
           cost?: number;
-          price?: number;
+          price1?: number;
+          price2?: number;
+          price3?: number;
+          price4?: number;
+          price5?: number;
           status?: 'active' | 'disabled';
           created_at?: string;
           updated_at?: string;

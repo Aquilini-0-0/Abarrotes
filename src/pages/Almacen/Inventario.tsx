@@ -243,13 +243,13 @@ export function Inventario() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Precio de Venta</label>
-                      <p className="text-green-600 font-mono text-lg font-bold">${viewingProduct.price.toFixed(2)}</p>
+                      <p className="text-green-600 font-mono text-lg font-bold">${viewingProduct.price1.toFixed(2)}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Margen de Ganancia</label>
                       <p className="text-blue-600 font-bold">
                         {viewingProduct.cost > 0 
-                          ? (((viewingProduct.price - viewingProduct.cost) / viewingProduct.cost) * 100).toFixed(1)
+                          ? (((viewingProduct.price1 - viewingProduct.cost) / viewingProduct.cost) * 100).toFixed(1)
                           : '0.0'
                         }%
                       </p>
