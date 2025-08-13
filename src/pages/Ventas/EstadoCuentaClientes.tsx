@@ -438,7 +438,12 @@ export function EstadoCuentaClientes() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Última Compra:</span>
-                      <span>{selectedCliente.ultima_compra ? new Date(selectedCliente.ultima_compra).toLocaleDateString('es-MX') : 'N/A'}</span>
+                      <span>
+                        {selectedCliente.ultima_compra ? (() => {
+                          const date = new Date(selectedCliente.ultima_compra);
+                          return (date && !isNaN(date.getTime())) ? date.toLocaleDateString('es-MX') : 'N/A';
+                        })() : 'N/A'}
+                      </span>
                     </div>
                   </div>
                 </div>
