@@ -13,29 +13,26 @@ export function Inventario() {
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
 
- const navigate = useNavigate();
-
-const handleSaveProduct = async (productData: Omit<Product, 'id'>) => {
-  try {
-    if (editingProduct) {
-      await updateProduct(editingProduct.id, productData);
-      alert('✅ Producto actualizado exitosamente');
-    } else {
-      await createProduct(productData);
-      alert('✅ Producto creado exitosamente');
+  const handleSaveProduct = async (productData: Omit<Product, 'id'>) => {
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, productData);
+        alert('✅ Producto actualizado exitosamente');
+      } else {
+        await createProduct(productData);
+        alert('✅ Producto creado exitosamente');
+      }
+      setShowForm(false);
+      setEditingProduct(undefined);
+      
+      // Force page refresh to return to inventory list
+      window.location.href = '/Inventario';
+    } catch (err) {
+      console.error('Error saving product:', err);
+      alert('Error al guardar el producto');
     }
+  };
 
-    setShowForm(false);
-    setEditingProduct(undefined);
-
-    // Recargar la misma ruta para re-renderizar Inventario
-    navigate('/almacen/inventario', { replace: true });
-
-  } catch (err) {
-    console.error('Error saving product:', err);
-    alert('Error al guardar el producto');
-  }
-};
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
