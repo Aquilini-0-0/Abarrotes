@@ -49,6 +49,12 @@ export function LoginForm() {
     setSuccess('');
 
     try {
+      // Check if Supabase is configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        setError('Supabase no está configurado. Por favor haz clic en "Connect to Supabase" en la esquina superior derecha.');
+        return;
+      }
+
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-users`, {
         method: 'POST',
         headers: {
@@ -66,7 +72,11 @@ export function LoginForm() {
         setError('Error al crear usuarios: ' + (data.error || 'Error desconocido'));
       }
     } catch (err) {
-      setError('Error de conexión al crear usuarios');
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setError('No se puede conectar a Supabase. Por favor configura la conexión primero.');
+      } else {
+        setError('Error de conexión al crear usuarios');
+      }
     } finally {
       setIsCreatingUsers(false);
     }

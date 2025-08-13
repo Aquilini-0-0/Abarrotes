@@ -80,19 +80,25 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
               setTimeout(onDataUpdate, 100);
             }
           }
-        )
-        .subscribe();
-
-      subscriptions.push(subscription);
-    });
-
+        try {
+          const { data, error } = await supabase
+            .from(tableName)
+            .select(timestampColumn)
+            .order(timestampColumn, { ascending: false })
+            .limit(1)
+            .maybeSingle();
     return () => {
-      subscriptions.forEach(sub => {
+          if (error) continue;
         supabase.removeChannel(sub);
-      });
-    };
-  }, [tables, onDataUpdate]);
-
+          const lastUpdate = data?.[timestampColumn];
+          if (lastUpdate && lastUpdate !== lastUpdateRef.current[tableName]) {
+            lastUpdateRef.current[tableName] = lastUpdate;
+            hasUpdates = true;
+          }
+        } catch (tableError) {
+          // Skip this table if there's an error
+          console.warn(`Error checking updates for table ${tableName}:`, tableError);
+          continue;
   return {
     // Expose method to manually trigger sync
     triggerSync: () => {
@@ -100,5 +106,10 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
         onDataUpdate();
       }
     }
-  };
+      // Silently handle network errors to prevent console spam
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        // Network error - this is expected when Supabase is not configured
+        return;
+      }
+      console.warn('Error checking for updates:', err);
 }
