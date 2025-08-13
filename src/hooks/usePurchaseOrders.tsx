@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Card } from '../../components/Common/Card';
-import { DataTable } from '../../components/Common/DataTable';
-import { usePurchaseOrders } from '../../hooks/usePurchaseOrders';
-import { useSuppliers } from '../../hooks/useSuppliers';
-import { useProducts } from '../../hooks/useProducts';
+import { Card } from '../components/Common/Card';
+import { DataTable } from '../components/Common/DataTable';
+import { usePurchaseOrders } from '../hooks/usePurchaseOrders';
+import { useSuppliers } from '../hooks/useSuppliers';
+import { useProducts } from '../hooks/useProducts';
 import { Plus, Edit, FileText, Trash2, ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
 
 interface CompraDetallada {
