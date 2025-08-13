@@ -90,24 +90,6 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
       form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
     }
   };
-      const productData = {
-        name: formData.name,
-        code: formData.code,
-        line: formData.line,
-        subline: formData.subline,
-        unit: formData.unit,
-        stock: formData.stock,
-        cost: formData.cost,
-        price1: formData.price1,
-        price2: formData.price2,
-        price3: formData.price3,
-        price4: formData.price4,
-        price5: formData.price5,
-        status: formData.status
-      };
-      onSave(productData);
-    }
-  };
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -574,69 +556,6 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             </button>
           </div>
         </form>
-        
-        {/* Cost Warning Modal */}
-        {showCostWarning && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-              <div className="bg-yellow-600 p-4 border-b border-yellow-700 rounded-t-lg">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-white font-bold">Advertencia de Costos</h3>
-                  <button
-                    onClick={() => {
-                      setShowCostWarning(false);
-                      setPendingSubmit(false);
-                    }}
-                    className="text-yellow-100 hover:text-white"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-              </div>
-              <div className="p-6">
-                <div className="text-center mb-6">
-                  <div className="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-yellow-600 text-2xl">⚠️</span>
-                  </div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                    Costo Mayor al Precio
-                  </h4>
-                  <p className="text-gray-600 text-sm">
-                    El costo (${formData.cost.toFixed(2)}) es mayor a uno o más precios de venta. 
-                    Esto resultará en pérdidas. ¿Está seguro de continuar?
-                  </p>
-                  <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <div className="text-sm text-yellow-800">
-                      <p>Costo: ${formData.cost.toFixed(2)}</p>
-                      <p>Precio 1: ${formData.price1.toFixed(2)}</p>
-                      <p>Precio 2: ${formData.price2.toFixed(2)}</p>
-                      <p>Precio 3: ${formData.price3.toFixed(2)}</p>
-                      <p>Precio 4: ${formData.price4.toFixed(2)}</p>
-                      <p>Precio 5: ${formData.price5.toFixed(2)}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex space-x-3">
-                  <button
-                    onClick={handleConfirmSave}
-                    className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
-                  >
-                    Guardar de Todas Formas
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowCostWarning(false);
-                      setPendingSubmit(false);
-                    }}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
