@@ -204,7 +204,11 @@ export function EstadoCuentaClientes() {
       key: 'ultima_compra', 
       label: 'Última Compra', 
       sortable: true,
-      render: (value: string) => value ? new Date(value).toLocaleDateString('es-MX') : 'N/A'
+      render: (value: string) => {
+        if (!value) return 'N/A';
+        const date = new Date(value);
+        return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString('es-MX');
+      }
     },
     { 
       key: 'dias_vencimiento', 
