@@ -196,9 +196,10 @@ export function POSMenuBar({
                   <DollarSign size={14} />
                   <span>Anticipos</span>
                 </button>
+                 */}
               </div>
             </div>
-            */}
+           
 
             {/* Cerrar sesión */}
             <div className="relative group">
