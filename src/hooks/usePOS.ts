@@ -268,47 +268,19 @@ export function usePOS() {
       
       // Check if this is an existing order (not temp)
       if (!isNewOrder) {
-        // Get current order data to compare totals
+        // For existing orders, always save as pending when using save button
+        // Payment processing should be done through the payment modal
         const { data: currentOrder, error: fetchError } = await supabase
           .from('sales')
-          .select('total, amount_paid, status')
+          .select('amount_paid')
           .eq('id', order.id)
           .single();
 
         if (fetchError) throw fetchError;
 
-        const previousTotal = currentOrder.total;
         const amountPaid = currentOrder.amount_paid || 0;
-        const wasFullyPaid = currentOrder.status === 'paid';
-        const newTotal = order.total;
-        
-        // Determine new status based on remaining balance
-        let newStatus: 'pending' | 'paid' = 'pending'; // Default to pending for saves
-        
-        let newAmountPaid = amountPaid;
-        let newRemainingBalance = newTotal - amountPaid;
-        
-        if (wasFullyPaid) {
-          if (newTotal === previousTotal) {
-            // Case A: No changes to total, keep as paid
-            newStatus = 'paid';
-            newAmountPaid = newTotal;
-            newRemainingBalance = 0;
-          } else if (newTotal > previousTotal) {
-            // Case B: Total increased
-            newStatus = 'pending';
-            newRemainingBalance = newTotal - amountPaid;
-          } else {
-            // Case C: Total decreased but was paid, keep as paid
-            newStatus = 'paid';
-            newAmountPaid = newTotal;
-            newRemainingBalance = 0;
-          }
-        } else {
-          // Was not fully paid
-          newStatus = 'pending';
-          newRemainingBalance = newTotal - amountPaid;
-        }
+        const newRemainingBalance = order.total - amountPaid;
+        const newStatus = newRemainingBalance <= 0.01 ? 'paid' : 'pending';
 
         // Update existing order
         const { data: updatedSale, error: updateError } = await supabase
@@ -318,7 +290,6 @@ export function usePOS() {
             client_name: order.client_name,
             date: order.date,
             total: order.total,
-            amount_paid: newAmountPaid,
             remaining_balance: newRemainingBalance,
             status: newStatus
           })
@@ -337,12 +308,6 @@ export function usePOS() {
 
         if (deleteItemsError) throw deleteItemsError;
       } else {
-        // New orders saved without payment are always pending
-        let initialStatus: 'pending' | 'paid' = 'pending';
-        
-        let initialAmountPaid = 0;
-        let initialRemainingBalance = order.total;
-        
         // Create new sale record
         const { data: newSale, error: saleError } = await supabase
           .from('sales')
@@ -351,9 +316,9 @@ export function usePOS() {
             client_name: order.client_name,
             date: order.date,
             total: order.total,
-            status: initialStatus,
-            amount_paid: initialAmountPaid,
-            remaining_balance: initialRemainingBalance,
+            status: 'pending',
+            amount_paid: 0,
+            remaining_balance: order.total,
             created_by: order.created_by
           })
           .select()
@@ -378,9 +343,6 @@ export function usePOS() {
         .insert(saleItems);
 
       if (itemsError) throw itemsError;
-
-      // Don't update stock when saving - only when payment is processed
-      // Stock will be updated when payment is processed and status becomes 'paid'
 
       await fetchOrders();
       return saleData;

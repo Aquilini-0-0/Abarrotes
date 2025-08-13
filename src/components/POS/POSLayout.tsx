@@ -211,8 +211,8 @@ export function POSLayout() {
       // Determine if this is an existing order being paid
       const isExistingOrder = !currentOrder.id.startsWith('temp-');
       
-      // For existing orders, use processPayment to handle partial/full payments
       if (isExistingOrder) {
+        // For existing orders, use processPayment
         const paymentAmount = paymentData.method === 'mixed' 
           ? paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer + paymentData.breakdown.credit
           : currentOrder.total;
@@ -223,7 +223,6 @@ export function POSLayout() {
           reference: paymentData.reference
         });
         
-        // Update last order
         setLastOrder({
           id: currentOrder.id,
           client_name: currentOrder.client_name,
@@ -242,37 +241,39 @@ export function POSLayout() {
         } else {
           alert(`✅ Abono procesado exitosamente - Saldo restante: $${result.newRemainingBalance.toFixed(2)}`);
         }
-        return;
-      }
-      
-      // For new orders, save with payment method
-      const orderToSave = {
-        ...currentOrder,
-        payment_method: paymentData.method,
-        is_credit: paymentData.method === 'credit'
-      } as any;
-
-      const savedOrder = await saveOrder(orderToSave);
-      
-      // Update last order immediately
-      setLastOrder({
-        id: savedOrder.id,
-        client_name: orderToSave.client_name,
-        total: orderToSave.total,
-        items_count: orderToSave.items.length,
-        date: new Date().toISOString(),
-        status: savedOrder.status
-      });
-      
-      // Mark tab as saved and create new tab
-      markTabAsSaved(activeTabId);
-      createNewTab();
-      setShowPaymentModal(false);
-      
-      if (savedOrder.status === 'paid') {
-        alert('✅ Pedido procesado exitosamente - Marcado como PAGADO');
       } else {
-        alert('✅ Pedido guardado como CRÉDITO - Estado: PENDIENTE');
+        // For new orders, save first then process payment
+        const savedOrder = await saveOrder(currentOrder);
+        
+        // Now process the payment
+        const paymentAmount = paymentData.method === 'mixed' 
+          ? paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer + paymentData.breakdown.credit
+          : currentOrder.total;
+          
+        const result = await processPayment(savedOrder.id, {
+          amount: paymentAmount,
+          method: paymentData.method,
+          reference: paymentData.reference
+        });
+        
+        setLastOrder({
+          id: savedOrder.id,
+          client_name: currentOrder.client_name,
+          total: currentOrder.total,
+          items_count: currentOrder.items.length,
+          date: new Date().toISOString(),
+          status: result.newStatus
+        });
+        
+        markTabAsSaved(activeTabId);
+        createNewTab();
+        setShowPaymentModal(false);
+        
+        if (result.newStatus === 'paid') {
+          alert('✅ Pedido procesado exitosamente - Marcado como PAGADO');
+        } else {
+          alert('✅ Pedido guardado como CRÉDITO - Estado: PENDIENTE');
+        }
       }
     } catch (err) {
       console.error('Error processing payment:', err);

@@ -17,8 +17,10 @@ export function Inventario() {
     try {
       if (editingProduct) {
         await updateProduct(editingProduct.id, productData);
+        alert('✅ Producto actualizado exitosamente');
       } else {
         await createProduct(productData);
+        alert('✅ Producto creado exitosamente');
       }
       setShowForm(false);
       setEditingProduct(undefined);

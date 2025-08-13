@@ -7,6 +7,12 @@ import { useProducts } from '../../hooks/useProducts';
 import { AutocompleteInput } from '../../components/Common/AutocompleteInput';
 import { Plus, Edit, FileText, Trash2, ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
 
+interface Proveedor {
+  id: string;
+  name: string;
+  rfc: string;
+}
+
 interface CompraDetallada {
   id: string;
   id_factura: string;
@@ -46,6 +52,10 @@ export function ListadoCompras() {
   const { suppliers } = useSuppliers();
   const { products } = useProducts();
   
+  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [loadingProveedores, setLoadingProveedores] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  
   const [filtros, setFiltros] = useState({
     almacen_entrada: 'BODEGA',
     proveedor: '',
@@ -81,6 +91,28 @@ export function ListadoCompras() {
     precio4: 0,
     precio5: 0
   });
+
+  // Fetch proveedores
+  useEffect(() => {
+    const fetchProveedores = async () => {
+      setLoadingProveedores(true);
+      try {
+        const { data, error } = await supabase
+          .from('suppliers')
+          .select('id, name, rfc')
+          .order('name');
+
+        if (error) throw error;
+        setProveedores(data || []);
+      } catch (err) {
+        console.error('Error fetching proveedores:', err);
+      } finally {
+        setLoadingProveedores(false);
+      }
+    };
+
+    fetchProveedores();
+  }, []);
 
   // Convertir órdenes de compra a formato de compras detalladas
   const comprasDetalladas: CompraDetallada[] = orders.map((order, index) => ({
@@ -130,27 +162,60 @@ export function ListadoCompras() {
   const handleSubmitDetalle = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Clear previous validation errors
+    setValidationErrors({});
+    const errors: Record<string, string> = {};
+    
+    // Validate required fields
+    if (!newDetalle.producto.trim()) {
+      errors.producto = 'El nombre del producto es requerido';
+    }
+    if (!newDetalle.proveedor_id) {
+      errors.proveedor_id = 'Debe seleccionar un proveedor';
+    }
+    if (newDetalle.cantidad <= 0) {
+      errors.cantidad = 'La cantidad debe ser mayor a 0';
+    }
+    if (newDetalle.costo_unitario <= 0) {
+      errors.costo_unitario = 'El costo unitario debe ser mayor a 0';
+    }
+    if (!newDetalle.unidad_medida) {
+      errors.unidad_medida = 'Debe seleccionar una unidad de medida';
+    }
+    
+    // If there are validation errors, show them and return
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    
     // Validaciones de precios
     const precios = [newDetalle.precio1, newDetalle.precio2, newDetalle.precio3, newDetalle.precio4, newDetalle.precio5];
     for (let i = 0; i < precios.length; i++) {
       if (precios[i] > 0 && precios[i] <= newDetalle.costo_unitario) {
-        alert(`El precio ${i + 1} debe ser mayor al costo unitario ($${newDetalle.costo_unitario.toFixed(2)})`);
-        return;
+        errors[`precio${i + 1}`] = `Debe ser mayor al costo unitario ($${newDetalle.costo_unitario.toFixed(2)})`;
       }
     }
 
     if (newDetalle.precio1 <= 0) {
-      alert('El precio 1 es obligatorio y debe ser mayor a 0');
-      return;
+      errors.precio1 = 'El precio 1 es obligatorio y debe ser mayor a 0';
     }
-
-    const selectedSupplier = suppliers.find(s => s.id === newDetalle.proveedor_id);
-    if (!selectedSupplier) {
-      alert('Debe seleccionar un proveedor válido');
+    
+    // If there are price validation errors, show them and return
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
       return;
     }
 
     try {
+      const selectedSupplier = proveedores.find(s => s.id === newDetalle.proveedor_id);
+      if (!selectedSupplier) {
+        setValidationErrors({ proveedor_id: 'Debe seleccionar un proveedor válido' });
+        return;
+      }
+
+
+
       // Crear el producto primero
       const { data: newProduct, error: productError } = await supabase
         .from('products')
@@ -230,7 +295,7 @@ export function ListadoCompras() {
       alert('Compra registrada exitosamente');
     } catch (err) {
       console.error('Error creating purchase:', err);
-      alert('Error al registrar la compra');
+      setValidationErrors({ general: 'Error al registrar la compra: ' + (err instanceof Error ? err.message : 'Error desconocido') });
     }
   };
 
@@ -520,10 +585,35 @@ export function ListadoCompras() {
                       type="text"
                       value={newDetalle.producto}
                       onChange={(e) => handleInputChange('producto', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        validationErrors.producto ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      }`}
                       placeholder="Nombre del producto"
                       required
                     />
+                    {validationErrors.producto && (
+                      <p className="text-red-500 text-xs mt-1">{validationErrors.producto}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Proveedor *
+                    </label>
+                    <AutocompleteInput
+                      options={proveedores.map(proveedor => ({
+                        id: proveedor.id,
+                        label: `${proveedor.name} - ${proveedor.rfc}`,
+                        value: proveedor.id
+                      }))}
+                      value={newDetalle.proveedor_id}
+                      onChange={(value) => handleInputChange('proveedor_id', value)}
+                      placeholder="Buscar proveedor..."
+                      className={validationErrors.proveedor_id ? 'border-red-300 bg-red-50' : ''}
+                    />
+                    {validationErrors.proveedor_id && (
+                      <p className="text-red-500 text-xs mt-1">{validationErrors.proveedor_id}</p>
+                    )}
                   </div>
 
                   <div>
@@ -561,10 +651,15 @@ export function ListadoCompras() {
                         type="number"
                         value={newDetalle.cantidad}
                         onChange={(e) => handleInputChange('cantidad', parseInt(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          validationErrors.cantidad ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                        }`}
                         min="1"
                         required
                       />
+                      {validationErrors.cantidad && (
+                        <p className="text-red-500 text-xs mt-1">{validationErrors.cantidad}</p>
+                      )}
                     </div>
 
                     <div>
@@ -574,7 +669,9 @@ export function ListadoCompras() {
                       <select
                         value={newDetalle.unidad_medida}
                         onChange={(e) => handleInputChange('unidad_medida', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          validationErrors.unidad_medida ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                        }`}
                         required
                       >
                         <option value="">Seleccionar</option>
@@ -586,6 +683,9 @@ export function ListadoCompras() {
                         <option value="METRO">METRO</option>
                         <option value="TONELADA">TONELADA</option>
                       </select>
+                      {validationErrors.unidad_medida && (
+                        <p className="text-red-500 text-xs mt-1">{validationErrors.unidad_medida}</p>
+                      )}
                     </div>
                   </div>
 
@@ -599,10 +699,15 @@ export function ListadoCompras() {
                         step="0.01"
                         value={newDetalle.costo_unitario}
                         onChange={(e) => handleInputChange('costo_unitario', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          validationErrors.costo_unitario ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                        }`}
                         min="0"
                         required
                       />
+                      {validationErrors.costo_unitario && (
+                        <p className="text-red-500 text-xs mt-1">{validationErrors.costo_unitario}</p>
+                      )}
                     </div>
 
                     <div>
@@ -729,12 +834,12 @@ export function ListadoCompras() {
                         value={newDetalle[`precio${nivel}` as keyof DetalleCompra] as number}
                         onChange={(e) => handleInputChange(`precio${nivel}`, parseFloat(e.target.value) || 0)}
                         className={`w-full px-4 py-3 text-lg font-bold border-2 rounded-lg focus:outline-none focus:ring-3 focus:ring-red-300 transition-all ${
-                          newDetalle.precio5 > 0 && newDetalle.precio5 <= newDetalle.costo_unitario ? 'border-red-400 bg-red-50' : 'border-red-200 bg-red-50'
+                          validationErrors[`precio${nivel}`] ? 'border-red-400 bg-red-50' : 'border-red-200 bg-red-50'
                         }`}
                         placeholder="0.00"
                       />
-                      {newDetalle.precio5 > 0 && newDetalle.precio5 <= newDetalle.costo_unitario && (
-                        <p className="text-red-500 text-xs mt-2 font-medium">Debe ser mayor al costo</p>
+                      {validationErrors[`precio${nivel}`] && (
+                        <p className="text-red-500 text-xs mt-2 font-medium">{validationErrors[`precio${nivel}`]}</p>
                       )}
                       <div className="text-xs text-gray-500 mt-1">
                         {nivel === 1 ? 'General' : 
@@ -747,6 +852,13 @@ export function ListadoCompras() {
                 </div>
               </div>
 
+              {/* General validation errors */}
+              {validationErrors.general && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-red-600 text-sm">{validationErrors.general}</p>
+                </div>
+              )}
+
               {/* Botones de Acción */}
               <div className="flex items-center justify-end space-x-4 mt-6 pt-6 border-t border-gray-200">
                 <button
@@ -754,6 +866,7 @@ export function ListadoCompras() {
                   onClick={() => {
                     setShowForm(false);
                     setEditingCompra(null);
+                    setValidationErrors({});
                   }}
                   className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                 >

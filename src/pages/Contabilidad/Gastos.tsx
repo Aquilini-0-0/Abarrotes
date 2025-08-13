@@ -3,10 +3,12 @@ import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useExpenses } from '../../hooks/useExpenses';
 import { Expense } from '../../types';
-import { Plus, TrendingDown, DollarSign, Calendar } from 'lucide-react';
+import { Plus, TrendingDown, DollarSign, Calendar, Edit, Trash2, X } from 'lucide-react';
 
 export function Gastos() {
-  const { expenses, loading, error, createExpense } = useExpenses();
+  const { expenses, loading, error, createExpense, updateExpense, deleteExpense } = useExpenses();
+  const [showForm, setShowForm] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [newExpense, setNewExpense] = useState({
     concept: '',
     category: '',
@@ -18,10 +20,18 @@ export function Gastos() {
   const handleSubmitExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createExpense({
-        ...newExpense,
-        date: new Date().toISOString().split('T')[0]
-      });
+      if (editingExpense) {
+        await updateExpense(editingExpense.id, newExpense);
+        alert('Gasto actualizado exitosamente');
+        setEditingExpense(null);
+      } else {
+        await createExpense({
+          ...newExpense,
+          date: new Date().toISOString().split('T')[0]
+        });
+        alert('Gasto registrado exitosamente');
+      }
+      
       setNewExpense({
         concept: '',
         category: '',
@@ -29,13 +39,36 @@ export function Gastos() {
         bank_account: '',
         description: ''
       });
-      alert('Gasto registrado exitosamente');
+      setShowForm(false);
     } catch (err) {
       console.error('Error creating expense:', err);
       alert('Error al registrar el gasto');
     }
   };
 
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpense(expense);
+    setNewExpense({
+      concept: expense.concept,
+      category: expense.category,
+      amount: expense.amount,
+      bank_account: expense.bank_account,
+      description: expense.description
+    });
+    setShowForm(true);
+  };
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    if (confirm('¿Está seguro de eliminar este gasto?')) {
+      try {
+        await deleteExpense(expenseId);
+        alert('Gasto eliminado exitosamente');
+      } catch (err) {
+        console.error('Error deleting expense:', err);
+        alert('Error al eliminar el gasto');
+      }
+    }
+  };
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -80,7 +113,29 @@ export function Gastos() {
       )
     },
     { key: 'bank_account', label: 'Cuenta Bancaria', sortable: true },
-    { key: 'description', label: 'Descripción' }
+    { key: 'description', label: 'Descripción' },
+    {
+      key: 'actions',
+      label: 'Acciones',
+      render: (_, expense: Expense) => (
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => handleEditExpense(expense)}
+            className="p-1 text-blue-600 hover:text-blue-800"
+            title="Editar"
+          >
+            <Edit size={16} />
+          </button>
+          <button
+            onClick={() => handleDeleteExpense(expense.id)}
+            className="p-1 text-red-600 hover:text-red-800"
+            title="Eliminar"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      )
+    }
   ];
 
   const totalGastos = expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -94,7 +149,10 @@ export function Gastos() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Registro de Gastos</h1>
-        <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+        <button 
+          onClick={() => setShowForm(true)}
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
           <Plus size={16} />
           <span>Nuevo Gasto</span>
         </button>
@@ -156,88 +214,109 @@ export function Gastos() {
         </div>
 
         <div className="space-y-6">
-          <Card title="Nuevo Gasto">
-            <form onSubmit={handleSubmitExpense} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Concepto
-                </label>
-                <input
-                  type="text"
-                  value={newExpense.concept}
-                  onChange={(e) => setNewExpense(prev => ({ ...prev, concept: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: Pago de servicios"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Categoría
-                </label>
-                <select 
-                  value={newExpense.category}
-                  onChange={(e) => setNewExpense(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Seleccionar categoría</option>
-                  <option value="Servicios">Servicios</option>
-                  <option value="Mantenimiento">Mantenimiento</option>
-                  <option value="Combustible">Combustible</option>
-                  <option value="Oficina">Oficina</option>
-                  <option value="Otros">Otros</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Monto
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={newExpense.amount}
-                  onChange={(e) => setNewExpense(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cuenta Bancaria
-                </label>
-                <select 
-                  value={newExpense.bank_account}
-                  onChange={(e) => setNewExpense(prev => ({ ...prev, bank_account: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Seleccionar cuenta</option>
-                  <option value="BBVA - *1234">BBVA - *1234</option>
-                  <option value="Santander - *5678">Santander - *5678</option>
-                  <option value="Banorte - *9012">Banorte - *9012</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Descripción
-                </label>
-                <textarea
-                  value={newExpense.description}
-                  onChange={(e) => setNewExpense(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Descripción adicional..."
-                  rows={3}
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Registrar Gasto
-              </button>
-            </form>
-          </Card>
+          {showForm && (
+            <Card title={editingExpense ? "Editar Gasto" : "Nuevo Gasto"}>
+              <form onSubmit={handleSubmitExpense} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Concepto
+                  </label>
+                  <input
+                    type="text"
+                    value={newExpense.concept}
+                    onChange={(e) => setNewExpense(prev => ({ ...prev, concept: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: Pago de servicios"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Categoría
+                  </label>
+                  <select 
+                    value={newExpense.category}
+                    onChange={(e) => setNewExpense(prev => ({ ...prev, category: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Seleccionar categoría</option>
+                    <option value="Servicios">Servicios</option>
+                    <option value="Mantenimiento">Mantenimiento</option>
+                    <option value="Combustible">Combustible</option>
+                    <option value="Oficina">Oficina</option>
+                    <option value="Otros">Otros</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Monto
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newExpense.amount}
+                    onChange={(e) => setNewExpense(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cuenta Bancaria
+                  </label>
+                  <select 
+                    value={newExpense.bank_account}
+                    onChange={(e) => setNewExpense(prev => ({ ...prev, bank_account: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Seleccionar cuenta</option>
+                    <option value="BBVA - *1234">BBVA - *1234</option>
+                    <option value="Santander - *5678">Santander - *5678</option>
+                    <option value="Banorte - *9012">Banorte - *9012</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Descripción
+                  </label>
+                  <textarea
+                    value={newExpense.description}
+                    onChange={(e) => setNewExpense(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Descripción adicional..."
+                    rows={3}
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    {editingExpense ? 'Actualizar' : 'Registrar'} Gasto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForm(false);
+                      setEditingExpense(null);
+                      setNewExpense({
+                        concept: '',
+                        category: '',
+                        amount: 0,
+                        bank_account: '',
+                        description: ''
+                      });
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </Card>
+          )}
         </div>
       </div>
     </div>

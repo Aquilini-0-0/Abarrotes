@@ -30,6 +30,7 @@ export function Clientes() {
       if (editingClient) {
         await updateClient(editingClient.id, newClient);
         alert('Cliente actualizado exitosamente');
+        setEditingClient(null);
       } else {
         // Validate required fields
         if (!newClient.name.trim()) {
@@ -56,7 +57,6 @@ export function Clientes() {
         balance: 0
       });
       setShowForm(false);
-      setEditingClient(null);
     } catch (err) {
       console.error('Error saving client:', err);
       alert('Error al guardar el cliente: ' + (err instanceof Error ? err.message : 'Error desconocido'));
