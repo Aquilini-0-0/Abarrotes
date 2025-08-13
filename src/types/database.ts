@@ -612,6 +612,85 @@ export interface Database {
         updated_at?: string;
       };
     };
+    cash_movements: {
+      Row: {
+        id: string;
+        fecha: string;
+        tipo: 'caja_mayor' | 'deposito_bancario' | 'gasto' | 'pago_proveedor' | 'prestamo' | 'traspaso_caja' | 'otros';
+        monto: number;
+        cargo: string;
+        numero_caja: string;
+        descripcion: string;
+        usuario: string;
+        created_at: string;
+      };
+      Insert: {
+        id?: string;
+        fecha?: string;
+        tipo: 'caja_mayor' | 'deposito_bancario' | 'gasto' | 'pago_proveedor' | 'prestamo' | 'traspaso_caja' | 'otros';
+        monto: number;
+        cargo: string;
+        numero_caja: string;
+        descripcion?: string;
+        usuario: string;
+        created_at?: string;
+      };
+      Update: {
+        id?: string;
+        fecha?: string;
+        tipo?: 'caja_mayor' | 'deposito_bancario' | 'gasto' | 'pago_proveedor' | 'prestamo' | 'traspaso_caja' | 'otros';
+        monto?: number;
+        cargo?: string;
+        numero_caja?: string;
+        descripcion?: string;
+        usuario?: string;
+        created_at?: string;
+      };
+    };
+    vales_devolucion: {
+      Row: {
+        id: string;
+        folio_vale: string;
+        folio_remision: string;
+        fecha_expedicion: string;
+        cliente: string;
+        importe: number;
+        disponible: number;
+        estatus: 'HABILITADO' | 'USADO' | 'VENCIDO';
+        tipo: string;
+        factura: string;
+        created_at: string;
+        updated_at: string;
+      };
+      Insert: {
+        id?: string;
+        folio_vale: string;
+        folio_remision: string;
+        fecha_expedicion?: string;
+        cliente: string;
+        importe: number;
+        disponible?: number;
+        estatus?: 'HABILITADO' | 'USADO' | 'VENCIDO';
+        tipo?: string;
+        factura: string;
+        created_at?: string;
+        updated_at?: string;
+      };
+      Update: {
+        id?: string;
+        folio_vale?: string;
+        folio_remision?: string;
+        fecha_expedicion?: string;
+        cliente?: string;
+        importe?: number;
+        disponible?: number;
+        estatus?: 'HABILITADO' | 'USADO' | 'VENCIDO';
+        tipo?: string;
+        factura?: string;
+        created_at?: string;
+        updated_at?: string;
+      };
+    };
     Views: {
       [_ in never]: never;
     };

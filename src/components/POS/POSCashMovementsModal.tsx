@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, DollarSign, Plus, Calendar, User, Building2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 interface CashMovement {
   id: string;
@@ -18,6 +20,7 @@ interface POSCashMovementsModalProps {
 }
 
 export function POSCashMovementsModal({ onClose }: POSCashMovementsModalProps) {
+  const { user } = useAuth();
   const [movements, setMovements] = useState<CashMovement[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -36,79 +39,83 @@ export function POSCashMovementsModal({ onClose }: POSCashMovementsModalProps) {
 
   const fetchMovements = async () => {
     try {
-      // Simulamos datos de movimientos de efectivo
-      const mockMovements: CashMovement[] = [
-        {
-          id: '1',
-          fecha: '2025-01-15',
-          tipo: 'gasto',
-          monto: 500.00,
-          cargo: 'Gastos Operativos',
-          numero_caja: 'CAJA-01',
-          descripcion: 'Compra de material de oficina',
-          usuario: 'Juan Pérez',
-          created_at: '2025-01-15T10:30:00'
-        },
-        {
-          id: '2',
-          fecha: '2025-01-15',
-          tipo: 'deposito_bancario',
-          monto: 15000.00,
-          cargo: 'Depósito Diario',
-          numero_caja: 'CAJA-01',
-          descripcion: 'Depósito de ventas del día',
-          usuario: 'María García',
-          created_at: '2025-01-15T16:45:00'
-        },
-        {
-          id: '3',
-          fecha: '2025-01-14',
-          tipo: 'pago_proveedor',
-          monto: 8500.00,
-          cargo: 'Pago a Proveedores',
-          numero_caja: 'CAJA-02',
-          descripcion: 'Pago a Distribuidora Nacional',
-          usuario: 'Carlos López',
-          created_at: '2025-01-14T14:20:00'
-        }
-      ];
+      const { data, error } = await supabase
+        .from('cash_movements')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedMovements: CashMovement[] = data.map(item => ({
+        id: item.id,
+        fecha: item.fecha,
+        tipo: item.tipo,
+        monto: item.monto,
+        cargo: item.cargo,
+        numero_caja: item.numero_caja,
+        descripcion: item.descripcion,
+        usuario: item.usuario,
+        created_at: item.created_at
+      }));
       
-      setMovements(mockMovements);
+      setMovements(formattedMovements);
     } catch (err) {
       console.error('Error fetching cash movements:', err);
+      setMovements([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateMovement = () => {
+  const handleCreateMovement = async () => {
     if (!newMovement.cargo.trim() || newMovement.monto <= 0) {
       alert('Por favor complete todos los campos requeridos');
       return;
     }
 
-    const movement: CashMovement = {
-      id: `mov-${Date.now()}`,
-      fecha: new Date().toISOString().split('T')[0],
-      tipo: newMovement.tipo,
-      monto: newMovement.monto,
-      cargo: newMovement.cargo,
-      numero_caja: newMovement.numero_caja,
-      descripcion: newMovement.descripcion,
-      usuario: 'Usuario Actual',
-      created_at: new Date().toISOString()
-    };
+    try {
+      const { data, error } = await supabase
+        .from('cash_movements')
+        .insert({
+          fecha: new Date().toISOString().split('T')[0],
+          tipo: newMovement.tipo,
+          monto: newMovement.monto,
+          cargo: newMovement.cargo,
+          numero_caja: newMovement.numero_caja,
+          descripcion: newMovement.descripcion,
+          usuario: user?.name || 'Usuario POS'
+        })
+        .select()
+        .single();
 
-    setMovements(prev => [movement, ...prev]);
-    setNewMovement({
-      tipo: 'gasto',
-      monto: 0,
-      cargo: '',
-      numero_caja: 'CAJA-01',
-      descripcion: ''
-    });
-    setShowForm(false);
-    alert('Movimiento registrado exitosamente');
+      if (error) throw error;
+
+      const formattedMovement: CashMovement = {
+        id: data.id,
+        fecha: data.fecha,
+        tipo: data.tipo,
+        monto: data.monto,
+        cargo: data.cargo,
+        numero_caja: data.numero_caja,
+        descripcion: data.descripcion,
+        usuario: data.usuario,
+        created_at: data.created_at
+      };
+
+      setMovements(prev => [formattedMovement, ...prev]);
+      setNewMovement({
+        tipo: 'gasto',
+        monto: 0,
+        cargo: '',
+        numero_caja: 'CAJA-01',
+        descripcion: ''
+      });
+      setShowForm(false);
+      alert('Movimiento registrado exitosamente');
+    } catch (err) {
+      console.error('Error creating cash movement:', err);
+      alert('Error al registrar el movimiento');
+    }
   };
 
   const getTipoLabel = (tipo: string) => {

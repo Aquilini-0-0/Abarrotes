@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, FileText, Search, Eye, Download, Plus, DollarSign } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 interface Vale {
   id: string;
@@ -19,10 +21,18 @@ interface POSValesModalProps {
 }
 
 export function POSValesModal({ onClose }: POSValesModalProps) {
+  const { user } = useAuth();
   const [vales, setVales] = useState<Vale[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [newVale, setNewVale] = useState({
+    folio_remision: '',
+    cliente: '',
+    importe: 0,
+    factura: ''
+  });
 
   useEffect(() => {
     fetchVales();
@@ -30,54 +40,119 @@ export function POSValesModal({ onClose }: POSValesModalProps) {
 
   const fetchVales = async () => {
     try {
-      // Simulamos datos de vales por devolución
-      const mockVales: Vale[] = [
-        {
-          id: '1',
-          folio_vale: 'VAL-001',
-          folio_remision: 'REM-001',
-          fecha_expedicion: '2025-01-15',
-          cliente: 'Supermercado El Águila',
-          importe: 500.00,
-          disponible: 500.00,
-          estatus: 'HABILITADO',
-          tipo: 'Devolución',
-          factura: 'FAC-001'
-        },
-        {
-          id: '2',
-          folio_vale: 'VAL-002',
-          folio_remision: 'REM-003',
-          fecha_expedicion: '2025-01-14',
-          cliente: 'Tienda La Esquina',
-          importe: 250.00,
-          disponible: 100.00,
-          estatus: 'HABILITADO',
-          tipo: 'Devolución Parcial',
-          factura: 'FAC-003'
-        },
-        {
-          id: '3',
-          folio_vale: 'VAL-003',
-          folio_remision: 'REM-005',
-          fecha_expedicion: '2025-01-12',
-          cliente: 'Abarrotes Don José',
-          importe: 800.00,
-          disponible: 0.00,
-          estatus: 'USADO',
-          tipo: 'Devolución',
-          factura: 'FAC-005'
-        }
-      ];
+      const { data, error } = await supabase
+        .from('vales_devolucion')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedVales: Vale[] = data.map(item => ({
+        id: item.id,
+        folio_vale: item.folio_vale,
+        folio_remision: item.folio_remision,
+        fecha_expedicion: item.fecha_expedicion,
+        cliente: item.cliente,
+        importe: item.importe,
+        disponible: item.disponible,
+        estatus: item.estatus,
+        tipo: item.tipo,
+        factura: item.factura
+      }));
       
-      setVales(mockVales);
+      setVales(formattedVales);
     } catch (err) {
       console.error('Error fetching vales:', err);
+      setVales([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCreateVale = async () => {
+    if (!newVale.folio_remision.trim() || !newVale.cliente.trim() || newVale.importe <= 0) {
+      alert('Por favor complete todos los campos requeridos');
+      return;
+    }
+
+    try {
+      // Generate unique folio
+      const folio = `VAL-${Date.now().toString().slice(-6)}`;
+
+      const { data, error } = await supabase
+        .from('vales_devolucion')
+        .insert({
+          folio_vale: folio,
+          folio_remision: newVale.folio_remision,
+          fecha_expedicion: new Date().toISOString().split('T')[0],
+          cliente: newVale.cliente,
+          importe: newVale.importe,
+          disponible: newVale.importe,
+          estatus: 'HABILITADO',
+          tipo: 'Devolución',
+          factura: newVale.factura
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const formattedVale: Vale = {
+        id: data.id,
+        folio_vale: data.folio_vale,
+        folio_remision: data.folio_remision,
+        fecha_expedicion: data.fecha_expedicion,
+        cliente: data.cliente,
+        importe: data.importe,
+        disponible: data.disponible,
+        estatus: data.estatus,
+        tipo: data.tipo,
+        factura: data.factura
+      };
+
+      setVales(prev => [formattedVale, ...prev]);
+      setNewVale({
+        folio_remision: '',
+        cliente: '',
+        importe: 0,
+        factura: ''
+      });
+      setShowForm(false);
+      alert('Vale registrado exitosamente');
+    } catch (err) {
+      console.error('Error creating vale:', err);
+      alert('Error al registrar el vale');
+    }
+  };
+
+  const handleMarkAsUsed = async (valeId: string) => {
+    if (!confirm('¿Está seguro de marcar este vale como usado?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('vales_devolucion')
+        .update({
+          estatus: 'USADO',
+          disponible: 0
+        })
+        .eq('id', valeId);
+
+      if (error) throw error;
+
+      setVales(prev => prev.map(vale => 
+        vale.id === valeId 
+          ? { ...vale, estatus: 'USADO' as const, disponible: 0 }
+          : vale
+      ));
+
+      alert('Vale marcado como usado');
+    } catch (err) {
+      console.error('Error marking vale as used:', err);
+      alert('Error al marcar el vale como usado');
+    }
+  };
   const filteredVales = vales.filter(vale => {
     const matchesSearch = vale.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          vale.folio_vale.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -178,6 +253,7 @@ export function POSValesModal({ onClose }: POSValesModalProps) {
             </div>
 
             <button
+              onClick={() => setShowForm(true)}
               className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:opacity-90"
             >
               <Plus size={16} />
@@ -252,8 +328,9 @@ export function POSValesModal({ onClose }: POSValesModalProps) {
                           </button>
                           {vale.estatus === 'HABILITADO' && vale.disponible > 0 && (
                             <button
+                              onClick={() => handleMarkAsUsed(vale.id)}
                               className="p-1 text-green-600 hover:text-green-800"
-                              title="Usar vale"
+                              title="Marcar como usado"
                             >
                               <Download size={16} />
                             </button>
@@ -267,6 +344,100 @@ export function POSValesModal({ onClose }: POSValesModalProps) {
             </table>
           </div>
         </div>
+
+        {/* New Vale Form Modal */}
+        {showForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="bg-gradient-to-r from-orange-600 to-red-600 p-4 rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-white font-bold">Nuevo Vale por Devolución</h3>
+                  <button
+                    onClick={() => setShowForm(false)}
+                    className="text-orange-100 hover:text-white"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Folio Remisión
+                  </label>
+                  <input
+                    type="text"
+                    value={newVale.folio_remision}
+                    onChange={(e) => setNewVale(prev => ({ ...prev, folio_remision: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="REM-001"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cliente
+                  </label>
+                  <input
+                    type="text"
+                    value={newVale.cliente}
+                    onChange={(e) => setNewVale(prev => ({ ...prev, cliente: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="Nombre del cliente"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Importe del Vale
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newVale.importe}
+                    onChange={(e) => setNewVale(prev => ({ ...prev, importe: parseFloat(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="0.00"
+                    min="0"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Factura
+                  </label>
+                  <input
+                    type="text"
+                    value={newVale.factura}
+                    onChange={(e) => setNewVale(prev => ({ ...prev, factura: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="FAC-001"
+                    required
+                  />
+                </div>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleCreateVale}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:opacity-90"
+                  >
+                    Crear Vale
+                  </button>
+                  <button
+                    onClick={() => setShowForm(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

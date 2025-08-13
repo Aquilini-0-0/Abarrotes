@@ -68,6 +68,21 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <Navigate to="/ejecutivo/dashboard" replace />;
 }
 
+function ProtectedERPRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, user } = useAuth();
+  const loginSystem = localStorage.getItem('loginSystem');
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  // Only allow ERP access if user logged in through ERP system or is Admin
+  if (loginSystem === 'POS' && user?.role !== 'Admin') {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <Layout>{children}</Layout>;
+}
 
 function AppRoutes() {
   return (
@@ -94,142 +109,142 @@ function AppRoutes() {
       
       {/* Executive Routes */}
       <Route path="/ejecutivo/dashboard" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <Dashboard />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       
       {/* Warehouse Routes */}
       <Route path="/almacen/inventario" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <Inventario />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/almacen/listado-productos" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <ListadoProductos />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/almacen/ajustes" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <AjustesInventario />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/almacen/listado-compras" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <ListadoCompras />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/almacen/reporte-inventario" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <ReporteInventario />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/almacen/reporte-ajustes" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <ReporteAjustes />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/almacen/estado-traspaso" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <EstadoTraspaso />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/almacen/reporte-costos" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <ReporteCostos />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/almacen/proveedores" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <Proveedores />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/almacen/kardex" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <Kardex />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       
       {/* Accounting Routes */}
       <Route path="/contabilidad/catalogos" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <Catalogos />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/contabilidad/bancarios" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <MovimientosBancarios />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/contabilidad/reporte-gastos" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <ReporteGastos />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/contabilidad/gastos" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <Gastos />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       
       {/* Sales Routes */}
       <Route path="/ventas/cfdi" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <CFDI />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/ventas/precios" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <PreciosVentas />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/ventas/clientes" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <Clientes />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/ventas/reportes" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <ReportesVentas />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/ventas/listado-remisiones" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <ListadoRemisiones />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/ventas/reporte-inventario" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <ReporteInventarioVentas />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/ventas/reporte-ventas-caja" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <ReporteVentasCaja />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/ventas/estado-cuenta-clientes" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <EstadoCuentaClientes />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       
       {/* Executive Routes */}
       <Route path="/ejecutivo/analisis" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <AnalisisResultados />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/ejecutivo/corte-caja" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <CorteCaja />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       <Route path="/ejecutivo/reporte-cajas" element={
-        <PrivateRoute>
+        <ProtectedERPRoute>
           <ReporteCajas />
-        </PrivateRoute>
+        </ProtectedERPRoute>
       } />
       
       {/* Placeholder routes for remaining modules */}

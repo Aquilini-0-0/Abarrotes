@@ -282,14 +282,11 @@ export function usePOS() {
         const wasFullyPaid = currentOrder.status === 'paid';
         const newTotal = order.total;
         
-        // Determine new status based on payment method
-        let newStatus: 'pending' | 'paid' = 'paid'; // Default to paid
-        if (order.payment_method === 'credit' || order.is_credit) {
-          newStatus = 'pending';
-        }
+        // Determine new status based on remaining balance
+        let newStatus: 'pending' | 'paid' = 'pending'; // Default to pending for saves
         
         let newAmountPaid = amountPaid;
-        let newRemainingBalance = (order.payment_method === 'credit' || order.is_credit) ? newTotal : 0;
+        let newRemainingBalance = newTotal - amountPaid;
         
         if (wasFullyPaid) {
           if (newTotal === previousTotal) {
@@ -299,14 +296,8 @@ export function usePOS() {
             newRemainingBalance = 0;
           } else if (newTotal > previousTotal) {
             // Case B: Total increased
-            if (order.payment_method === 'credit' || order.is_credit) {
-              newStatus = 'pending';
-              newRemainingBalance = newTotal - amountPaid;
-            } else {
-              newStatus = 'paid';
-              newAmountPaid = newTotal;
-              newRemainingBalance = 0;
-            }
+            newStatus = 'pending';
+            newRemainingBalance = newTotal - amountPaid;
           } else {
             // Case C: Total decreased but was paid, keep as paid
             newStatus = 'paid';
@@ -315,15 +306,8 @@ export function usePOS() {
           }
         } else {
           // Was not fully paid
-          if (order.payment_method === 'credit' || order.is_credit) {
-            newStatus = 'pending';
-            newRemainingBalance = newTotal - amountPaid;
-          } else {
-            // Non-credit payment, mark as paid
-            newStatus = 'paid';
-            newAmountPaid = newTotal;
-            newRemainingBalance = 0;
-          }
+          newStatus = 'pending';
+          newRemainingBalance = newTotal - amountPaid;
         }
 
         // Update existing order
@@ -353,14 +337,11 @@ export function usePOS() {
 
         if (deleteItemsError) throw deleteItemsError;
       } else {
-        // Determine initial status based on payment method and credit flag
-        let initialStatus: 'pending' | 'paid' = 'paid'; // Default to paid
-        if (order.payment_method === 'credit' || order.is_credit) {
-          initialStatus = 'pending';
-        }
+        // New orders saved without payment are always pending
+        let initialStatus: 'pending' | 'paid' = 'pending';
         
-        let initialAmountPaid = (order.payment_method === 'credit' || order.is_credit) ? 0 : order.total;
-        let initialRemainingBalance = (order.payment_method === 'credit' || order.is_credit) ? order.total : 0;
+        let initialAmountPaid = 0;
+        let initialRemainingBalance = order.total;
         
         // Create new sale record
         const { data: newSale, error: saleError } = await supabase
@@ -398,41 +379,8 @@ export function usePOS() {
 
       if (itemsError) throw itemsError;
 
-      // Create inventory movements and update stock if order is paid
-      if (saleData.status === 'paid') {
-        for (const item of order.items) {
-          // Create inventory movement
-          await supabase
-            .from('inventory_movements')
-            .insert({
-              product_id: item.product_id,
-              product_name: item.product_name,
-              type: 'salida',
-              quantity: item.quantity,
-              date: order.date,
-              reference: `POS-${saleData.id.slice(-6)}`,
-              user_name: user?.name || 'POS User',
-              created_by: user?.id
-            });
-
-          // Update product stock
-          const { data: product } = await supabase
-            .from('products')
-            .select('stock')
-            .eq('id', item.product_id)
-            .single();
-
-          if (product) {
-            await supabase
-              .from('products')
-              .update({ stock: Math.max(0, product.stock - item.quantity) })
-              .eq('id', item.product_id);
-          }
-        }
-        
-        // Refresh products data to reflect stock changes
-        await fetchProducts();
-      }
+      // Don't update stock when saving - only when payment is processed
+      // Stock will be updated when payment is processed and status becomes 'paid'
 
       await fetchOrders();
       return saleData;
