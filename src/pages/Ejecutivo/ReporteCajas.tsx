@@ -89,7 +89,10 @@ export function ReporteCajas() {
   useAutoSync({
     onDataUpdate: fetchReportes,
     interval: 3000, // Update every 3 seconds
-    tables: ['cash_registers', 'sales']
+    tables: [
+      { name: 'cash_registers', timestampColumn: 'created_at' },
+      'sales'
+    ]
   });
 
   React.useEffect(() => {
