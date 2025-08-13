@@ -73,7 +73,8 @@ export function Clientes() {
       email: client.email,
       zone: client.zone,
       credit_limit: client.credit_limit,
-      balance: client.balance
+      balance: client.balance,
+      default_price_level: client.default_price_level
     });
     setShowForm(true);
   };
