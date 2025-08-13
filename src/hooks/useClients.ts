@@ -25,8 +25,8 @@ export function useClients() {
         phone: item.phone,
         email: item.email,
         zone: item.zone,
-        credit_limit: item.credit_limit,
-        balance: item.balance
+        credit_limit: Number(item.credit_limit) || 0,
+        balance: Number(item.balance) || 0
       }));
 
       setClients(formattedClients);
@@ -62,8 +62,8 @@ export function useClients() {
         phone: data.phone,
         email: data.email,
         zone: data.zone,
-        credit_limit: data.credit_limit,
-        balance: data.balance
+        credit_limit: Number(data.credit_limit) || 0,
+        balance: Number(data.balance) || 0
       };
 
       setClients(prev => [newClient, ...prev]);
@@ -93,8 +93,8 @@ export function useClients() {
         phone: data.phone,
         email: data.email,
         zone: data.zone,
-        credit_limit: data.credit_limit,
-        balance: data.balance
+        credit_limit: Number(data.credit_limit) || 0,
+        balance: Number(data.balance) || 0
       };
 
       setClients(prev => prev.map(c => c.id === id ? updatedClient : c));
