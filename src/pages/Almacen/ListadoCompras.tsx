@@ -229,11 +229,17 @@ export function ListadoCompras() {
         .from('almacenes')
         .select('id')
         .eq('nombre', 'ALMACEN-PRINCIPAL')
-        .single();
+        .maybeSingle();
 
       if (almacenError) {
         console.error('Error finding Almacen Principal:', almacenError);
         setValidationErrors({ general: 'No se encontró el Almacén Principal en la base de datos' });
+        return;
+      }
+
+      if (!almacenPrincipal) {
+        console.error('Almacen Principal not found');
+        setValidationErrors({ general: 'No se encontró el Almacén Principal (ALMACEN-PRINCIPAL) en la base de datos. Por favor, créelo primero.' });
         return;
       }
 
