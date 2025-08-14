@@ -82,7 +82,6 @@ export function POSOrderPanel({
     }
   };
 
-  /*
   const validateAdminPassword = (password: string) => {
     return password === 'admin123'; // En producción, validar contra la base de datos
   };
@@ -113,8 +112,6 @@ export function POSOrderPanel({
     setPendingAction(null);
   };
 
-  */
-
   const handleSaveClick = () => {
     // Save order without payment processing
     // Orders are saved as "pending" by default
@@ -127,13 +124,12 @@ export function POSOrderPanel({
       const totalAfterSale = client.balance + order.total;
       if (totalAfterSale > client.credit_limit) {
         setPendingAction('pay');
-         setShowCreditAuthModal(true);
+        setShowCreditAuthModal(true);
         return;
       }
     }
     onPay();
   };
-
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -541,7 +537,7 @@ export function POSOrderPanel({
 )}
 
 
-      {/* Credit Authorization Modal 
+      {/* Credit Authorization Modal */}
       {showCreditAuthModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
@@ -618,7 +614,6 @@ export function POSOrderPanel({
           </div>
         </div>
       )}
-      */}
     </div>
   );
 }
