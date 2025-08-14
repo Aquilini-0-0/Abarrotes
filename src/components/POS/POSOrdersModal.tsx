@@ -22,6 +22,11 @@ export function POSOrdersModal({ orders, onClose, onSelectOrder, onEditOrder }: 
     return matchesSearch && matchesStatus;
   });
 
+  const handleViewDetails = (order: POSOrder) => {
+    setSelectedOrderDetail(order);
+    setShowDetailModal(true);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'text-green-400';

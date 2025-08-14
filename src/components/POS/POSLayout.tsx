@@ -551,16 +551,7 @@ export function POSLayout() {
             setSelectedProduct(null);
           }}
           onConfirm={(product, finalQuantity, priceLevelFromModal, finalUnitPrice) => {
-            // Create a modified product with the calculated final unit price
-            const modifiedProduct = {
-              ...product,
-              prices: {
-                ...product.prices,
-                [`price${priceLevelFromModal}`]: finalUnitPrice
-              }
-            };
-            
-            const updatedOrder = addItemToOrder(currentOrder!, modifiedProduct, finalQuantity, priceLevelFromModal);
+            const updatedOrder = addItemToOrder(currentOrder!, product, finalQuantity, priceLevelFromModal, finalUnitPrice);
             updateActiveOrder(updatedOrder);
             setShowTaraModal(false);
             setSelectedProduct(null);

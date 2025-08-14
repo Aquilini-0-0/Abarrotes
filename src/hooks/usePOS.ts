@@ -125,7 +125,7 @@ export function usePOS() {
   };
 
   // Add item to current order
-  const addItemToOrder = (order: POSOrder, product: POSProduct, quantity: number, priceLevel: 1 | 2 | 3 | 4 | 5): POSOrder => {
+  const addItemToOrder = (order: POSOrder, product: POSProduct, quantity: number, priceLevel: 1 | 2 | 3 | 4 | 5, customUnitPrice?: number): POSOrder => {
     if (!order) throw new Error('No hay pedido activo');
 
     // Validate stock
@@ -133,7 +133,7 @@ export function usePOS() {
       throw new Error(`Stock insuficiente. Disponible: ${product.stock} unidades`);
     }
 
-    const unitPrice = getEffectivePrice(product, priceLevel);
+    const unitPrice = customUnitPrice || getEffectivePrice(product, priceLevel);
     const existingItemIndex = order.items.findIndex(
       item => item.product_id === product.id && item.price_level === priceLevel
     );

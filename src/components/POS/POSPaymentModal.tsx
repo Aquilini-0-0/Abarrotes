@@ -123,8 +123,8 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       return;
     }
 
-    // Check credit limit for credit payments
-    if ((paymentMethod === 'credit' || paymentBreakdown.credit > 0) && creditExceeded) {
+    // Check credit limit for credit payments - only show auth modal if exceeded
+    if (paymentMethod === 'credit' && client && creditExceeded) {
       setShowCreditAuthModal(true);
       return;
     }
