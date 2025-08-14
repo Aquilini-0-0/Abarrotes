@@ -40,17 +40,31 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
       return;
     }
 
-    if (pesoBruto <= 0) {
+    if (pesoBruto <= 0 && selectedTara.id !== '1') {
       alert('El peso bruto debe ser mayor a 0');
       return;
     }
 
-    // For SIN TARA option, use the original quantity and price
-    const finalQuantity = selectedTara.id === '1' ? quantity : pesoNeto;
-    const finalUnitPrice = selectedTara.id === '1' ? precioKilo : precioKilo; // Always use price per kilo
+    // Calculate final values based on tara selection
+    let finalQuantity: number;
+    let finalUnitPrice: number;
     
-    if (selectedTara.id !== '1' && pesoNeto <= 0) {
-      alert('El peso neto no puede ser negativo. Verifica el peso bruto y la tara.');
+    if (selectedTara.id === '1') {
+      // SIN TARA: Use manual kilos input and calculate final price
+      if (pesoBruto <= 0) {
+        alert('Debe ingresar los kilos para venta sin tara');
+        return;
+      }
+      finalQuantity = pesoBruto; // Use the kilos entered as quantity
+      finalUnitPrice = precioKilo; // Price per kilo
+    } else {
+      // CON TARA: Use peso neto and price per kilo
+      finalQuantity = pesoNeto;
+      finalUnitPrice = precioKilo;
+    }
+    
+    if (finalQuantity <= 0) {
+      alert('La cantidad final no puede ser cero o negativa');
       return;
     }
 
@@ -149,7 +163,7 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Peso Bruto (KG) *
+                    {selectedTara?.id === '1' ? 'Kilos a Vender *' : 'Peso Bruto (KG) *'}
                   </label>
                   <input
                     type="number"
@@ -157,7 +171,7 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
                     value={pesoBruto}
                     onChange={(e) => setPesoBruto(parseFloat(e.target.value) || 0)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-lg font-mono text-center"
-                    placeholder="0.00"
+                    placeholder={selectedTara?.id === '1' ? 'Kilos a vender' : 'Peso bruto'}
                     min="0"
                   />
                 </div>
@@ -186,16 +200,20 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
                       <span className="text-gray-600">Peso Bruto:</span>
                       <span className="font-mono font-bold text-gray-900">{pesoBruto.toFixed(2)} kg</span>
                     </div>
+                    {selectedTara?.id !== '1' && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Peso Tara Total:</span>
                       <span className="font-mono font-bold text-red-600">-{pesoTaraTotal.toFixed(2)} kg</span>
                     </div>
+                    )}
                     <div className="border-t border-gray-300 pt-2 flex justify-between">
-                      <span className="font-semibold text-gray-900">Peso Neto:</span>
+                      <span className="font-semibold text-gray-900">
+                        {selectedTara?.id === '1' ? 'Kilos a Vender:' : 'Peso Neto:'}
+                      </span>
                       <span className={`font-mono font-bold text-lg ${
-                        pesoNeto > 0 ? 'text-green-600' : 'text-red-600'
+                        (selectedTara?.id === '1' ? pesoBruto : pesoNeto) > 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {pesoNeto.toFixed(2)} kg
+                        {(selectedTara?.id === '1' ? pesoBruto : pesoNeto).toFixed(2)} kg
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -205,14 +223,14 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
                     <div className="border-t border-gray-300 pt-2 flex justify-between">
                       <span className="font-bold text-gray-900 text-lg">Precio Final:</span>
                       <span className="font-mono font-bold text-orange-600 text-xl">
-                        ${precioFinal.toFixed(2)}
+                        ${(selectedTara?.id === '1' ? pesoBruto * precioKilo : precioFinal).toFixed(2)}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Validation Messages */}
-                {pesoNeto <= 0 && pesoBruto > 0 && (
+                {selectedTara?.id !== '1' && pesoNeto <= 0 && pesoBruto > 0 && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                     <div className="flex items-center">
                       <X className="w-4 h-4 text-red-600 mr-2" />
@@ -223,7 +241,7 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
                   </div>
                 )}
 
-                {pesoNeto > product.stock && (
+                {(selectedTara?.id === '1' ? pesoBruto : pesoNeto) > product.stock && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                     <div className="flex items-center">
                       <Package className="w-4 h-4 text-yellow-600 mr-2" />

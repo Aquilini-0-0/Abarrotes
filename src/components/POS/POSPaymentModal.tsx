@@ -123,7 +123,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       return;
     }
 
-    // Check credit limit for credit payments - only show auth modal if exceeded
+    // Check credit limit for credit payments
     if (paymentMethod === 'credit' && client && creditExceeded) {
       setShowCreditAuthModal(true);
       return;
@@ -539,7 +539,7 @@ const processPayment = async () => {
             isProcessing ||
             (paymentMethod === 'cash' && change < 0) ||
             (paymentMethod === 'mixed' && !paymentComplete) ||
-            (paymentMethod === 'credit' && (!client || (client.credit_limit - client.balance) < order.total)) ||
+            (paymentMethod === 'credit' && !client) ||
             (paymentMethod === 'vales' && (!selectedVale || selectedVale.disponible < order.total))
           }
           className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-bold shadow disabled:opacity-50 text-sm transition-all ${
