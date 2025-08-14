@@ -17,6 +17,12 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
   const lastUpdateRef = useRef<Record<string, string>>({});
 
   useEffect(() => {
+    // Skip auto-sync if Supabase is not configured
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      console.warn('Supabase not configured - skipping auto-sync');
+      return;
+    }
+
     const checkForUpdates = async () => {
       try {
         let hasUpdates = false;
@@ -51,14 +57,9 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
           onDataUpdate();
         }
       } catch (err) {
-        // Silently handle network errors to prevent console spam
+        // Handle network errors gracefully
         if (err instanceof TypeError && err.message.includes('fetch')) {
-          // Network error - this is expected when Supabase is not configured
-          return;
-        }
-        console.warn('Error checking for updates:', err);
-        if (err instanceof TypeError && err.message.includes('fetch')) {
-          // Network error - this is expected when Supabase is not configured
+          console.warn('Network error during auto-sync (Supabase may not be configured) - skipping update');
           return;
         }
         console.warn('Error checking for updates:', err);
@@ -80,32 +81,45 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
 
   // Real-time subscriptions for critical tables
   useEffect(() => {
+    // Skip real-time subscriptions if Supabase is not configured
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      return;
+    }
+
     const subscriptions: any[] = [];
 
     tables.forEach(tableConfig => {
       const tableName = typeof tableConfig === 'string' ? tableConfig : tableConfig.name;
       
-      const subscription = supabase
-        .channel(`${tableName}_changes`)
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: tableName }, 
-          (payload) => {
-            console.log(`Real-time update in ${tableName}:`, payload);
-            if (onDataUpdate) {
-              // Debounce updates to avoid excessive re-renders
-              setTimeout(onDataUpdate, 100);
+      try {
+        const subscription = supabase
+          .channel(`${tableName}_changes`)
+          .on('postgres_changes', 
+            { event: '*', schema: 'public', table: tableName }, 
+            (payload) => {
+              console.log(`Real-time update in ${tableName}:`, payload);
+              if (onDataUpdate) {
+                // Debounce updates to avoid excessive re-renders
+                setTimeout(onDataUpdate, 100);
+              }
             }
-          }
-        )
-        .subscribe();
+          )
+          .subscribe();
 
-      subscriptions.push(subscription);
+        subscriptions.push(subscription);
+      } catch (err) {
+        console.warn(`Failed to subscribe to ${tableName} changes:`, err);
+      }
     });
 
     return () => {
-      subscriptions.forEach(sub => {
-        supabase.removeChannel(sub);
-      });
+      try {
+        subscriptions.forEach(sub => {
+          supabase.removeChannel(sub);
+        });
+      } catch (err) {
+        console.warn('Error cleaning up subscriptions:', err);
+      }
     };
   }, [tables, onDataUpdate]);
 
