@@ -144,6 +144,12 @@ export function useOrderLocks() {
       return;
     }
 
+    // Skip cleanup if Supabase is not configured
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      console.warn('Skipping lock cleanup - Supabase not configured');
+      return;
+    }
+
     if (!user || !user.id || !sessionId) return;
 
     try {
@@ -173,6 +179,12 @@ export function useOrderLocks() {
   };
 
   const cleanExpiredLocks = async () => {
+    // Skip cleanup if Supabase is not configured
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      console.warn('Skipping expired lock cleanup - Supabase not configured');
+      return;
+    }
+
     if (!supabase) {
       console.warn('Supabase client not available for expired lock cleanup');
       return;

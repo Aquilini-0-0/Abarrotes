@@ -21,16 +21,48 @@ if (!supabaseUrl || !supabaseAnonKey) {
       signInWithPassword: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
       signUp: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
       getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      admin: {
+        createUser: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') })
+      }
     },
     from: () => ({
-      select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }) }) }),
-      insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }) }) }),
-      update: () => ({ eq: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }) }),
-      delete: () => ({ eq: () => Promise.resolve({ error: new Error('Supabase not configured') }) })
+      select: () => ({
+        eq: () => ({
+          single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
+          maybeSingle: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
+          order: () => ({
+            limit: () => ({ single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }) })
+          })
+        }),
+        order: () => Promise.resolve({ data: [], error: new Error('Supabase not configured') }),
+        gt: () => ({ order: () => Promise.resolve({ data: [], error: new Error('Supabase not configured') }) }),
+        in: () => ({ order: () => Promise.resolve({ data: [], error: new Error('Supabase not configured') }) }),
+        filter: () => Promise.resolve({ data: [], error: new Error('Supabase not configured') }),
+        gte: () => ({ lte: () => ({ order: () => Promise.resolve({ data: [], error: new Error('Supabase not configured') }) }) }),
+        lte: () => ({ order: () => Promise.resolve({ data: [], error: new Error('Supabase not configured') }) }),
+        lt: () => Promise.resolve({ data: [], error: new Error('Supabase not configured') })
+      }),
+      insert: () => ({ 
+        select: () => ({ 
+          single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }) 
+        }) 
+      }),
+      update: () => ({ 
+        eq: () => ({ 
+          select: () => ({ 
+            single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }) 
+          }) 
+        }) 
+      }),
+      delete: () => ({ 
+        eq: () => Promise.resolve({ error: new Error('Supabase not configured') }),
+        lt: () => Promise.resolve({ error: new Error('Supabase not configured') })
+      }),
+      upsert: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') })
     }),
     channel: () => ({
-      on: () => ({ subscribe: () => {} })
+      on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) })
     }),
     removeChannel: () => {}
   };
