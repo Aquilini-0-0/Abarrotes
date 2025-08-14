@@ -127,7 +127,7 @@ export function POSOrderPanel({
       const totalAfterSale = client.balance + order.total;
       if (totalAfterSale > client.credit_limit) {
         setPendingAction('pay');
-       setShowCreditAuthModal(true);
+         setShowCreditAuthModal(true);
         return;
       }
     }
