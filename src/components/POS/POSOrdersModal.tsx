@@ -176,7 +176,7 @@ return (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        onSelectOrder(order);
+                        handleViewDetails(order);
                       }}
                       className="p-0.5 sm:p-1 text-green-600 hover:text-green-800"
                       title="Ver detalles"
