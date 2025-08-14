@@ -32,10 +32,15 @@ export function LoginForm() {
     console.log(selectedSystem);
 
     if (!success) {
-      setError('Email o contraseña incorrectos');
+      setError('Email o contraseña incorrectos. Si es la primera vez que usas el sistema, haz clic en "Crear Usuarios de Prueba" primero.');
     }
   } catch (err) {
-    setError('Error al iniciar sesión');
+    console.error('Login error:', err);
+    if (err instanceof Error && err.message.includes('Invalid login credentials')) {
+      setError('Credenciales inválidas. Si es la primera vez que usas el sistema, necesitas crear los usuarios de prueba primero.');
+    } else {
+      setError('Error al iniciar sesión. Verifica tu conexión a internet.');
+    }
   } finally {
     setIsLoading(false);
   }
@@ -502,7 +507,7 @@ const buttonGradient = isERS
                   <div className={`mt-4 sm:mt-6 p-3 sm:p-4 ${isERS ? 'bg-blue-50 border-blue-100' : 'bg-orange-50 border-orange-100'} rounded-lg sm:rounded-xl border`}>
                     <p className={`text-[10px] sm:text-xs ${isERS ? 'text-blue-700' : 'text-orange-700'} flex items-center justify-center font-medium`}>
                       <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full mr-1 sm:mr-2 animate-pulse"></span>
-                      Los usuarios se crearán automáticamente y funcionan para ambos sistemas
+                      ⚠️ IMPORTANTE: Debes crear los usuarios antes del primer uso del sistema
                     </p>
                   </div>
                 </div>

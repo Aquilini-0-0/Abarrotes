@@ -97,7 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     } catch (error) {
       console.error('POS Login error:', error);
-      return false;
+      // Re-throw the error so the component can handle it
+      throw error;
     }
   };
 
