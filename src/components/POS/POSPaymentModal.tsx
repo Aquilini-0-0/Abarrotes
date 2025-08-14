@@ -132,26 +132,64 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
     processPayment();
   };
 
-  const processPayment = () => {
-    setIsProcessing(true);
-    
-    const paymentData = {
-      method: paymentMethod,
-      breakdown: paymentMethod === 'mixed' ? paymentBreakdown : undefined,
-      cashReceived: paymentMethod === 'cash' ? cashReceived : undefined,
-      change: paymentMethod === 'cash' ? change : 0,
-      selectedVale: paymentMethod === 'vales' ? selectedVale : undefined,
-      printTicket,
-      printA4
-    };
+const processPayment = async () => {
+  setIsProcessing(true);
 
-    // Simulate processing delay
-    setTimeout(() => {
-      onConfirm(paymentData);
-      setIsProcessing(false);
-    }, 1000);
+  // Initialize paymentData with common values
+  const paymentData = {
+    method: paymentMethod,
+    breakdown: paymentMethod === 'mixed' ? paymentBreakdown : undefined,
+    cashReceived: paymentMethod === 'cash' ? cashReceived : undefined,
+    change: paymentMethod === 'cash' ? change : 0,
+    selectedVale: paymentMethod === 'vales' ? selectedVale : undefined, // Keep this line to pass the selected vale
+    printTicket,
+    printA4
   };
 
+  try {
+    // Logic for updating the voucher balance (vale)
+    if (paymentMethod === 'vales' && selectedVale) {
+      // 1. Calculate the amount to be used from the voucher
+      const amountToUse = Math.min(selectedVale.disponible, order.total);
+
+      // 2. Calculate the new available balance (disponible)
+      const newDisponible = selectedVale.disponible - amountToUse;
+
+      // 3. Determine the new status
+      const newStatus = newDisponible <= 0 ? 'USADO' : 'HABILITADO';
+
+      // 4. Update the voucher in the database using Supabase
+      const { data: updatedVale, error } = await supabase
+        .from('vales_devolucion')
+        .update({
+          disponible: newDisponible,
+          estatus: newStatus,
+        })
+        .eq('id', selectedVale.id)
+        .select(); // Use .select() to get the updated row
+
+      if (error) throw error;
+      console.log('Vale actualizado:', updatedVale);
+
+      // 5. Update the paymentData with the new vale info for the onConfirm callback
+      paymentData.selectedVale = updatedVale[0]; // Assuming updatedVale is an array
+      
+      // Optionally, you might want to handle what happens if the vale's amount is less than the total
+      // and you need a second payment method. Your current UI prevents this, but it's good practice.
+      // E.g., if newDisponible < 0, handle it as an error or a mixed payment scenario.
+    }
+
+    // Pass the final payment data, including the updated vale info, to the parent component.
+    onConfirm(paymentData);
+  } catch (err) {
+    console.error('Error al procesar el pago con vale:', err);
+    // Handle the error (e.g., show an error message to the user)
+    alert('Hubo un error al procesar el pago. Por favor, inténtelo de nuevo.');
+  } finally {
+    setIsProcessing(false);
+  }
+};
+  
   const handleCreditAuth = () => {
     if (!validateAdminPassword(adminPassword)) {
       alert('Contraseña de administrador incorrecta');
