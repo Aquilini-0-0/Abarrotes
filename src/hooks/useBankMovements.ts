@@ -103,6 +103,12 @@ export function useBankMovements() {
       };
 
       setMovimientos(prev => [newMovement, ...prev]);
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return newMovement;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error creating bank movement');

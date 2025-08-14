@@ -56,6 +56,12 @@ export function useSuppliers() {
       };
 
       setSuppliers(prev => [newSupplier, ...prev]);
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return newSupplier;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error creating supplier');
@@ -84,6 +90,12 @@ export function useSuppliers() {
       };
 
       setSuppliers(prev => prev.map(s => s.id === id ? updatedSupplier : s));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return updatedSupplier;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error updating supplier');
@@ -100,6 +112,11 @@ export function useSuppliers() {
       if (error) throw error;
 
       setSuppliers(prev => prev.filter(s => s.id !== id));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error deleting supplier');
     }

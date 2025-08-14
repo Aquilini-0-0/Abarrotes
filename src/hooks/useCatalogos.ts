@@ -91,6 +91,12 @@ export function useCatalogos() {
       };
 
       setConceptos(prev => [newConcepto, ...prev]);
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return newConcepto;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error creating concepto');
@@ -117,6 +123,12 @@ export function useCatalogos() {
       };
 
       setCuentas(prev => [newCuenta, ...prev]);
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return newCuenta;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error creating cuenta');
@@ -143,6 +155,12 @@ export function useCatalogos() {
       };
 
       setConceptos(prev => prev.map(c => c.id === id ? updatedConcepto : c));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return updatedConcepto;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error updating concepto');
@@ -170,6 +188,12 @@ export function useCatalogos() {
       };
 
       setCuentas(prev => prev.map(c => c.id === id ? updatedCuenta : c));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return updatedCuenta;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error updating cuenta');
@@ -186,6 +210,11 @@ export function useCatalogos() {
       if (error) throw error;
 
       setConceptos(prev => prev.filter(c => c.id !== id));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error deleting concepto');
     }
@@ -201,6 +230,11 @@ export function useCatalogos() {
       if (error) throw error;
 
       setCuentas(prev => prev.filter(c => c.id !== id));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error deleting cuenta');
     }

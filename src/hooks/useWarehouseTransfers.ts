@@ -167,6 +167,12 @@ export function useWarehouseTransfers() {
       // Stock will be updated when status changes to 'completado'
 
       await fetchTransfers();
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return data;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error creating transfer');
@@ -217,6 +223,12 @@ export function useWarehouseTransfers() {
       }
 
       await fetchTransfers();
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return data;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error updating transfer status');

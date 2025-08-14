@@ -56,6 +56,12 @@ export function useExpenses() {
       };
 
       setExpenses(prev => [newExpense, ...prev]);
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return newExpense;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error creating expense');
@@ -84,6 +90,12 @@ export function useExpenses() {
       };
 
       setExpenses(prev => prev.map(e => e.id === id ? updatedExpense : e));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return updatedExpense;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error updating expense');
@@ -100,6 +112,11 @@ export function useExpenses() {
       if (error) throw error;
 
       setExpenses(prev => prev.filter(e => e.id !== id));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error deleting expense');
     }

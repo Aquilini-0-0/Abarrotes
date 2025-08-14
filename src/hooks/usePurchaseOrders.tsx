@@ -118,6 +118,11 @@ export function usePurchaseOrders() {
       // Refresh the orders list
       await fetchOrders();
 
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+
       return order;
     } catch (err) {
       console.error('Error creating purchase order:', err);
@@ -142,6 +147,11 @@ export function usePurchaseOrders() {
 
       // Refresh the orders list
       await fetchOrders();
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
     } catch (err) {
       console.error('Error updating purchase order:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error updating purchase order';
@@ -165,6 +175,11 @@ export function usePurchaseOrders() {
 
       // Refresh the orders list
       await fetchOrders();
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
     } catch (err) {
       console.error('Error deleting purchase order:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error deleting purchase order';

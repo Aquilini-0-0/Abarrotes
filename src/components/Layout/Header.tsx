@@ -121,12 +121,17 @@ export function Header() {
       
       // Wait a moment for all hooks to refresh
       setTimeout(() => {
-        alert('✅ Datos sincronizados correctamente');
+        // Don't show alert for automatic syncs
+        if (arguments[0] !== 'auto') {
+          alert('✅ Datos sincronizados correctamente');
+        }
       }, 1000);
       
     } catch (err) {
       console.error('Error during manual sync:', err);
-      alert('Error al sincronizar datos');
+      if (arguments[0] !== 'auto') {
+        alert('Error al sincronizar datos');
+      }
     } finally {
       // Stop syncing animation after a delay
       setTimeout(() => {
@@ -134,6 +139,11 @@ export function Header() {
       }, 1500);
     }
   };
+
+  // Export sync function to window for global access
+  React.useEffect(() => {
+    window.triggerSync = () => handleManualSync('auto');
+  }, []);
 
   const markAsRead = (notificationId: string) => {
     setNotifications(prev => prev.map(notif => 

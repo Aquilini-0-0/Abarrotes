@@ -95,6 +95,12 @@ export function useSales() {
       };
 
       setSales(prev => [newSale, ...prev]);
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return newSale;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error creating sale');
@@ -113,6 +119,12 @@ export function useSales() {
       if (error) throw error;
 
       setSales(prev => prev.map(s => s.id === id ? { ...s, status } : s));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return data;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error updating sale status');

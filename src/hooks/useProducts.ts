@@ -66,6 +66,12 @@ export function useProducts() {
       };
 
       setProducts(prev => [newProduct, ...prev]);
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return newProduct;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error creating product');
@@ -97,6 +103,12 @@ export function useProducts() {
       };
 
       setProducts(prev => prev.map(p => p.id === id ? updatedProduct : p));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return updatedProduct;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error updating product');
@@ -113,6 +125,11 @@ export function useProducts() {
       if (error) throw error;
 
       setProducts(prev => prev.filter(p => p.id !== id));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error deleting product');
     }

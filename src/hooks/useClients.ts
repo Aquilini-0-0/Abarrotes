@@ -67,6 +67,12 @@ export function useClients() {
       };
 
       setClients(prev => [newClient, ...prev]);
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return newClient;
     } catch (err) {
       console.error('Error in createClient function:', err);
@@ -98,6 +104,12 @@ export function useClients() {
       };
 
       setClients(prev => prev.map(c => c.id === id ? updatedClient : c));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return updatedClient;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error updating client');
@@ -114,6 +126,11 @@ export function useClients() {
       if (error) throw error;
 
       setClients(prev => prev.filter(c => c.id !== id));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error deleting client');
     }

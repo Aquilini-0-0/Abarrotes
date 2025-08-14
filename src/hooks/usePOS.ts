@@ -345,6 +345,12 @@ export function usePOS() {
       if (itemsError) throw itemsError;
 
       await fetchOrders();
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return saleData;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error saving order');
@@ -469,6 +475,12 @@ export function usePOS() {
       }
 
       await fetchOrders();
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return { newAmountPaid, newRemainingBalance, newStatus };
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error processing payment');
@@ -560,6 +572,12 @@ export function usePOS() {
       if (error) throw error;
 
       setCashRegister(data);
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return data;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error opening cash register');
@@ -585,6 +603,12 @@ export function usePOS() {
       if (error) throw error;
 
       setCashRegister(data);
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return data;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error closing cash register');

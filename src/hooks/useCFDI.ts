@@ -144,6 +144,12 @@ export function useCFDI() {
       }
 
       await fetchCFDI();
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
       return saleRecord;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error creating CFDI');
@@ -164,6 +170,11 @@ export function useCFDI() {
           ? { ...f, estado: 'timbrado' as const, uuid: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}` }
           : f
       ));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error timbrar factura');
     }
@@ -181,6 +192,11 @@ export function useCFDI() {
       setFacturas(prev => prev.map(f => 
         f.id === facturaId ? { ...f, estado: 'cancelado' as const } : f
       ));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error cancelar factura');
     }
@@ -231,6 +247,11 @@ export function useCFDI() {
       if (updateError) throw updateError;
 
       await fetchCFDI();
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error updating CFDI');
     }
