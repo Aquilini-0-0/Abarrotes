@@ -126,9 +126,9 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
     // NUEVA LÓGICA: Si excede el límite de crédito, muestra el modal de autorización
     const creditAmount = paymentMethod === 'credit' ? order.total : paymentMethod === 'mixed' ? paymentBreakdown.credit : 0;
-    const creditExceeded = client && creditAmount > 0 && (client.balance + creditAmount) > client.credit_limit;
+    const creditExceededCondition = client && creditAmount > 0 && (client.balance + creditAmount) > client.credit_limit;
 
-    if (creditExceeded) {
+    if (creditExceededCondition) {
       setShowCreditAuthModal(true);
       return;
     }
@@ -441,11 +441,12 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
             </button>
             <button
               onClick={handleConfirm}
+              // --- CAMBIO CLAVE AQUÍ: Hemos eliminado la condición de crédito ---
               disabled={
                 isProcessing ||
                 (paymentMethod === 'cash' && change < 0) ||
                 (paymentMethod === 'mixed' && !paymentComplete) ||
-                (paymentMethod === 'credit' && (!client || (client.credit_limit - client.balance) < order.total)) ||
+                (paymentMethod === 'credit' && !client) || // El botón solo se deshabilita si no hay cliente para crédito
                 (paymentMethod === 'vales' && (!selectedVale || selectedVale.disponible < order.total))
               }
               className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-bold shadow disabled:opacity-50 text-sm transition-all ${
