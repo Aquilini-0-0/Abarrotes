@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, User } from 'lucide-react';
+import { Plus, Edit, Trash2, User, CreditCard, AlertTriangle, X } from 'lucide-react';
 import { POSOrder, POSOrderItem, POSClient } from '../../types/pos';
 import { POSEditItemModal } from './POSEditItemModal';
-import { POSPaymentModal } from './POSPaymentModal'; // Se asume que este es el componente del modal de pago
 
 interface POSOrderPanelProps {
   order: POSOrder | null;
@@ -48,6 +47,9 @@ export function POSOrderPanel({
   const [showObservations, setShowObservations] = useState(false);
   const [showEditItemModal, setShowEditItemModal] = useState(false);
   const [editingItem, setEditingItem] = useState<POSOrderItem | null>(null);
+  const [showCreditAuthModal, setShowCreditAuthModal] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [pendingAction, setPendingAction] = useState<'save' | 'pay' | null>(null);
 
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(searchClient.toLowerCase()) ||
@@ -57,49 +59,106 @@ export function POSOrderPanel({
   const creditUsed = client?.balance || 0;
   const creditAvailable = client ? client.credit_limit - creditUsed : 0;
   const orderTotal = order?.total || 0;
+  
+  // Debug logging
+  console.log('Client credit info:', {
+    client: client?.name,
+    credit_limit: client?.credit_limit,
+    balance: client?.balance,
+    creditUsed,
+    creditAvailable,
+    orderTotal
+  });
+  
+  const creditExceeded = client && (isCredit || order?.is_credit) && (creditUsed + orderTotal) > client.credit_limit;
 
   const handleApplyDiscount = () => {
     if (order) {
       onApplyDiscount(discountAmount);
     }
+    // Trigger parent update for last order
     if (onRefreshData) {
       onRefreshData();
     }
   };
 
+  const validateAdminPassword = (password: string) => {
+    return password === 'admin123'; // En producción, validar contra la base de datos
+  };
+
+  const handleCreditAuth = async () => {
+    if (!validateAdminPassword(adminPassword)) {
+      alert('Contraseña de administrador incorrecta');
+      setAdminPassword('');
+      return;
+    }
+
+    setShowCreditAuthModal(false);
+    setAdminPassword('');
+
+    // Execute the pending action
+    if (pendingAction === 'save') {
+      onSave();
+    } else if (pendingAction === 'pay') {
+      onPay();
+    }
+
+    setPendingAction(null);
+  };
+
+  const handleCancelCreditAuth = () => {
+    setShowCreditAuthModal(false);
+    setAdminPassword('');
+    setPendingAction(null);
+  };
+
   const handleSaveClick = () => {
+    // Save order without payment processing
+    // Orders are saved as "pending" by default
     onSave();
   };
 
   const handlePayClick = () => {
-    // Ya no se valida el crédito aquí. Solo se llama a la función onPay del padre.
+    // Check credit limit if it's a credit sale
+    if (isCredit && client && order) {
+      const totalAfterSale = client.balance + order.total;
+      if (totalAfterSale > client.credit_limit) {
+        setPendingAction('pay');
+        setShowCreditAuthModal(true);
+        return;
+      }
+    }
     onPay();
   };
 
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
-      <div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 py-1 sm:py-2 px-2 sm:px-3 lg:px-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3">
-            <h2 className="text-white font-bold text-xs sm:text-sm lg:text-base">Detalle del Pedido</h2>
-            <button
-              onClick={() => setShowClientModal(true)}
-              className="flex items-center space-x-1 bg-gradient-to-r from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 border border-orange-200 px-1 sm:px-2 lg:px-3 py-0.5 sm:py-1 rounded-lg text-orange-700 text-[10px] sm:text-xs font-medium transition-all duration-200 shadow-sm"
-            >
-              <User size={12} className="sm:w-3.5 sm:h-3.5" />
-              <span className="hidden md:inline">{client?.name || 'Seleccionar Cliente'}</span>
-              <span className="md:hidden">{client?.name ? client.name.substring(0, 8) + '...' : 'Cliente'}</span>
-            </button>
-          </div>
-          <div className="text-orange-50 text-[10px] sm:text-xs hidden md:block">
-            Pedido: {order?.id.slice(-6) || 'NUEVO'}
-            {client && (
-              <span className="ml-1 sm:ml-2">| RFC: {client.rfc} | Zona: {client.zone}</span>
-            )}
-          </div>
-        </div>
-      </div>
+<div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 py-1 sm:py-2 px-2 sm:px-3 lg:px-4">
+  <div className="flex items-center justify-between">
+    {/* Left: Title + Button */}
+    <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3">
+      <h2 className="text-white font-bold text-xs sm:text-sm lg:text-base">Detalle del Pedido</h2>
+      <button
+        onClick={() => setShowClientModal(true)}
+        className="flex items-center space-x-1 bg-gradient-to-r from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 border border-orange-200 px-1 sm:px-2 lg:px-3 py-0.5 sm:py-1 rounded-lg text-orange-700 text-[10px] sm:text-xs font-medium transition-all duration-200 shadow-sm"
+      >
+        <User size={12} className="sm:w-3.5 sm:h-3.5" />
+        <span className="hidden md:inline">{client?.name || 'Seleccionar Cliente'}</span>
+        <span className="md:hidden">{client?.name ? client.name.substring(0, 8) + '...' : 'Cliente'}</span>
+      </button>
+    </div>
+
+    {/* Right: Pedido info */}
+    <div className="text-orange-50 text-[10px] sm:text-xs hidden md:block">
+      Pedido: {order?.id.slice(-6) || 'NUEVO'}
+      {client && (
+        <span className="ml-1 sm:ml-2">| RFC: {client.rfc} | Zona: {client.zone}</span>
+      )}
+    </div>
+  </div>
+</div>
+
 
       {/* Items Table */}
       <div className="flex-1 overflow-hidden">
@@ -183,191 +242,214 @@ export function POSOrderPanel({
         </div>
       </div>
 
-      {/* Credit Information */}
-      {client && (
-        <div className="bg-gradient-to-r from-orange-50 to-red-50 py-1 sm:py-2 px-2 sm:px-3 border-t border-orange-200">
-          <div className="grid grid-cols-3 gap-1 sm:gap-2 text-[10px] sm:text-xs">
-            <div>
-              <div className="text-gray-600 font-medium">Límite de Crédito</div>
-              <div className="text-orange-600 font-mono font-semibold">
-                ${client.credit_limit.toLocaleString('es-MX')}
-              </div>
-            </div>
-            <div>
-              <div className="text-gray-600 font-medium">Crédito Usado</div>
-              <div className="text-amber-600 font-mono font-semibold">
-                ${creditUsed.toLocaleString('es-MX')}
-              </div>
-            </div>
-            <div>
-              <div className="text-gray-600 font-medium">Crédito Disponible</div>
-              <div
-                className={`font-mono font-semibold ${
-                  creditAvailable > 0 ? 'text-green-600' : 'text-red-600'
-                }`}
-              >
-                ${creditAvailable.toLocaleString('es-MX')}
-              </div>
-            </div>
-          </div>
+{/* Credit Information */}
+{client && (
+  <div className="bg-gradient-to-r from-orange-50 to-red-50 py-1 sm:py-2 px-2 sm:px-3 border-t border-orange-200">
+    <div className="grid grid-cols-3 gap-1 sm:gap-2 text-[10px] sm:text-xs">
+      <div>
+        <div className="text-gray-600 font-medium">Límite de Crédito</div>
+        <div className="text-orange-600 font-mono font-semibold">
+          ${client.credit_limit.toLocaleString('es-MX')}
         </div>
-      )}
-
-      {/* Observaciones Colapsables */}
-      <div className="bg-gradient-to-r from-orange-25 to-red-25 border-t border-orange-100">
-        <button
-          onClick={() => setShowObservations(!showObservations)}
-          className="w-full py-1 sm:py-2 px-2 sm:px-3 text-left flex items-center justify-between hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-colors"
+      </div>
+      <div>
+        <div className="text-gray-600 font-medium">Crédito Usado</div>
+        <div className="text-amber-600 font-mono font-semibold">
+          ${creditUsed.toLocaleString('es-MX')}
+        </div>
+      </div>
+      <div>
+        <div className="text-gray-600 font-medium">Crédito Disponible</div>
+        <div
+          className={`font-mono font-semibold ${
+            creditAvailable > 0 ? 'text-green-600' : 'text-red-600'
+          }`}
         >
-          <span className="text-gray-700 font-medium text-[10px] sm:text-xs lg:text-sm">
-            Observaciones y Detalles
-          </span>
-          <svg
-            className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-500 transition-transform ${
-              showObservations ? 'rotate-180' : ''
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {showObservations && (
-          <div className="px-2 sm:px-3 pb-1 sm:pb-2 space-y-1 sm:space-y-2">
-            <div>
-              <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Observaciones</label>
-              <input
-                type="text"
-                value={observations}
-                onChange={(e) => setObservations(e.target.value)}
-                className="w-full bg-white border border-orange-200 text-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
-                placeholder="Observaciones del pedido..."
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-1 sm:gap-2">
-              <div>
-                <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Chofer</label>
-                <select
-                  value={driver}
-                  onChange={(e) => setDriver(e.target.value)}
-                  className="w-full bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
-                >
-                  <option value="">Sin chofer</option>
-                  <option value="Juan Pérez">Juan Pérez</option>
-                  <option value="María García">María García</option>
-                  <option value="Carlos López">Carlos López</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Ruta</label>
-                <select
-                  value={route}
-                  onChange={(e) => setRoute(e.target.value)}
-                  className="w-full bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
-                >
-                  <option value="">Sin ruta</option>
-                  <option value="Centro">Centro</option>
-                  <option value="Norte">Norte</option>
-                  <option value="Sur">Sur</option>
-                  <option value="Foránea">Foránea</option>
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
-              {[
-                { label: 'Crédito', checked: isCredit, set: setIsCredit },
-                { label: 'Factura', checked: isInvoice, set: setIsInvoice },
-                { label: 'Cotización', checked: isQuote, set: setIsQuote },
-                { label: 'Vender en Ext.', checked: isExternal, set: setIsExternal },
-              ].map((opt, idx) => (
-                <label key={idx} className="flex items-center space-x-0.5 sm:space-x-1 text-[10px] sm:text-xs">
-                  <input
-                    type="checkbox"
-                    checked={opt.checked}
-                    onChange={(e) => opt.set(e.target.checked)}
-                    className="rounded text-orange-600 focus:ring-orange-500 border-orange-300 w-2.5 h-2.5 sm:w-3 sm:h-3"
-                  />
-                  <span className="text-gray-700 text-[10px] sm:text-xs lg:text-sm">{opt.label}</span>
-                </label>
-              ))}
-            </div>
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <label className="text-gray-600 text-[10px] sm:text-xs font-medium">Desc:</label>
-              <input
-                type="number"
-                step="0.01"
-                value={discountAmount}
-                onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
-                className="bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs w-12 sm:w-16 lg:w-20 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                placeholder="0.00"
-              />
-              <button
-                onClick={handleApplyDiscount}
-                className="bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 text-orange-700 px-1 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium border border-orange-300 shadow-sm"
-              >
-                Aplicar
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 py-0.5 sm:py-1 lg:py-2 px-1 sm:px-2 lg:px-4">
-        {/* Total */}
-        <div className="flex items-center justify-between mb-0.5 sm:mb-1 lg:mb-2">
-          <span className="text-orange-50 text-[10px] sm:text-xs lg:text-sm font-semibold">TOTAL:</span>
-          <span className="text-white font-bold text-sm sm:text-base lg:text-lg font-mono">
-            ${orderTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-          </span>
-        </div>
-
-        {/* Botones */}
-        <div className="grid grid-cols-4 gap-0.5 sm:gap-1 lg:gap-2">
-          <button
-            onClick={handlePayClick}
-            disabled={!order?.items.length}
-            className="bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 disabled:from-gray-200 disabled:to-gray-300 disabled:cursor-not-allowed text-green-700 disabled:text-gray-500 py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 border border-green-300 disabled:border-gray-300 flex flex-col items-center justify-center min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-9 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            PAGAR
-            <div className="text-[6px] sm:text-[8px] lg:text-[10px] opacity-80 hidden lg:block">F12</div>
-          </button>
-
-          <button
-            onClick={handleSaveClick}
-            disabled={!order?.items.length}
-            className="bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 disabled:from-gray-200 disabled:to-gray-300 disabled:cursor-not-allowed text-orange-700 disabled:text-gray-500 py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 border border-orange-300 disabled:border-gray-300 flex flex-col items-center justify-center min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            GUARDAR
-          </button>
-
-          <button
-            onClick={onCancel}
-            className="bg-white text-orange-600 border border-orange-600 py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 flex flex-col items-center justify-center hover:bg-orange-50 min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            CANCELAR
-          </button>
-
-          <button
-            onClick={onCancel}
-            className="bg-black text-white py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 border border-gray-800 flex flex-col items-center justify-center min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22m-5-4h-8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z" />
-            </svg>
-            ELIMINAR
-          </button>
+          ${creditAvailable.toLocaleString('es-MX')}
         </div>
       </div>
+    </div>
+
+    {creditExceeded && (
+      <div className="mt-1 sm:mt-2 bg-red-50 border border-red-200 rounded-md p-1 sm:p-2 flex items-center space-x-1">
+        <AlertTriangle size={12} className="sm:w-3.5 sm:h-3.5 text-red-600" />
+        <span className="text-red-700 font-bold text-[10px] sm:text-xs">
+          ¡LÍMITE DE CRÉDITO EXCEDIDO!
+        </span>
+      </div>
+    )}
+  </div>
+)}
+
+
+{/* Observaciones Colapsables */}
+<div className="bg-gradient-to-r from-orange-25 to-red-25 border-t border-orange-100">
+  {/* Toggle Button */}
+  <button
+    onClick={() => setShowObservations(!showObservations)}
+    className="w-full py-1 sm:py-2 px-2 sm:px-3 text-left flex items-center justify-between hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-colors"
+  >
+    <span className="text-gray-700 font-medium text-[10px] sm:text-xs lg:text-sm">
+      Observaciones y Detalles
+    </span>
+    <svg
+      className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-500 transition-transform ${
+        showObservations ? 'rotate-180' : ''
+      }`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+
+  {/* Collapsible Content */}
+  {showObservations && (
+    <div className="px-2 sm:px-3 pb-1 sm:pb-2 space-y-1 sm:space-y-2">
+      {/* Observaciones */}
+      <div>
+        <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Observaciones</label>
+        <input
+          type="text"
+          value={observations}
+          onChange={(e) => setObservations(e.target.value)}
+          className="w-full bg-white border border-orange-200 text-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+          placeholder="Observaciones del pedido..."
+        />
+      </div>
+      
+      {/* Chofer y Ruta */}
+      <div className="grid grid-cols-2 gap-1 sm:gap-2">
+        <div>
+          <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Chofer</label>
+          <select
+            value={driver}
+            onChange={(e) => setDriver(e.target.value)}
+            className="w-full bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+          >
+            <option value="">Sin chofer</option>
+            <option value="Juan Pérez">Juan Pérez</option>
+            <option value="María García">María García</option>
+            <option value="Carlos López">Carlos López</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Ruta</label>
+          <select
+            value={route}
+            onChange={(e) => setRoute(e.target.value)}
+            className="w-full bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+          >
+            <option value="">Sin ruta</option>
+            <option value="Centro">Centro</option>
+            <option value="Norte">Norte</option>
+            <option value="Sur">Sur</option>
+            <option value="Foránea">Foránea</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* Opciones de Venta - Siempre visibles */}
+  <div className="px-2 sm:px-3 py-1 sm:py-2 border-t border-orange-200">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
+    {[
+      { label: 'Crédito', checked: isCredit, set: setIsCredit },
+      { label: 'Factura', checked: isInvoice, set: setIsInvoice },
+      { label: 'Cotización', checked: isQuote, set: setIsQuote },
+      { label: 'Vender en Ext.', checked: isExternal, set: setIsExternal },
+    ].map((opt, idx) => (
+      <label key={idx} className="flex items-center space-x-0.5 sm:space-x-1 text-[10px] sm:text-xs">
+        <input
+          type="checkbox"
+          checked={opt.checked}
+          onChange={(e) => opt.set(e.target.checked)}
+          className="rounded text-orange-600 focus:ring-orange-500 border-orange-300 w-2.5 h-2.5 sm:w-3 sm:h-3"
+        />
+        <span className="text-gray-700 text-[10px] sm:text-xs lg:text-sm">{opt.label}</span>
+      </label>
+    ))}
+    </div>
+
+    {/* Descuento */}
+    <div className="flex items-center space-x-1 sm:space-x-2">
+      <label className="text-gray-600 text-[10px] sm:text-xs font-medium">Desc:</label>
+      <input
+        type="number"
+        step="0.01"
+        value={discountAmount}
+        onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
+        className="bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs w-12 sm:w-16 lg:w-20 focus:outline-none focus:ring-1 focus:ring-orange-500"
+        placeholder="0.00"
+      />
+      <button
+        onClick={handleApplyDiscount}
+        className="bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 text-orange-700 px-1 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium border border-orange-300 shadow-sm"
+      >
+        Aplicar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 py-0.5 sm:py-1 lg:py-2 px-1 sm:px-2 lg:px-4">
+  {/* Total */}
+  <div className="flex items-center justify-between mb-0.5 sm:mb-1 lg:mb-2">
+    <span className="text-orange-50 text-[10px] sm:text-xs lg:text-sm font-semibold">TOTAL:</span>
+    <span className="text-white font-bold text-sm sm:text-base lg:text-lg font-mono">
+      ${orderTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+    </span>
+  </div>
+
+  {/* Botones */}
+  <div className="grid grid-cols-4 gap-0.5 sm:gap-1 lg:gap-2">
+    <button
+      onClick={handlePayClick}
+      disabled={!order?.items.length}
+      className="bg-gradient-to-r from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 disabled:from-gray-200 disabled:to-gray-300 disabled:cursor-not-allowed text-green-700 disabled:text-gray-500 py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 border border-green-300 disabled:border-gray-300 flex flex-col items-center justify-center min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-9 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+      PAGAR
+      <div className="text-[6px] sm:text-[8px] lg:text-[10px] opacity-80 hidden lg:block">F12</div>
+    </button>
+
+    <button
+      onClick={handleSaveClick}
+      disabled={!order?.items.length}
+      className="bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 disabled:from-gray-200 disabled:to-gray-300 disabled:cursor-not-allowed text-orange-700 disabled:text-gray-500 py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 border border-orange-300 disabled:border-gray-300 flex flex-col items-center justify-center min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+      GUARDAR
+    </button>
+
+    <button
+      onClick={onCancel}
+      className="bg-white text-orange-600 border border-orange-600 py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 flex flex-col items-center justify-center hover:bg-orange-50 min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+      CANCELAR
+    </button>
+
+    <button
+      onClick={onCancel}
+      className="bg-black text-white py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 border border-gray-800 flex flex-col items-center justify-center min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22m-5-4h-8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z" />
+      </svg>
+      ELIMINAR
+    </button>
+  </div>
+</div>
+
 
       {/* Client Selection Modal */}
       {showClientModal && (
@@ -438,23 +520,100 @@ export function POSOrderPanel({
 
       {/* Edit Item Modal */}
       {showEditItemModal && editingItem && products && (
-        <POSEditItemModal
-          item={editingItem}
-          product={products.find(p => p.id === editingItem.product_id)!}
-          onClose={() => {
-            setShowEditItemModal(false);
-            setEditingItem(null);
-          }}
-          onSave={(updated) => {
-            onUpdateQuantity(updated.id, updated.quantity);
-            onUpdateItemPrice(updated.id, updated.price_level, updated.unit_price);
-            setShowEditItemModal(false);
-            setEditingItem(null);
-          }}
-        />
+  <POSEditItemModal
+    item={editingItem}
+    product={products.find(p => p.id === editingItem.product_id)!}
+    onClose={() => {
+      setShowEditItemModal(false);
+      setEditingItem(null);
+    }}
+    onSave={(updated) => {
+      onUpdateQuantity(updated.id, updated.quantity);
+      onUpdateItemPrice(updated.id, updated.price_level, updated.unit_price);
+      setShowEditItemModal(false);
+      setEditingItem(null);
+    }}
+  />
+)}
+
+
+      {/* Credit Authorization Modal */}
+      {showCreditAuthModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="bg-red-600 p-4 border-b border-red-700 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white font-bold">Autorización Requerida</h3>
+                <button
+                  onClick={handleCancelCreditAuth}
+                  className="text-red-100 hover:text-white"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-yellow-600 text-2xl">⚠️</span>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                  Límite de Crédito Excedido
+                </h4>
+                <p className="text-gray-600 text-sm mb-4">
+                  El cliente {client?.name} excederá su límite de crédito con esta operación.
+                  Se requiere autorización de administrador para continuar.
+                </p>
+                {client && order && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
+                    <div className="text-yellow-800">
+                      <p>Límite: ${client.credit_limit.toLocaleString('es-MX')}</p>
+                      <p>Saldo actual: ${client.balance.toLocaleString('es-MX')}</p>
+                      <p>Este pedido: ${order.total.toLocaleString('es-MX')}</p>
+                      <p className="font-bold">Nuevo saldo: ${(client.balance + order.total).toLocaleString('es-MX')}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Contraseña de Administrador
+                  </label>
+                  <input
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Ingrese contraseña..."
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleCreditAuth();
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleCreditAuth}
+                    disabled={!adminPassword.trim()}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Autorizar Operación
+                  </button>
+                  <button
+                    onClick={handleCancelCreditAuth}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
-      
-      {/* El modal de autorización de crédito duplicado se ha eliminado de aquí */}
     </div>
   );
 }
