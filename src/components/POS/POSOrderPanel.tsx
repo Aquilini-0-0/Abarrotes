@@ -82,6 +82,7 @@ export function POSOrderPanel({
     }
   };
 
+  /*
   const validateAdminPassword = (password: string) => {
     return password === 'admin123'; // En producción, validar contra la base de datos
   };
@@ -111,6 +112,8 @@ export function POSOrderPanel({
     setAdminPassword('');
     setPendingAction(null);
   };
+
+  */
 
   const handleSaveClick = () => {
     // Save order without payment processing
