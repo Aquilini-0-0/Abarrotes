@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { POSMenuBar } from './POSMenuBar';
 import { POSOrderTabs } from './POSOrderTabs';
 import { POSOrderPanel } from './POSOrderPanel';
