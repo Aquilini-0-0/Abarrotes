@@ -13,7 +13,7 @@ interface POSTaraModalProps {
   quantity: number;
   priceLevel: 1 | 2 | 3 | 4 | 5;
   onClose: () => void;
-  onConfirm: (product: POSProduct, quantity: number, priceLevel: 1 | 2 | 3 | 4 | 5, finalWeight: number) => void;
+  onConfirm: (product: POSProduct, finalQuantity: number, priceLevel: 1 | 2 | 3 | 4 | 5, finalUnitPrice: number) => void;
 }
 
 export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm }: POSTaraModalProps) {
