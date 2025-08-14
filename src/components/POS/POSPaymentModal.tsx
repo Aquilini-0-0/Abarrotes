@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
-import { X, CreditCard, DollarSign, Smartphone, Calculator, AlertTriangle, Lock } from 'lucide-react';
+import { X, CreditCard, DollarSign, Smartphone, Calculator, AlertTriangle, Lock, FileText } from 'lucide-react';
 import { POSOrder, POSClient, PaymentBreakdown, Payment } from '../../types/pos';
+import { supabase } from '../../lib/supabase';
+
+interface Vale {
+  id: string;
+  folio_vale: string;
+  cliente: string;
+  importe: number;
+  disponible: number;
+  estatus: 'HABILITADO' | 'USADO' | 'VENCIDO';
+}
 
 interface POSPaymentModalProps {
   order: POSOrder;
@@ -11,7 +21,7 @@ interface POSPaymentModalProps {
 }
 
 export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPayment }: POSPaymentModalProps) {
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer' | 'credit' | 'mixed'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer' | 'credit' | 'mixed' | 'vales'>('cash');
   const [paymentBreakdown, setPaymentBreakdown] = useState<PaymentBreakdown>({
     cash: order.total || 0,
     card: 0,
@@ -26,6 +36,9 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCreditAuthModal, setShowCreditAuthModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
+  const [clientVales, setClientVales] = useState<Vale[]>([]);
+  const [selectedVale, setSelectedVale] = useState<Vale | null>(null);
+  const [loadingVales, setLoadingVales] = useState(false);
 
   const orderTotal = order.total || 0;
   const change = cashReceived - paymentAmount;
@@ -45,6 +58,46 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
   const validateAdminPassword = (password: string) => {
     return password === 'admin123'; // En producción, validar contra la base de datos
+  };
+
+  // Fetch client vales when payment method changes to vales
+  React.useEffect(() => {
+    if (paymentMethod === 'vales' && client) {
+      fetchClientVales();
+    }
+  }, [paymentMethod, client]);
+
+  const fetchClientVales = async () => {
+    if (!client) return;
+    
+    setLoadingVales(true);
+    try {
+      const { data, error } = await supabase
+        .from('vales_devolucion')
+        .select('*')
+        .eq('cliente', client.name)
+        .eq('estatus', 'HABILITADO')
+        .gt('disponible', 0)
+        .order('fecha_expedicion', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedVales: Vale[] = data.map(item => ({
+        id: item.id,
+        folio_vale: item.folio_vale,
+        cliente: item.cliente,
+        importe: item.importe,
+        disponible: item.disponible,
+        estatus: item.estatus
+      }));
+      
+      setClientVales(formattedVales);
+    } catch (err) {
+      console.error('Error fetching client vales:', err);
+      setClientVales([]);
+    } finally {
+      setLoadingVales(false);
+    }
   };
 
   const handlePaymentBreakdownChange = (method: keyof PaymentBreakdown, amount: number) => {
@@ -180,17 +233,18 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
             { method: 'card', label: 'Tarjeta', color: 'from-blue-400 to-blue-600', icon: <CreditCard size={20} /> },
             { method: 'transfer', label: 'Transferencia', color: 'from-purple-400 to-purple-600', icon: <Smartphone size={20} /> },
             { method: 'credit', label: 'Crédito', color: 'from-yellow-400 to-yellow-600', icon: <CreditCard size={20} /> },
-            { method: 'mixed', label: 'Mixto', color: 'from-orange-400 to-red-500', icon: <Calculator size={20} /> }
+            { method: 'mixed', label: 'Mixto', color: 'from-orange-400 to-red-500', icon: <Calculator size={20} /> },
+            { method: 'vales', label: 'Vales', color: 'from-pink-400 to-pink-600', icon: <FileText size={20} /> }
           ].map((btn) => (
             <button
               key={btn.method}
               onClick={() => setPaymentMethod(btn.method)}
-              disabled={btn.method === 'credit' && !client}
+              disabled={(btn.method === 'credit' || btn.method === 'vales') && !client}
               className={`p-2 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold border transition
                 ${paymentMethod === btn.method
                   ? `bg-gradient-to-br ${btn.color} text-white shadow-md`
                   : 'bg-gray-50 border-gray-300 hover:bg-gray-100 text-gray-700'}
-                ${btn.method === 'credit' && !client ? 'opacity-40 cursor-not-allowed' : ''}
+                ${(btn.method === 'credit' || btn.method === 'vales') && !client ? 'opacity-40 cursor-not-allowed' : ''}
               `}
             >
               <div className="flex flex-col items-center">
@@ -324,6 +378,92 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
                         {selectedVale.disponible >= order.total ? 'Vale cubre el total' : 'Vale insuficiente'}
                       </span>
                     </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pago con Vales */}
+      {paymentMethod === 'vales' && (
+        <div>
+          <h4 className="text-gray-800 font-semibold mb-2 text-sm sm:text-base">Pago con Vales por Devolución</h4>
+          {loadingVales ? (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500 mx-auto mb-2"></div>
+              <p className="text-gray-600">Cargando vales del cliente...</p>
+            </div>
+          ) : clientVales.length === 0 ? (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 mr-3" />
+                <div>
+                  <p className="text-yellow-800 font-medium">
+                    El cliente {client?.name} no tiene vales disponibles.
+                  </p>
+                  <p className="text-yellow-600 text-sm">
+                    Seleccione otro método de pago para continuar.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-gray-600 text-xs sm:text-sm mb-1">Seleccionar Vale</label>
+                <select
+                  value={selectedVale?.id || ''}
+                  onChange={(e) => {
+                    const vale = clientVales.find(v => v.id === e.target.value);
+                    setSelectedVale(vale || null);
+                    if (vale) {
+                      setPaymentAmount(Math.min(vale.disponible, order.total));
+                    }
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                >
+                  <option value="">Seleccionar vale</option>
+                  {clientVales.map(vale => (
+                    <option key={vale.id} value={vale.id}>
+                      {vale.folio_vale} - ${vale.disponible.toFixed(2)} disponible
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {selectedVale && (
+                <div className="bg-pink-50 border border-pink-200 rounded-lg p-3">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Folio Vale:</span>
+                      <span className="font-mono text-pink-600">{selectedVale.folio_vale}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Disponible:</span>
+                      <span className="font-mono text-green-600">${selectedVale.disponible.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Pedido:</span>
+                      <span className="font-mono text-gray-900">${order.total.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2">
+                      <span className="font-semibold">Resultado:</span>
+                      <span className={`font-bold ${selectedVale.disponible >= order.total ? 'text-green-600' : 'text-red-600'}`}>
+                        {selectedVale.disponible >= order.total ? 'Vale cubre el total' : 'Vale insuficiente'}
+                      </span>
+                    </div>
+                    {selectedVale.disponible < order.total && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-2 mt-2">
+                        <div className="flex items-center">
+                          <AlertTriangle className="h-4 w-4 text-red-600 mr-2" />
+                          <span className="text-red-800 text-sm font-medium">
+                            El vale no cubre el total del pedido. Faltan ${(order.total - selectedVale.disponible).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

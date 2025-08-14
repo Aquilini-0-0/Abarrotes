@@ -354,8 +354,9 @@ export function usePOS() {
   // Process payment for an order
   const processPayment = async (orderId: string, paymentData: {
     amount: number;
-    method: 'cash' | 'card' | 'transfer' | 'credit';
+    method: 'cash' | 'card' | 'transfer' | 'credit' | 'vales';
     reference?: string;
+    selectedVale?: any;
   }) => {
     try {
       // Get current order data

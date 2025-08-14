@@ -508,6 +508,12 @@ export function POSLayout() {
                 return;
               }
             }
+            
+            // Add selectedVale to payment data if using vales method
+            if (paymentData.method === 'vales' && paymentData.selectedVale) {
+              paymentData.selectedVale = paymentData.selectedVale;
+            }
+            
             handlePayOrder(paymentData);
           }}
         />
