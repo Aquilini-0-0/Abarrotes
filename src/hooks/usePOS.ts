@@ -561,9 +561,7 @@ export function usePOS() {
           total_sales: 0,
           total_cash: 0,
           total_card: 0,
-          amount_paid: 0,
-          remaining_balance: order.total,
-          status: 'pending', // Always save as pending initially
+          total_transfer: 0,
           status: 'open'
         })
         .select()
