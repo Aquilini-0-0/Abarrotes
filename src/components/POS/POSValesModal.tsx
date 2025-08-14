@@ -23,19 +23,22 @@ interface POSValesModalProps {
 export function POSValesModal({ onClose }: POSValesModalProps) {
   const { user } = useAuth();
   const [vales, setVales] = useState<Vale[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingClients, setLoadingClients] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [newVale, setNewVale] = useState({
     folio_remision: '',
-    cliente: '',
+    cliente_id: '',
     importe: 0,
     factura: ''
   });
 
   useEffect(() => {
     fetchVales();
+    fetchClients();
   }, []);
 
   const fetchVales = async () => {
@@ -69,9 +72,33 @@ export function POSValesModal({ onClose }: POSValesModalProps) {
     }
   };
 
+  const fetchClients = async () => {
+    try {
+      setLoadingClients(true);
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, name, rfc')
+        .order('name');
+
+      if (error) throw error;
+      setClients(data || []);
+    } catch (err) {
+      console.error('Error fetching clients:', err);
+      setClients([]);
+    } finally {
+      setLoadingClients(false);
+    }
+  };
+
   const handleCreateVale = async () => {
-    if (!newVale.folio_remision.trim() || !newVale.cliente.trim() || newVale.importe <= 0) {
+    if (!newVale.folio_remision.trim() || !newVale.cliente_id.trim() || newVale.importe <= 0) {
       alert('Por favor complete todos los campos requeridos');
+      return;
+    }
+
+    const selectedClient = clients.find(c => c.id === newVale.cliente_id);
+    if (!selectedClient) {
+      alert('Debe seleccionar un cliente válido');
       return;
     }
 
@@ -85,7 +112,7 @@ export function POSValesModal({ onClose }: POSValesModalProps) {
           folio_vale: folio,
           folio_remision: newVale.folio_remision,
           fecha_expedicion: new Date().toISOString().split('T')[0],
-          cliente: newVale.cliente,
+          cliente: selectedClient.name,
           importe: newVale.importe,
           disponible: newVale.importe,
           estatus: 'HABILITADO',
@@ -113,7 +140,7 @@ export function POSValesModal({ onClose }: POSValesModalProps) {
       setVales(prev => [formattedVale, ...prev]);
       setNewVale({
         folio_remision: '',
-        cliente: '',
+        cliente_id: '',
         importe: 0,
         factura: ''
       });

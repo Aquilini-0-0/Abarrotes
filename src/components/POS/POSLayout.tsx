@@ -551,6 +551,7 @@ export function POSLayout() {
             setSelectedProduct(null);
           }}
           onConfirm={(product, originalQuantity, priceLevelFromModal, finalWeightFromModal) => {
+            // Use the modified product with calculated price from tara modal
             const updatedOrder = addItemToOrder(currentOrder!, product, finalWeightFromModal, priceLevelFromModal);
             updateActiveOrder(updatedOrder);
             setShowTaraModal(false);

@@ -47,6 +47,7 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
 
     // For SIN TARA option, use the original quantity
     const finalQuantity = selectedTara.id === '1' ? quantity : pesoNeto;
+    const finalPrice = selectedTara.id === '1' ? precioKilo : precioFinal / finalQuantity;
     
     if (selectedTara.id !== '1' && pesoNeto <= 0) {
       alert('El peso neto no puede ser negativo. Verifica el peso bruto y la tara.');
@@ -59,7 +60,16 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
       return;
     }
 
-    onConfirm(product, quantity, priceLevel, finalQuantity);
+    // Create a modified product with the calculated final price
+    const modifiedProduct = {
+      ...product,
+      prices: {
+        ...product.prices,
+        [`price${priceLevel}`]: finalPrice
+      }
+    };
+
+    onConfirm(modifiedProduct, quantity, priceLevel, finalQuantity);
   };
 
   return (
