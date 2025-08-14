@@ -57,6 +57,11 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
           return;
         }
         console.warn('Error checking for updates:', err);
+        if (err instanceof TypeError && err.message.includes('fetch')) {
+          // Network error - this is expected when Supabase is not configured
+          return;
+        }
+        console.warn('Error checking for updates:', err);
       }
     };
 
