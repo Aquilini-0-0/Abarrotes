@@ -120,7 +120,7 @@ export function POSOrderPanel({
     // Orders are saved as "pending" by default
     onSave();
   };
-
+/*
   const handlePayClick = () => {
     // Check credit limit if it's a credit sale
     if (isCredit && client && order) {
@@ -133,6 +133,8 @@ export function POSOrderPanel({
     }
     onPay();
   };
+
+  */
 
   return (
     <div className="h-full flex flex-col bg-white">
