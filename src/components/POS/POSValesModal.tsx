@@ -407,14 +407,22 @@ export function POSValesModal({ onClose }: POSValesModalProps) {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Cliente
                   </label>
-                  <input
-                    type="text"
-                    value={newVale.cliente}
-                    onChange={(e) => setNewVale(prev => ({ ...prev, cliente: e.target.value }))}
+                  <select
+                    value={newVale.cliente_id}
+                    onChange={(e) => setNewVale(prev => ({ ...prev, cliente_id: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Nombre del cliente"
+                    disabled={loadingClients}
                     required
-                  />
+                  >
+                    <option value="">
+                      {loadingClients ? 'Cargando clientes...' : 'Seleccionar cliente'}
+                    </option>
+                    {clients.map(client => (
+                      <option key={client.id} value={client.id}>
+                        {client.name} - {client.rfc}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
