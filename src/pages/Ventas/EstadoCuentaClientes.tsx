@@ -169,6 +169,8 @@ export function EstadoCuentaClientes() {
         printWindow.close();
       }, 250);
     }
+    
+    alert('✅ PDF de estado de cuenta generado y descargado exitosamente');
   };
 
   const columns = [

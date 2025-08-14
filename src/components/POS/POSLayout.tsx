@@ -229,6 +229,10 @@ export function POSLayout() {
     if (!currentOrder) return;
 
     try {
+      // Clear any pending auth state when starting payment process
+      setPendingAction(null);
+      setPendingPaymentData(null);
+      
       // Determine if this is an existing order being paid
       const isExistingOrder = !currentOrder.id.startsWith('temp-');
       
@@ -320,15 +324,6 @@ export function POSLayout() {
   const handleSaveOrder = async () => {
     if (currentOrder) {
       try {
-        // Check credit limit before saving
-        if (currentOrder.is_credit && selectedClient) {
-          const totalAfterSale = selectedClient.balance + currentOrder.total;
-          if (totalAfterSale > selectedClient.credit_limit) {
-            setShowCreditAuthModal(true);
-            return;
-          }
-        }
-
         const savedOrder = await saveOrder({ ...currentOrder, status: 'draft' });
         markTabAsSaved(activeTabId);
         closeTab(activeTabId); // Close the tab after saving

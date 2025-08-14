@@ -10,9 +10,24 @@ export function ReportesVentas() {
   const [selectedSale, setSelectedSale] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [viewMode, setViewMode] = useState<'detailed' | 'summary' | 'extended'>('extended');
+  const [filtros, setFiltros] = useState({
+    cliente: '',
+    fechaInicio: '',
+    fechaFin: ''
+  });
 
   // Expandir datos de ventas con información detallada
-  const extendedSales = sales.flatMap(sale => 
+  const allSales = [...sales].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  
+  // Apply filters
+  const filteredSales = allSales.filter(sale => {
+    if (filtros.cliente && !sale.client_name.toLowerCase().includes(filtros.cliente.toLowerCase())) return false;
+    if (filtros.fechaInicio && sale.date < filtros.fechaInicio) return false;
+    if (filtros.fechaFin && sale.date > filtros.fechaFin) return false;
+    return true;
+  });
+  
+  const extendedSales = filteredSales.flatMap(sale => 
     sale.items.map((item, index) => ({
       factura: `FAC-${sale.id.slice(-6)}`,
       ticket: `TKT-${sale.id.slice(-6)}-${index + 1}`,
@@ -34,7 +49,7 @@ export function ReportesVentas() {
   );
 
   // Agrupar ventas por cliente para vista resumen
-  const salesSummary = sales.reduce((acc, sale) => {
+  const salesSummary = filteredSales.reduce((acc, sale) => {
     const existingClient = acc.find(item => item.client_id === sale.client_id);
     if (existingClient) {
       existingClient.total += sale.total;
@@ -218,8 +233,8 @@ export function ReportesVentas() {
   ];
 
   const totalVentas = sales.reduce((sum, sale) => sum + sale.total, 0);
-  const ventasPagadas = sales.filter(s => s.status === 'paid').reduce((sum, sale) => sum + sale.total, 0);
-  const ventasPendientes = sales.filter(s => s.status === 'pending').reduce((sum, sale) => sum + sale.total, 0);
+  const ventasPagadas = filteredSales.filter(s => s.status === 'paid').reduce((sum, sale) => sum + sale.total, 0);
+  const ventasPendientes = filteredSales.filter(s => s.status === 'pending').reduce((sum, sale) => sum + sale.total, 0);
   const clientesUnicos = salesSummary.length;
 
   if (loading) {
@@ -411,11 +426,18 @@ export function ReportesVentas() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Cliente
                 </label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input
+                  type="text"
+                  value={filtros.cliente}
+                  onChange={(e) => setFiltros(prev => ({ ...prev, cliente: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Buscar cliente..."
+                />
+                {/* <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Todos los clientes</option>
                   <option value="1">Supermercado El Águila</option>
                   <option value="2">Tienda La Esquina</option>
-                </select>
+                </select> */}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -423,6 +445,8 @@ export function ReportesVentas() {
                 </label>
                 <input
                   type="date"
+                  value={filtros.fechaInicio}
+                  onChange={(e) => setFiltros(prev => ({ ...prev, fechaInicio: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -432,13 +456,15 @@ export function ReportesVentas() {
                 </label>
                 <input
                   type="date"
+                  value={filtros.fechaFin}
+                  onChange={(e) => setFiltros(prev => ({ ...prev, fechaFin: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
 
             <DataTable
-              data={viewMode === 'summary' ? salesSummary : viewMode === 'extended' ? extendedSales : sales}
+              data={viewMode === 'summary' ? salesSummary : viewMode === 'extended' ? extendedSales : filteredSales}
               columns={viewMode === 'summary' ? summaryColumns : viewMode === 'extended' ? extendedColumns : detailedColumns}
               title={viewMode === 'summary' ? "Resumen por Cliente" : viewMode === 'extended' ? "Reporte Extendido" : "Historial de Ventas"}
             />

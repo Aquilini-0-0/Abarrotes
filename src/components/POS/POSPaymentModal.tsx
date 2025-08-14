@@ -123,17 +123,18 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       return;
     }
 
-    // Check credit limit for credit payments
-    if (paymentMethod === 'credit' && client && creditExceeded) {
-      setShowCreditAuthModal(true);
-      return;
-    }
-
     processPayment();
   };
 
 const processPayment = async () => {
   setIsProcessing(true);
+
+  // Check credit limit for credit payments BEFORE processing
+  if (paymentMethod === 'credit' && client && creditExceeded) {
+    setIsProcessing(false);
+    setShowCreditAuthModal(true);
+    return;
+  }
 
   // Initialize paymentData with common values
   const paymentData = {

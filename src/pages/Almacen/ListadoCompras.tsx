@@ -415,13 +415,6 @@ export function ListadoCompras() {
       render: (_, compra: CompraDetallada) => (
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => handleEdit(compra)}
-            className="p-1 text-blue-600 hover:text-blue-800"
-            title="Editar"
-          >
-            <Edit size={16} />
-          </button>
-          <button
             onClick={() => handleViewDetail(compra)}
             className="p-1 text-green-600 hover:text-green-800"
             title="Ver documento"
