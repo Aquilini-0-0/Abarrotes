@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, User, CreditCard, AlertTriangle, X } from 'lucide-react';
+import { Plus, Edit, Trash2, User } from 'lucide-react';
 import { POSOrder, POSOrderItem, POSClient } from '../../types/pos';
 import { POSEditItemModal } from './POSEditItemModal';
+import { POSPaymentModal } from './POSPaymentModal'; // Se asume que este es el componente del modal de pago
 
 interface POSOrderPanelProps {
   order: POSOrder | null;
@@ -47,9 +48,6 @@ export function POSOrderPanel({
   const [showObservations, setShowObservations] = useState(false);
   const [showEditItemModal, setShowEditItemModal] = useState(false);
   const [editingItem, setEditingItem] = useState<POSOrderItem | null>(null);
-  const [showCreditAuthModal, setShowCreditAuthModal] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
-  const [pendingAction, setPendingAction] = useState<'save' | 'pay' | null>(null);
 
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(searchClient.toLowerCase()) ||
@@ -59,76 +57,22 @@ export function POSOrderPanel({
   const creditUsed = client?.balance || 0;
   const creditAvailable = client ? client.credit_limit - creditUsed : 0;
   const orderTotal = order?.total || 0;
-  
-  // Debug logging
-  console.log('Client credit info:', {
-    client: client?.name,
-    credit_limit: client?.credit_limit,
-    balance: client?.balance,
-    creditUsed,
-    creditAvailable,
-    orderTotal
-  });
-  
-  const creditExceeded = client && (isCredit || order?.is_credit) && (creditUsed + orderTotal) > client.credit_limit;
 
   const handleApplyDiscount = () => {
     if (order) {
       onApplyDiscount(discountAmount);
     }
-    // Trigger parent update for last order
     if (onRefreshData) {
       onRefreshData();
     }
   };
 
-  const validateAdminPassword = (password: string) => {
-    return password === 'admin123'; // En producción, validar contra la base de datos
-  };
-
-  const handleCreditAuth = async () => {
-    if (!validateAdminPassword(adminPassword)) {
-      alert('Contraseña de administrador incorrecta');
-      setAdminPassword('');
-      return;
-    }
-
-    setShowCreditAuthModal(false);
-    setAdminPassword('');
-
-    // Execute the pending action
-    if (pendingAction === 'save') {
-      onSave();
-    } else if (pendingAction === 'pay') {
-      onPay();
-    }
-
-    setPendingAction(null);
-  };
-
-  const handleCancelCreditAuth = () => {
-    setShowCreditAuthModal(false);
-    setAdminPassword('');
-    setPendingAction(null);
-  };
-
   const handleSaveClick = () => {
-    // Save order without payment processing
-    // Orders are saved as "pending" by default
     onSave();
   };
 
   const handlePayClick = () => {
-    // Check credit limit if it's a credit sale
-    if (isCredit && client && order) {
-      const totalAfterSale = client.balance + order.total;
-      if (totalAfterSale > client.credit_limit) {
-        setPendingAction('pay');
-        setAdminPassword(''); // <--- LÍNEA AÑADIDA: Resetea el estado de la contraseña
-        setShowCreditAuthModal(true);
-        return;
-      }
-    }
+    // Ya no se valida el crédito aquí. Solo se llama a la función onPay del padre.
     onPay();
   };
 
@@ -137,7 +81,6 @@ export function POSOrderPanel({
       {/* Header */}
       <div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 py-1 sm:py-2 px-2 sm:px-3 lg:px-4">
         <div className="flex items-center justify-between">
-          {/* Left: Title + Button */}
           <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3">
             <h2 className="text-white font-bold text-xs sm:text-sm lg:text-base">Detalle del Pedido</h2>
             <button
@@ -149,8 +92,6 @@ export function POSOrderPanel({
               <span className="md:hidden">{client?.name ? client.name.substring(0, 8) + '...' : 'Cliente'}</span>
             </button>
           </div>
-
-          {/* Right: Pedido info */}
           <div className="text-orange-50 text-[10px] sm:text-xs hidden md:block">
             Pedido: {order?.id.slice(-6) || 'NUEVO'}
             {client && (
@@ -269,21 +210,11 @@ export function POSOrderPanel({
               </div>
             </div>
           </div>
-
-          {creditExceeded && (
-            <div className="mt-1 sm:mt-2 bg-red-50 border border-red-200 rounded-md p-1 sm:p-2 flex items-center space-x-1">
-              <AlertTriangle size={12} className="sm:w-3.5 sm:h-3.5 text-red-600" />
-              <span className="text-red-700 font-bold text-[10px] sm:text-xs">
-                ¡LÍMITE DE CRÉDITO EXCEDIDO!
-              </span>
-            </div>
-          )}
         </div>
       )}
 
       {/* Observaciones Colapsables */}
       <div className="bg-gradient-to-r from-orange-25 to-red-25 border-t border-orange-100">
-        {/* Toggle Button */}
         <button
           onClick={() => setShowObservations(!showObservations)}
           className="w-full py-1 sm:py-2 px-2 sm:px-3 text-left flex items-center justify-between hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-colors"
@@ -302,11 +233,8 @@ export function POSOrderPanel({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
-
-        {/* Collapsible Content */}
         {showObservations && (
           <div className="px-2 sm:px-3 pb-1 sm:pb-2 space-y-1 sm:space-y-2">
-            {/* Observaciones */}
             <div>
               <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Observaciones</label>
               <input
@@ -317,8 +245,6 @@ export function POSOrderPanel({
                 placeholder="Observaciones del pedido..."
               />
             </div>
-            
-            {/* Chofer y Ruta */}
             <div className="grid grid-cols-2 gap-1 sm:gap-2">
               <div>
                 <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Chofer</label>
@@ -348,49 +274,43 @@ export function POSOrderPanel({
                 </select>
               </div>
             </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
+              {[
+                { label: 'Crédito', checked: isCredit, set: setIsCredit },
+                { label: 'Factura', checked: isInvoice, set: setIsInvoice },
+                { label: 'Cotización', checked: isQuote, set: setIsQuote },
+                { label: 'Vender en Ext.', checked: isExternal, set: setIsExternal },
+              ].map((opt, idx) => (
+                <label key={idx} className="flex items-center space-x-0.5 sm:space-x-1 text-[10px] sm:text-xs">
+                  <input
+                    type="checkbox"
+                    checked={opt.checked}
+                    onChange={(e) => opt.set(e.target.checked)}
+                    className="rounded text-orange-600 focus:ring-orange-500 border-orange-300 w-2.5 h-2.5 sm:w-3 sm:h-3"
+                  />
+                  <span className="text-gray-700 text-[10px] sm:text-xs lg:text-sm">{opt.label}</span>
+                </label>
+              ))}
+            </div>
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <label className="text-gray-600 text-[10px] sm:text-xs font-medium">Desc:</label>
+              <input
+                type="number"
+                step="0.01"
+                value={discountAmount}
+                onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
+                className="bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs w-12 sm:w-16 lg:w-20 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                placeholder="0.00"
+              />
+              <button
+                onClick={handleApplyDiscount}
+                className="bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 text-orange-700 px-1 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium border border-orange-300 shadow-sm"
+              >
+                Aplicar
+              </button>
+            </div>
           </div>
         )}
-
-        {/* Opciones de Venta - Siempre visibles */}
-        <div className="px-2 sm:px-3 py-1 sm:py-2 border-t border-orange-200">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
-            {[
-              { label: 'Crédito', checked: isCredit, set: setIsCredit },
-              { label: 'Factura', checked: isInvoice, set: setIsInvoice },
-              { label: 'Cotización', checked: isQuote, set: setIsQuote },
-              { label: 'Vender en Ext.', checked: isExternal, set: setIsExternal },
-            ].map((opt, idx) => (
-              <label key={idx} className="flex items-center space-x-0.5 sm:space-x-1 text-[10px] sm:text-xs">
-                <input
-                  type="checkbox"
-                  checked={opt.checked}
-                  onChange={(e) => opt.set(e.target.checked)}
-                  className="rounded text-orange-600 focus:ring-orange-500 border-orange-300 w-2.5 h-2.5 sm:w-3 sm:h-3"
-                />
-                <span className="text-gray-700 text-[10px] sm:text-xs lg:text-sm">{opt.label}</span>
-              </label>
-            ))}
-          </div>
-
-          {/* Descuento */}
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            <label className="text-gray-600 text-[10px] sm:text-xs font-medium">Desc:</label>
-            <input
-              type="number"
-              step="0.01"
-              value={discountAmount}
-              onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
-              className="bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs w-12 sm:w-16 lg:w-20 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              placeholder="0.00"
-            />
-            <button
-              onClick={handleApplyDiscount}
-              className="bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 text-orange-700 px-1 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium border border-orange-300 shadow-sm"
-            >
-              Aplicar
-            </button>
-          </div>
-        </div>
       </div>
 
       <div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 py-0.5 sm:py-1 lg:py-2 px-1 sm:px-2 lg:px-4">
@@ -533,84 +453,8 @@ export function POSOrderPanel({
           }}
         />
       )}
-
-      {/* Credit Authorization Modal */}
-      {showCreditAuthModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="bg-red-600 p-4 border-b border-red-700 rounded-t-lg">
-              <div className="flex items-center justify-between">
-                <h3 className="text-white font-bold">Autorización Requerida</h3>
-                <button
-                  onClick={handleCancelCreditAuth}
-                  className="text-red-100 hover:text-white"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="text-center mb-6">
-                <div className="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-yellow-600 text-2xl">⚠️</span>
-                </div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                  Límite de Crédito Excedido
-                </h4>
-                <p className="text-gray-600 text-sm mb-4">
-                  El cliente {client?.name} excederá su límite de crédito con esta operación.
-                  Se requiere autorización de administrador para continuar.
-                </p>
-                {client && order && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
-                    <div className="text-yellow-800">
-                      <p>Límite: ${client.credit_limit.toLocaleString('es-MX')}</p>
-                      <p>Saldo actual: ${client.balance.toLocaleString('es-MX')}</p>
-                      <p>Este pedido: ${order.total.toLocaleString('es-MX')}</p>
-                      <p className="font-bold">Nuevo saldo: ${(client.balance + order.total).toLocaleString('es-MX')}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contraseña de Administrador
-                  </label>
-                  <input
-                    type="password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                    placeholder="Ingrese contraseña..."
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleCreditAuth();
-                      }
-                    }}
-                  />
-                </div>
-                <div className="flex space-x-3">
-                  <button
-                    onClick={handleCreditAuth}
-                    disabled={!adminPassword.trim()}
-                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    Autorizar Operación
-                  </button>
-                  <button
-                    onClick={handleCancelCreditAuth}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      
+      {/* El modal de autorización de crédito duplicado se ha eliminado de aquí */}
     </div>
   );
 }
