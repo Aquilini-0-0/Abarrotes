@@ -45,18 +45,21 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
       return;
     }
 
-    if (pesoNeto <= 0) {
+    // For SIN TARA option, use the original quantity
+    const finalQuantity = selectedTara.id === '1' ? quantity : pesoNeto;
+    
+    if (selectedTara.id !== '1' && pesoNeto <= 0) {
       alert('El peso neto no puede ser negativo. Verifica el peso bruto y la tara.');
       return;
     }
 
     // Validación de stock
-    if (pesoNeto > product.stock) {
-      alert(`Stock insuficiente. Disponible: ${product.stock} kg, Solicitado: ${pesoNeto.toFixed(2)} kg`);
+    if (finalQuantity > product.stock) {
+      alert(`Stock insuficiente. Disponible: ${product.stock} ${product.unit}, Solicitado: ${finalQuantity.toFixed(2)} ${product.unit}`);
       return;
     }
 
-    onConfirm(product, quantity, priceLevel, pesoNeto);
+    onConfirm(product, quantity, priceLevel, finalQuantity);
   };
 
   return (
@@ -243,7 +246,7 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!selectedTara || pesoBruto <= 0 || pesoNeto <= 0 || pesoNeto > product.stock}
+              disabled={!selectedTara || (selectedTara.id !== '1' && (pesoBruto <= 0 || pesoNeto <= 0)) || (selectedTara?.id === '1' ? quantity : pesoNeto) > product.stock}
               className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-bold"
             >
               Agregar al Pedido

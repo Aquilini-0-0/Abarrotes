@@ -408,6 +408,18 @@ export function usePOS() {
 
       // If fully paid, create inventory movements and update stock
       if (newStatus === 'paid') {
+        // Handle vales payment
+        if (paymentData.method === 'vales' && paymentData.selectedVale) {
+          // Mark vale as used
+          await supabase
+            .from('vales_devolucion')
+            .update({
+              estatus: 'USADO',
+              disponible: 0
+            })
+            .eq('id', paymentData.selectedVale.id);
+        }
+        
         for (const item of orderData.sale_items) {
           // Create inventory movement
           await supabase

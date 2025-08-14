@@ -172,10 +172,9 @@ export function POSLayout() {
   const handleAddProduct = (product: POSProduct) => {
     try {
       if (quantity > 0) {
-        const updatedOrder = addItemToOrder(currentOrder!, product, quantity, selectedPriceLevel);
-        updateActiveOrder(updatedOrder);
-        setQuantity(1);
-        setSearchTerm('');
+        // Always show tara modal for all products
+        setSelectedProduct(product);
+        setShowTaraModal(true);
       }
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error al agregar producto');
@@ -482,12 +481,9 @@ export function POSLayout() {
             onPriceLevelChange={setSelectedPriceLevel}
             onAddProduct={handleAddProduct}
             onProductSelect={(product) => {
-              if (product.has_tara) {
-                setSelectedProduct(product);
-                setShowTaraModal(true);
-              } else {
-                handleAddProduct(product);
-              }
+              // Always show tara modal for all products
+              setSelectedProduct(product);
+              setShowTaraModal(true);
             }}
             onGetEffectivePrice={getEffectivePrice}
           />

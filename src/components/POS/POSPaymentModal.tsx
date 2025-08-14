@@ -87,6 +87,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       breakdown: paymentMethod === 'mixed' ? paymentBreakdown : undefined,
       cashReceived: paymentMethod === 'cash' ? cashReceived : undefined,
       change: paymentMethod === 'cash' ? change : 0,
+      selectedVale: paymentMethod === 'vales' ? selectedVale : undefined,
       printTicket,
       printA4
     };
@@ -268,6 +269,69 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
         </div>
       )}
 
+      {/* Pago con Vales */}
+      {paymentMethod === 'vales' && (
+        <div>
+          <h4 className="text-gray-800 font-semibold mb-2 text-sm sm:text-base">Pago con Vales por Devolución</h4>
+          {clientVales.length === 0 ? (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-yellow-800 font-medium">
+                El cliente {client?.name} no tiene vales disponibles.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-gray-600 text-xs sm:text-sm mb-1">Seleccionar Vale</label>
+                <select
+                  value={selectedVale?.id || ''}
+                  onChange={(e) => {
+                    const vale = clientVales.find(v => v.id === e.target.value);
+                    setSelectedVale(vale);
+                    if (vale) {
+                      setPaymentAmount(Math.min(vale.disponible, order.total));
+                    }
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                >
+                  <option value="">Seleccionar vale</option>
+                  {clientVales.map(vale => (
+                    <option key={vale.id} value={vale.id}>
+                      {vale.folio_vale} - ${vale.disponible.toFixed(2)} disponible
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {selectedVale && (
+                <div className="bg-pink-50 border border-pink-200 rounded-lg p-3">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Folio Vale:</span>
+                      <span className="font-mono text-pink-600">{selectedVale.folio_vale}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Disponible:</span>
+                      <span className="font-mono text-green-600">${selectedVale.disponible.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Pedido:</span>
+                      <span className="font-mono text-gray-900">${order.total.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2">
+                      <span className="font-semibold">Resultado:</span>
+                      <span className={`font-bold ${selectedVale.disponible >= order.total ? 'text-green-600' : 'text-red-600'}`}>
+                        {selectedVale.disponible >= order.total ? 'Vale cubre el total' : 'Vale insuficiente'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Opciones de Impresión */}
       <div>
         <h4 className="text-gray-800 font-semibold mb-2 text-sm sm:text-base">Opciones de Impresión</h4>
@@ -297,7 +361,8 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
             isProcessing ||
             (paymentMethod === 'cash' && change < 0) ||
             (paymentMethod === 'mixed' && !paymentComplete) ||
-            (paymentMethod === 'credit' && (!client || (client.credit_limit - client.balance) < order.total))
+            (paymentMethod === 'credit' && (!client || (client.credit_limit - client.balance) < order.total)) ||
+            (paymentMethod === 'vales' && (!selectedVale || selectedVale.disponible < order.total))
           }
           className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-bold shadow disabled:opacity-50 text-sm transition-all ${
             isProcessing 
