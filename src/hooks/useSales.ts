@@ -121,6 +121,14 @@ export function useSales() {
 
   useEffect(() => {
     fetchSales();
+    
+    // Listen for manual sync events
+    const handleRefresh = () => {
+      fetchSales();
+    };
+    
+    window.addEventListener('refreshData', handleRefresh);
+    return () => window.removeEventListener('refreshData', handleRefresh);
   }, []);
 
   return {

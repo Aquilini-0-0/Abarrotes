@@ -120,6 +120,14 @@ export function useProducts() {
 
   useEffect(() => {
     fetchProducts();
+    
+    // Listen for manual sync events
+    const handleRefresh = () => {
+      fetchProducts();
+    };
+    
+    window.addEventListener('refreshData', handleRefresh);
+    return () => window.removeEventListener('refreshData', handleRefresh);
   }, []);
 
   return {

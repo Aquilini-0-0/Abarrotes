@@ -107,6 +107,14 @@ export function useSuppliers() {
 
   useEffect(() => {
     fetchSuppliers();
+    
+    // Listen for manual sync events
+    const handleRefresh = () => {
+      fetchSuppliers();
+    };
+    
+    window.addEventListener('refreshData', handleRefresh);
+    return () => window.removeEventListener('refreshData', handleRefresh);
   }, []);
 
   return {

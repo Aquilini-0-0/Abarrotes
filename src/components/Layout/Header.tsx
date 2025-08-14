@@ -109,23 +109,24 @@ export function Header() {
   const handleManualSync = async () => {
     setSyncing(true);
     try {
-      // Force refresh of notifications
       await fetchNotifications();
       
-      // Dispatch manual sync event for other components
+      // Dispatch sync event to all components
       window.dispatchEvent(new CustomEvent('manualSync', {
         detail: { timestamp: Date.now() }
       }));
       
-      // Force page reload to refresh all data
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      // Trigger data refresh in all hooks
+      window.dispatchEvent(new CustomEvent('refreshData'));
+      
+      // Show success message
+      alert('✅ Datos sincronizados correctamente');
       
     } catch (err) {
       console.error('Error during manual sync:', err);
-      setSyncing(false);
       alert('Error al sincronizar datos');
+    } finally {
+      setSyncing(false);
     }
   };
 

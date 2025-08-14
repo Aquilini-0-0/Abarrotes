@@ -107,6 +107,14 @@ export function useExpenses() {
 
   useEffect(() => {
     fetchExpenses();
+    
+    // Listen for manual sync events
+    const handleRefresh = () => {
+      fetchExpenses();
+    };
+    
+    window.addEventListener('refreshData', handleRefresh);
+    return () => window.removeEventListener('refreshData', handleRefresh);
   }, []);
 
   return {

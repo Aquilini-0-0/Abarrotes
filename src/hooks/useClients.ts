@@ -121,6 +121,14 @@ export function useClients() {
 
   useEffect(() => {
     fetchClients();
+    
+    // Listen for manual sync events
+    const handleRefresh = () => {
+      fetchClients();
+    };
+    
+    window.addEventListener('refreshData', handleRefresh);
+    return () => window.removeEventListener('refreshData', handleRefresh);
   }, []);
 
   return {
