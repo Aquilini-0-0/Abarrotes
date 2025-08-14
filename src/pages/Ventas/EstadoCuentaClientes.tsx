@@ -512,6 +512,127 @@ export function EstadoCuentaClientes() {
                   Cerrar
                 </button>
                 <button
+                  onClick={() => {
+                    // Export individual client statement
+                    if (selectedCliente) {
+                      const clientSales = sales.filter(s => s.client_id === selectedCliente.cliente_id);
+                      
+                      const htmlContent = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                          <meta charset="UTF-8">
+                          <title>Estado de Cuenta - ${selectedCliente.cliente_nombre}</title>
+                          <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; }
+                            .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3B82F6; padding-bottom: 15px; }
+                            .title { font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
+                            .subtitle { font-size: 16px; color: #6B7280; margin-bottom: 10px; }
+                            .date { font-size: 12px; color: #6B7280; }
+                            .client-info { background-color: #EFF6FF; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3B82F6; }
+                            .credit-summary { background-color: #F0FDF4; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #10B981; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                            th { background-color: #3B82F6; color: white; padding: 12px 8px; text-align: left; font-weight: bold; }
+                            td { padding: 8px; border-bottom: 1px solid #E5E7EB; }
+                            tr:nth-child(even) { background-color: #F9FAFB; }
+                            .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #6B7280; border-top: 2px solid #3B82F6; padding-top: 15px; }
+                            .total { font-weight: bold; color: #059669; }
+                            .debt { font-weight: bold; color: #DC2626; }
+                            .status { padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; }
+                            .status-good { background-color: #D1FAE5; color: #065F46; }
+                            .status-warning { background-color: #FEF3C7; color: #92400E; }
+                            .status-danger { background-color: #FEE2E2; color: #991B1B; }
+                          </style>
+                        </head>
+                        <body>
+                          <div class="header">
+                            <div class="title">ESTADO DE CUENTA INDIVIDUAL</div>
+                            <div class="subtitle">${selectedCliente.cliente_nombre}</div>
+                            <div class="date">Generado el ${new Date().toLocaleString('es-MX')}</div>
+                          </div>
+                          
+                          <div class="client-info">
+                            <h3><strong>Información del Cliente:</strong></h3>
+                            <p><strong>Nombre:</strong> ${selectedCliente.cliente_nombre}</p>
+                            <p><strong>RFC:</strong> ${selectedCliente.rfc}</p>
+                            <p><strong>Última Compra:</strong> ${selectedCliente.ultima_compra ? new Date(selectedCliente.ultima_compra).toLocaleDateString('es-MX') : 'N/A'}</p>
+                            <p><strong>Días de Vencimiento:</strong> ${selectedCliente.dias_vencimiento} días</p>
+                          </div>
+                          
+                          <div class="credit-summary">
+                            <h3><strong>Resumen Crediticio:</strong></h3>
+                            <p><strong>Límite de Crédito:</strong> $${selectedCliente.limite_credito.toLocaleString('es-MX')}</p>
+                            <p><strong>Saldo Actual:</strong> <span class="${selectedCliente.saldo_actual > 0 ? 'debt' : 'total'}">$${selectedCliente.saldo_actual.toLocaleString('es-MX')}</span></p>
+                            <p><strong>Crédito Disponible:</strong> <span class="${selectedCliente.credito_disponible > 0 ? 'total' : 'debt'}">$${selectedCliente.credito_disponible.toLocaleString('es-MX')}</span></p>
+                            <p><strong>Estatus:</strong> <span class="status ${
+                              selectedCliente.estatus === 'al_corriente' ? 'status-good' : 
+                              selectedCliente.estatus === 'vencido' ? 'status-warning' : 'status-danger'
+                            }">${
+                              selectedCliente.estatus === 'al_corriente' ? 'Al Corriente' :
+                              selectedCliente.estatus === 'vencido' ? 'Vencido' : 'Límite Excedido'
+                            }</span></p>
+                          </div>
+                          
+                          <h3>Historial de Movimientos:</h3>
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Fecha</th>
+                                <th>Folio</th>
+                                <th>Concepto</th>
+                                <th>Importe</th>
+                                <th>Estado</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              ${clientSales.map(sale => `
+                                <tr>
+                                  <td>${new Date(sale.date).toLocaleDateString('es-MX')}</td>
+                                  <td>#${sale.id.slice(-6).toUpperCase()}</td>
+                                  <td>Venta de mercancía</td>
+                                  <td class="total">$${sale.total.toLocaleString('es-MX')}</td>
+                                  <td>
+                                    <span class="status ${sale.status === 'paid' ? 'status-good' : 'status-warning'}">
+                                      ${sale.status === 'paid' ? 'Pagado' : 'Pendiente'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              `).join('')}
+                              ${clientSales.length === 0 ? '<tr><td colspan="5" style="text-align: center; color: #6B7280;">No hay movimientos registrados</td></tr>' : ''}
+                            </tbody>
+                          </table>
+                          
+                          <div class="footer">
+                            <p><strong>Sistema ERP DURAN</strong> - Estado de Cuenta Individual</p>
+                            <p>Cliente: ${selectedCliente.cliente_nombre} | RFC: ${selectedCliente.rfc}</p>
+                            <p>Documento generado automáticamente el ${new Date().toLocaleString('es-MX')}</p>
+                          </div>
+                        </body>
+                        </html>
+                      `;
+                      
+                      const blob = new Blob([htmlContent], { type: 'text/html' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `estado_cuenta_${selectedCliente.cliente_nombre.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      
+                      // Also open print dialog
+                      const printWindow = window.open('', '_blank');
+                      if (printWindow) {
+                        printWindow.document.write(htmlContent);
+                        printWindow.document.close();
+                        setTimeout(() => {
+                          printWindow.print();
+                          printWindow.close();
+                        }, 250);
+                      }
+                      
+                      alert('✅ Estado de cuenta individual exportado exitosamente');
+                    }
+                  }}
                   className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
                   <Download size={16} />

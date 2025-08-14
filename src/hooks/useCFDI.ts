@@ -238,6 +238,14 @@ export function useCFDI() {
 
   useEffect(() => {
     fetchCFDI();
+    
+    // Listen for manual sync events
+    const handleRefresh = () => {
+      fetchCFDI();
+    };
+    
+    window.addEventListener('refreshData', handleRefresh);
+    return () => window.removeEventListener('refreshData', handleRefresh);
   }, []);
 
   return {

@@ -113,6 +113,14 @@ export function useInventoryMovements() {
 
   useEffect(() => {
     fetchMovements();
+    
+    // Listen for manual sync events
+    const handleRefresh = () => {
+      fetchMovements();
+    };
+    
+    window.addEventListener('refreshData', handleRefresh);
+    return () => window.removeEventListener('refreshData', handleRefresh);
   }, []);
 
   return {

@@ -109,24 +109,29 @@ export function Header() {
   const handleManualSync = async () => {
     setSyncing(true);
     try {
+      // Refresh notifications
       await fetchNotifications();
       
-      // Dispatch sync event to all components
+      // Dispatch refresh event to all data hooks
       window.dispatchEvent(new CustomEvent('manualSync', {
         detail: { timestamp: Date.now() }
       }));
       
-      // Trigger data refresh in all hooks
       window.dispatchEvent(new CustomEvent('refreshData'));
       
-      // Show success message
-      alert('✅ Datos sincronizados correctamente');
+      // Wait a moment for all hooks to refresh
+      setTimeout(() => {
+        alert('✅ Datos sincronizados correctamente');
+      }, 1000);
       
     } catch (err) {
       console.error('Error during manual sync:', err);
       alert('Error al sincronizar datos');
     } finally {
-      setSyncing(false);
+      // Stop syncing animation after a delay
+      setTimeout(() => {
+        setSyncing(false);
+      }, 1500);
     }
   };
 

@@ -208,6 +208,14 @@ export function useCatalogos() {
 
   useEffect(() => {
     fetchCatalogos();
+    
+    // Listen for manual sync events
+    const handleRefresh = () => {
+      fetchCatalogos();
+    };
+    
+    window.addEventListener('refreshData', handleRefresh);
+    return () => window.removeEventListener('refreshData', handleRefresh);
   }, []);
 
   return {
