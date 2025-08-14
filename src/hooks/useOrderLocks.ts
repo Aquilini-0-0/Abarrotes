@@ -40,8 +40,6 @@ export function useOrderLocks() {
       cleanupUserLocks().catch(err => {
         console.warn('Lock cleanup failed during component unmount (non-critical):', err);
       });
-        console.warn('Lock cleanup failed during component unmount (non-critical):', err);
-      });
     };
   }, [sessionId]);
 
@@ -146,21 +144,9 @@ export function useOrderLocks() {
       return;
     }
 
-    // Skip cleanup if page is being unloaded to prevent "Failed to fetch" errors
-    if (document.visibilityState === 'hidden') {
-      console.warn('Skipping lock cleanup due to page unload - locks will expire automatically');
-      return;
-    }
-
     if (!user || !user.id || !sessionId) return;
 
     try {
-      // Check if Supabase is available before attempting cleanup
-      if (!supabase) {
-        console.warn('Supabase client not available for lock cleanup');
-        return;
-      }
-
       // Check if Supabase is available before attempting cleanup
       if (!supabase) {
         console.warn('Supabase client not available for lock cleanup');
@@ -183,20 +169,10 @@ export function useOrderLocks() {
       } else {
         console.warn('Could not cleanup locks (non-critical):', err instanceof Error ? err.message : 'Unknown error');
       }
-      if (err instanceof TypeError && err.message.includes('fetch')) {
-        console.warn('Network error during lock cleanup (non-critical) - continuing without cleanup');
-      } else {
-        console.warn('Could not cleanup locks (non-critical):', err instanceof Error ? err.message : 'Unknown error');
-      }
     }
   };
 
   const cleanExpiredLocks = async () => {
-    if (!supabase) {
-      console.warn('Supabase client not available for expired lock cleanup');
-      return;
-    }
-
     if (!supabase) {
       console.warn('Supabase client not available for expired lock cleanup');
       return;
@@ -214,11 +190,6 @@ export function useOrderLocks() {
       await fetchLocks();
     } catch (err) {
       // Handle network errors gracefully
-      if (err instanceof TypeError && err.message.includes('fetch')) {
-        console.warn('Network error during expired lock cleanup (non-critical) - continuing without cleanup');
-      } else {
-        console.warn('Could not clean expired locks (non-critical):', err instanceof Error ? err.message : 'Unknown error');
-      }
       if (err instanceof TypeError && err.message.includes('fetch')) {
         console.warn('Network error during expired lock cleanup (non-critical) - continuing without cleanup');
       } else {
@@ -251,8 +222,6 @@ export function useOrderLocks() {
   useEffect(() => {
     const interval = setInterval(() => {
       cleanExpiredLocks().catch(err => {
-        console.warn('Periodic expired lock cleanup failed (non-critical):', err);
-      });
         console.warn('Periodic expired lock cleanup failed (non-critical):', err);
       });
     }, 60000);
