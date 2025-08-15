@@ -325,7 +325,7 @@ export function POSLayout() {
   const handleSaveOrder = async () => {
     if (currentOrder) {
       try {
-        const savedOrder = await saveOrder({ ...currentOrder, status: 'draft' });
+        const savedOrder = await saveOrder({ ...currentOrder, status: 'pending' });
         markTabAsSaved(activeTabId);
         closeTab(activeTabId); // Close the tab after saving
         alert('Pedido guardado');
@@ -359,7 +359,7 @@ export function POSLayout() {
     // Execute the pending action
     if (pendingAction === 'save') {
       try {
-        const savedOrder = await saveOrder({ ...currentOrder!, status: 'draft' });
+        const savedOrder = await saveOrder({ ...currentOrder!, status: 'pending' });
         markTabAsSaved(activeTabId);
         alert('Pedido guardado con autorización de administrador');
       } catch (err) {
