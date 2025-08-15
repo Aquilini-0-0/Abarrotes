@@ -459,7 +459,8 @@ export function usePOS() {
       }
 
       // Update client balance if credit sale
-      if (paymentData.method === 'credit' && orderData.client_id) {
+      // Only update client balance for non-credit payments (when actually paying down debt)
+      if (paymentData.method !== 'credit' && orderData.client_id) {
         const { data: client } = await supabase
           .from('clients')
           .select('balance')
@@ -467,9 +468,10 @@ export function usePOS() {
           .single();
 
         if (client) {
+          // Reduce client balance when they make a payment
           await supabase
             .from('clients')
-            .update({ balance: client.balance + paymentData.amount })
+            .update({ balance: Math.max(0, client.balance - paymentData.amount) })
             .eq('id', orderData.client_id);
         }
       }

@@ -272,6 +272,49 @@ export function POSLayout() {
         const savedOrder = await saveOrder(currentOrder);
         
         // Now process the payment
+      // Handle credit sales differently - don't process payment, just mark as credit
+      if (paymentData.method === 'credit') {
+        // Update the saved order to mark it as credit
+        await supabase
+          .from('sales')
+          .update({
+            status: 'pending',
+            amount_paid: 0,
+            remaining_balance: currentOrder.total
+          })
+          .eq('id', savedOrder.id);
+
+        // Update client balance for credit sale
+        if (currentOrder.client_id) {
+          const { data: client } = await supabase
+            .from('clients')
+            .select('balance')
+            .eq('id', currentOrder.client_id)
+            .single();
+
+          if (client) {
+            await supabase
+              .from('clients')
+              .update({ balance: client.balance + currentOrder.total })
+              .eq('id', currentOrder.client_id);
+          }
+        }
+        
+        setLastOrder({
+          id: savedOrder.id,
+          client_name: currentOrder.client_name,
+          total: currentOrder.total,
+          items_count: currentOrder.items.length,
+          date: new Date().toISOString(),
+          status: 'pending'
+        });
+        
+        markTabAsSaved(activeTabId);
+        closeTab(activeTabId);
+        setShowPaymentModal(false);
+        alert('✅ Pedido guardado como CRÉDITO - Estado: PENDIENTE');
+      } else {
+        // For non-credit payments, process the payment normally
         const paymentAmount = paymentData.method === 'mixed' 
           ? paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer + paymentData.breakdown.credit
           : currentOrder.total;
@@ -292,13 +335,13 @@ export function POSLayout() {
         });
         
         markTabAsSaved(activeTabId);
-        closeTab(activeTabId); // Close the tab after payment
+        closeTab(activeTabId);
         setShowPaymentModal(false);
         
         if (result.newStatus === 'paid') {
-          alert('✅ Pedido procesado exitosamente - Marcado como PAGADO');
+          alert('✅ Pago procesado exitosamente - Pedido marcado como PAGADO');
         } else {
-          alert('✅ Pedido guardado como CRÉDITO - Estado: PENDIENTE');
+          alert(`✅ Abono procesado exitosamente - Saldo restante: $${result.newRemainingBalance.toFixed(2)}`);
         }
       }
     } catch (err) {
