@@ -32,8 +32,6 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
     setIsClosing(true);
     try {
       await onCloseRegister(closingAmount);
-      // Reset cash register state to allow opening a new one
-      setCashRegister(null);
       onClose();
     } catch (err) {
       console.error('Error closing register:', err);
