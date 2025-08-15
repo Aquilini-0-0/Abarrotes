@@ -316,7 +316,7 @@ export function usePOS() {
             client_name: order.client_name,
             date: order.date,
             total: order.total,
-            status: order.status || 'pending',
+            status: order.status || 'draft',
             amount_paid: 0,
             remaining_balance: order.total,
             created_by: order.created_by

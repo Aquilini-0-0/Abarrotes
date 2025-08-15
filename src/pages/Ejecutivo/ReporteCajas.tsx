@@ -51,6 +51,7 @@ export function ReporteCajas() {
           *,
           users!cash_registers_user_id_fkey(name)
         `)
+        .eq('user_id', user?.id)
         .order('opened_at', { ascending: false });
 
       if (error) throw error;
