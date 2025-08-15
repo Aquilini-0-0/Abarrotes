@@ -41,7 +41,7 @@ export interface Database {
           line: string;
           subline: string;
           unit: string;
-          stock: number;
+          stock: number; // Now supports decimal values
           cost: number;
           price1: number;
           price2: number;
@@ -59,7 +59,7 @@ export interface Database {
           line: string;
           subline?: string;
           unit?: string;
-          stock?: number;
+          stock?: number; // Now supports decimal values
           cost?: number;
           price1?: number;
           price2?: number;
@@ -77,7 +77,7 @@ export interface Database {
           line?: string;
           subline?: string;
           unit?: string;
-          stock?: number;
+          stock?: number; // Now supports decimal values
           cost?: number;
           price1?: number;
           price2?: number;
@@ -282,7 +282,7 @@ export interface Database {
           product_id: string;
           product_name: string;
           type: 'entrada' | 'salida' | 'ajuste' | 'merma';
-          quantity: number;
+          quantity: number; // Now supports decimal values
           date: string;
           reference: string;
           user_name: string;
@@ -294,7 +294,7 @@ export interface Database {
           product_id: string;
           product_name: string;
           type: 'entrada' | 'salida' | 'ajuste' | 'merma';
-          quantity?: number;
+          quantity?: number; // Now supports decimal values
           date?: string;
           reference?: string;
           user_name: string;
@@ -306,7 +306,7 @@ export interface Database {
           product_id?: string;
           product_name?: string;
           type?: 'entrada' | 'salida' | 'ajuste' | 'merma';
-          quantity?: number;
+          quantity?: number; // Now supports decimal values
           date?: string;
           reference?: string;
           user_name?: string;

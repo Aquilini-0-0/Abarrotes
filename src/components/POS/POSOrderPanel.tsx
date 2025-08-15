@@ -180,10 +180,11 @@ export function POSOrderPanel({
                   <td className="p-1 sm:p-2 lg:p-3">
                     <input
                       type="number"
+                      step="0.001"
                       value={item.quantity}
-                      onChange={(e) => onUpdateQuantity(item.id, parseInt(e.target.value) || 1)}
+                      onChange={(e) => onUpdateQuantity(item.id, parseFloat(e.target.value) || 1)}
                       className="w-full bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded text-center text-[10px] sm:text-xs lg:text-sm focus:outline-none focus:ring-1 sm:focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                      min="1"
+                      min="0.001"
                     />
                   </td>
                   <td className="p-1 sm:p-2 lg:p-3 text-orange-600 font-semibold text-[10px] sm:text-xs lg:text-sm">P{item.price_level}</td>
@@ -202,7 +203,7 @@ export function POSOrderPanel({
                   <td className="p-1 sm:p-2 lg:p-3">
                     <div className="flex items-center justify-center space-x-1">
                       <button
-                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => onUpdateQuantity(item.id, parseFloat((item.quantity + 1).toFixed(3)))}
                         className="bg-green-600 hover:bg-green-700 text-white p-0.5 sm:p-1 rounded shadow-sm transition-colors"
                         title="Añadir"
                       >

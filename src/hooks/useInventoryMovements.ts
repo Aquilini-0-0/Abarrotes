@@ -77,19 +77,19 @@ export function useInventoryMovements() {
       // Update the product stock
       const { error: updateError } = await supabase
         .from('products')
-        .update({ stock: Math.max(0, newStock) })
+        .update({ stock: Math.max(0, parseFloat(newStock.toFixed(3))) })
         .eq('id', movementData.product_id);
 
       if (updateError) throw updateError;
 
-      console.log(`✅ Stock updated for product ${movementData.product_name}: ${product.stock} → ${Math.max(0, newStock)}`);
+      console.log(`✅ Stock updated for product ${movementData.product_name}: ${product.stock} → ${Math.max(0, parseFloat(newStock.toFixed(3)))}`);
       
       // Force refresh of products data
       window.dispatchEvent(new CustomEvent('stockUpdated', { 
         detail: { 
           productId: movementData.product_id, 
           oldStock: product.stock, 
-          newStock: Math.max(0, newStock) 
+          newStock: Math.max(0, parseFloat(newStock.toFixed(3)))
         } 
       }));
 

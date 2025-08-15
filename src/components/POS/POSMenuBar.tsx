@@ -373,9 +373,15 @@ export function POSMenuBar({
           {cashRegister && (
             <div className="hidden md:flex items-center space-x-1 sm:space-x-2 bg-green-50 border border-green-200 px-1 sm:px-2 py-1 rounded text-xs sm:text-sm">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-green-700 font-medium">
-                Caja Abierta: ${cashRegister.opening_amount.toLocaleString('es-MX')}
-              </span>
+              {cashRegister.status === 'open' ? (
+                <span className="text-green-700 font-medium">
+                  Caja Abierta: ${cashRegister.opening_amount.toLocaleString('es-MX')}
+                </span>
+              ) : (
+                <span className="text-gray-700 font-medium">
+                  Caja Cerrada
+                </span>
+              )}
             </div>
           )}
 

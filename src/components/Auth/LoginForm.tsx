@@ -32,12 +32,20 @@ export function LoginForm() {
     console.log(selectedSystem);
 
     if (!success) {
-      setError('Email o contraseña incorrectos. Si es la primera vez que usas el sistema, haz clic en "Crear Usuarios de Prueba" primero.');
+      if (selectedSystem === 'ERS') {
+        setError('Acceso denegado. Solo usuarios con rol de Administrador pueden acceder al ERS. Si es la primera vez que usas el sistema, haz clic en "Crear Usuarios de Prueba" primero.');
+      } else {
+        setError('Email o contraseña incorrectos. Si es la primera vez que usas el sistema, haz clic en "Crear Usuarios de Prueba" primero.');
+      }
     }
   } catch (err) {
     console.error('Login error:', err);
     if (err instanceof Error && err.message.includes('Invalid login credentials')) {
-      setError('Credenciales inválidas. Si es la primera vez que usas el sistema, necesitas crear los usuarios de prueba primero.');
+      if (selectedSystem === 'ERS') {
+        setError('Credenciales inválidas o acceso denegado. Solo administradores pueden acceder al ERS. Si es la primera vez que usas el sistema, necesitas crear los usuarios de prueba primero.');
+      } else {
+        setError('Credenciales inválidas. Si es la primera vez que usas el sistema, necesitas crear los usuarios de prueba primero.');
+      }
     } else {
       setError('Error al iniciar sesión. Verifica tu conexión a internet.');
     }

@@ -600,7 +600,8 @@ export function usePOS() {
 
       if (error) throw error;
 
-      setCashRegister(data);
+      // Clear cash register to allow opening a new one
+      setCashRegister(null);
       
       // Trigger automatic sync
       if (window.triggerSync) {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Search, Eye, Trash2, CreditCard, Edit } from 'lucide-react';
 import { POSOrder } from '../../types/pos';
+import { useAuth } from '../../context/AuthContext';
 
 interface POSOrdersModalProps {
   orders: POSOrder[];
@@ -10,18 +11,24 @@ interface POSOrdersModalProps {
 }
 
 export function POSOrdersModal({ orders, onClose, onSelectOrder, onEditOrder }: POSOrdersModalProps) {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [userFilter, setUserFilter] = useState<'all' | 'mine'>('all');
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrderDetail, setSelectedOrderDetail] = useState<POSOrder | null>(null);
 
-  const filteredOrders = orders.filter(order => {
+  let filteredOrders = orders.filter(order => {
     const matchesSearch = order.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !statusFilter || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
+  // Apply user filter
+  if (userFilter === 'mine') {
+    filteredOrders = filteredOrders.filter(order => order.created_by === user?.id);
+  }
   const handleViewDetails = (order: POSOrder) => {
     setSelectedOrderDetail(order);
     setShowDetailModal(true);
@@ -59,7 +66,7 @@ return (
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
           <div>
             <label className="block text-gray-600 text-xs sm:text-sm mb-1">Buscar</label>
             <div className="relative">
@@ -89,7 +96,18 @@ return (
             </select>
           </div>
 
-          <div className="flex items-end sm:col-span-2 lg:col-span-1">
+          <div>
+            <label className="block text-gray-600 text-xs sm:text-sm mb-1">Usuario</label>
+            <select
+              value={userFilter}
+              onChange={(e) => setUserFilter(e.target.value as 'all' | 'mine')}
+              className="w-full bg-gray-100 text-gray-900 px-2 sm:px-3 py-1 sm:py-2 rounded text-xs sm:text-sm"
+            >
+              <option value="all">Todos los usuarios</option>
+              <option value="mine">Solo mis pedidos</option>
+            </select>
+          </div>
+          <div className="flex items-end">
             <div className="text-gray-600 text-xs sm:text-sm">
               Mostrando {filteredOrders.length} de {orders.length} pedidos
             </div>

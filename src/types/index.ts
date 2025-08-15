@@ -13,7 +13,7 @@ export interface Product {
   line: string;
   subline: string;
   unit: string;
-  stock: number;
+  stock: number; // Now supports decimal values
   cost: number;
   price1?: number;
   price2?: number;

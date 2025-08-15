@@ -142,17 +142,18 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
                 </label>
                 <input
                   type="number"
+                  step="0.001"
                   value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                  onChange={(e) => setQuantity(parseFloat(e.target.value) || 1)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  min="1"
+                  min="0.001"
                   max={product.stock}
                 />
                 {quantity > product.stock && (
                   <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-red-600 text-sm flex items-center">
                       <AlertTriangle className="h-4 w-4 mr-1" />
-                      Cantidad excede el stock disponible ({product.stock} unidades)
+                      Cantidad excede el stock disponible ({product.stock % 1 === 0 ? product.stock.toString() : product.stock.toFixed(3)} unidades)
                     </p>
                   </div>
                 )}

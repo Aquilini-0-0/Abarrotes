@@ -208,21 +208,19 @@ export function POSProductPanel({
                         
                     </td>
                     <td className="p-1 sm:p-2 lg:p-3 text-right">
-<td className="p-1 sm:p-2 lg:p-3 text-right">
-  <span
-    className={`inline-flex items-center justify-center w-10 sm:w-12 lg:w-14 h-6 sm:h-7 lg:h-8 
-                rounded-full text-xs sm:text-sm font-semibold shadow 
-                ${
-                  isLowStock
-                    ? 'bg-red-500 text-white'
-                    : product.stock > 50
-                      ? 'bg-green-500 text-white'
-                      : 'bg-yellow-400 text-gray-800'
-                }`}
-  >
-    {product.stock}
-  </span>
-</td>
+                      <span
+                        className={`inline-flex items-center justify-center w-10 sm:w-12 lg:w-14 h-6 sm:h-7 lg:h-8 
+                                    rounded-full text-xs sm:text-sm font-semibold shadow 
+                                    ${
+                                      isLowStock
+                                        ? 'bg-red-500 text-white'
+                                        : product.stock > 50
+                                          ? 'bg-green-500 text-white'
+                                          : 'bg-yellow-400 text-gray-800'
+                                    }`}
+                      >
+                        {product.stock % 1 === 0 ? product.stock.toString() : product.stock.toFixed(2)}
+                      </span>
 
 
 

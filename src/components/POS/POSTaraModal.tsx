@@ -55,11 +55,11 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
         alert('Debe ingresar los kilos para venta sin tara');
         return;
       }
-      finalQuantity = pesoBruto; // Use the kilos entered as quantity
+      finalQuantity = parseFloat(pesoBruto.toFixed(3)); // Support decimal quantities
       finalUnitPrice = precioKilo; // Price per kilo
     } else {
       // CON TARA: Use peso neto and price per kilo
-      finalQuantity = pesoNeto;
+      finalQuantity = parseFloat(pesoNeto.toFixed(3)); // Support decimal quantities
       finalUnitPrice = precioKilo;
     }
     
@@ -70,7 +70,7 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
 
     // Validación de stock
     if (finalQuantity > product.stock) {
-      alert(`Stock insuficiente. Disponible: ${product.stock} ${product.unit}, Solicitado: ${finalQuantity.toFixed(2)} ${product.unit}`);
+      alert(`Stock insuficiente. Disponible: ${product.stock.toFixed(3)} ${product.unit}, Solicitado: ${finalQuantity.toFixed(3)} ${product.unit}`);
       return;
     }
 

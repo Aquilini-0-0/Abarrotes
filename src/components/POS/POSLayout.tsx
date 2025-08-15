@@ -200,6 +200,7 @@ export function POSLayout() {
   const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
     if (currentOrder) {
       try {
+        // Ensure quantity is properly formatted for decimal support
         const updatedOrder = updateItemQuantity(currentOrder, itemId, newQuantity);
         updateActiveOrder(updatedOrder);
       } catch (err) {

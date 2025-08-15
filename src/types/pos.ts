@@ -5,7 +5,7 @@ export interface POSProduct {
   line: string;
   subline: string;
   unit: string;
-  stock: number;
+  stock: number; // Now supports decimal values
   prices: {
     price1: number;
     price2: number;
@@ -30,7 +30,7 @@ export interface POSOrderItem {
   product_id: string;
   product_name: string;
   product_code: string;
-  quantity: number;
+  quantity: number; // Now supports decimal values
   price_level: 1 | 2 | 3 | 4 | 5;
   unit_price: number;
   total: number;
