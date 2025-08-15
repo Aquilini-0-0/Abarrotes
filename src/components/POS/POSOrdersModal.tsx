@@ -91,8 +91,6 @@ return (
               <option value="">Todos</option>
               <option value="pending">Sin Cobrar</option>
               <option value="paid">Pagado</option>
-              <option value="draft">Borrador</option>
-              <option value="cancelled">Cancelado</option>
             </select>
           </div>
 
