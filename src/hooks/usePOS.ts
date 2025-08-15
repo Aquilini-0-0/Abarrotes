@@ -365,11 +365,6 @@ export function usePOS() {
     selectedVale?: any;
   }) => {
     try {
-      // Skip payment processing for credit sales - they should remain pending
-      if (paymentData.method === 'credit') {
-        return { newAmountPaid: 0, newRemainingBalance: order.total, newStatus: 'pending' };
-      }
-
       // Get current order data
       const { data: orderData, error: orderError } = await supabase
         .from('sales')
@@ -388,95 +383,131 @@ export function usePOS() {
 
       if (orderError) throw orderError;
 
-      // Create payment record
-      const { error: paymentError } = await supabase
-        .from('payments')
-        .insert({
-          sale_id: orderId,
-          amount: paymentData.amount,
-          payment_method: paymentData.method,
-          reference: paymentData.reference || `PAY-${Date.now().toString().slice(-6)}`,
-          created_by: user?.id
-        });
+      // Handle credit sales differently
+      if (paymentData.method === 'credit') {
+        // Update order to mark as credit (pending status)
+        const { error: updateError } = await supabase
+          .from('sales')
+          .update({
+            status: 'pending',
+            amount_paid: 0,
+            remaining_balance: orderData.total
+          })
+          .eq('id', orderId);
 
-      if (paymentError) throw paymentError;
+        if (updateError) throw updateError;
 
-      // Calculate new totals
-      const newAmountPaid = (orderData.amount_paid || 0) + paymentData.amount;
-      const newRemainingBalance = Math.max(0, orderData.total - newAmountPaid);
-      const newStatus = newRemainingBalance <= 0.01 ? 'paid' : 'pending';
-
-      // Update order with payment info
-      const { error: updateError } = await supabase
-        .from('sales')
-        .update({
-          amount_paid: newAmountPaid,
-          remaining_balance: newRemainingBalance,
-          status: newStatus
-        })
-        .eq('id', orderId);
-
-      if (updateError) throw updateError;
-
-      // If fully paid, create inventory movements and update stock
-      if (newStatus === 'paid') {
-        // Handle vales payment
-        if (paymentData.method === 'vales' && paymentData.selectedVale) {
-          // Mark vale as used
-          await supabase
-            .from('vales_devolucion')
-            .update({
-              estatus: 'USADO',
-              disponible: 0
-            })
-            .eq('id', paymentData.selectedVale.id);
-        }
-        
-        for (const item of orderData.sale_items) {
-          // Create inventory movement
-          await supabase
-            .from('inventory_movements')
-            .insert({
-              product_id: item.product_id,
-              product_name: item.product_name,
-              type: 'salida',
-              quantity: item.quantity,
-              date: orderData.date,
-              reference: `POS-${orderId.slice(-6)}`,
-              user_name: user?.name || 'POS User',
-              created_by: user?.id
-            });
-
-          // Update product stock
-          const { data: product } = await supabase
-            .from('products')
-            .select('stock')
-            .eq('id', item.product_id)
+        // Update client balance for credit sale
+        if (orderData.client_id) {
+          const { data: client } = await supabase
+            .from('clients')
+            .select('balance')
+            .eq('id', orderData.client_id)
             .single();
 
-          if (product) {
+          if (client) {
             await supabase
-              .from('products')
-              .update({ stock: Math.max(0, product.stock - item.quantity) })
-              .eq('id', item.product_id);
+              .from('clients')
+              .update({ balance: client.balance + orderData.total })
+              .eq('id', orderData.client_id);
           }
         }
-      }
 
-      // Update client balance if credit sale
-      if (paymentData.method === 'credit' && orderData.client_id) {
-        const { data: client } = await supabase
-          .from('clients')
-          .select('balance')
-          .eq('id', orderData.client_id)
-          .single();
+        return { newAmountPaid: 0, newRemainingBalance: orderData.total, newStatus: 'pending' };
+      } else {
+        // For non-credit payments, process normally
+        // Create payment record
+        const { error: paymentError } = await supabase
+          .from('payments')
+          .insert({
+            sale_id: orderId,
+            amount: paymentData.amount,
+            payment_method: paymentData.method,
+            reference: paymentData.reference || `PAY-${Date.now().toString().slice(-6)}`,
+            created_by: user?.id
+          });
 
-        if (client) {
-          await supabase
-            .from('clients')
-            .update({ balance: client.balance + paymentData.amount })
-            .eq('id', orderData.client_id);
+        if (paymentError) throw paymentError;
+
+        // Calculate new totals
+        const newAmountPaid = (orderData.amount_paid || 0) + paymentData.amount;
+        const newRemainingBalance = Math.max(0, orderData.total - newAmountPaid);
+        const newStatus = newRemainingBalance <= 0.01 ? 'paid' : 'pending';
+
+        // Update order with payment info
+        const { error: updateError } = await supabase
+          .from('sales')
+          .update({
+            amount_paid: newAmountPaid,
+            remaining_balance: newRemainingBalance,
+            status: newStatus
+          })
+          .eq('id', orderId);
+
+        if (updateError) throw updateError;
+
+        // If fully paid, create inventory movements and update stock
+        if (newStatus === 'paid') {
+          // Handle vales payment
+          if (paymentData.method === 'vales' && paymentData.selectedVale) {
+            // Mark vale as used
+            await supabase
+              .from('vales_devolucion')
+              .update({
+                estatus: 'USADO',
+                disponible: 0
+              })
+              .eq('id', paymentData.selectedVale.id);
+          }
+          
+          for (const item of orderData.sale_items) {
+            // Create inventory movement
+            await supabase
+              .from('inventory_movements')
+              .insert({
+                product_id: item.product_id,
+                product_name: item.product_name,
+                type: 'salida',
+                quantity: item.quantity,
+                date: orderData.date,
+                reference: `POS-${orderId.slice(-6)}`,
+                user_name: user?.name || 'POS User',
+                created_by: user?.id
+              });
+
+            // Update product stock
+            const { data: product } = await supabase
+              .from('products')
+              .select('stock')
+              .eq('id', item.product_id)
+              .single();
+
+            if (product) {
+              await supabase
+                .from('products')
+                .update({ stock: Math.max(0, product.stock - item.quantity) })
+                .eq('id', item.product_id);
+            }
+          }
         }
+
+        // Update client balance for non-credit payments (reduce balance)
+        if (paymentData.method !== 'credit' && orderData.client_id) {
+          const { data: client } = await supabase
+            .from('clients')
+            .select('balance')
+            .eq('id', orderData.client_id)
+            .single();
+
+          if (client) {
+            await supabase
+              .from('clients')
+              .update({ balance: Math.max(0, client.balance - paymentData.amount) })
+              .eq('id', orderData.client_id);
+          }
+        }
+
+        return { newAmountPaid, newRemainingBalance, newStatus };
       }
 
       await fetchOrders();
@@ -486,7 +517,6 @@ export function usePOS() {
         window.triggerSync();
       }
       
-      return { newAmountPaid, newRemainingBalance, newStatus };
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error processing payment');
     }
