@@ -479,18 +479,29 @@ export function usePOS() {
             const { data: product } = await supabase
               .from('products')
               .select('stock')
-             // Update vale balance - only mark as used if balance reaches 0
-             const newValeBalance = paymentData.selectedVale.disponible - paymentData.amount;
-             const newValeStatus = newValeBalance <= 0 ? 'USADO' : 'HABILITADO';
-             
-             await supabase
-               .from('vales_devolucion')
-               .update({
-                 disponible: Math.max(0, newValeBalance),
-                 estatus: newValeStatus
-               })
-               .eq('id', paymentData.selectedVale.id);
+              .eq('id', item.product_id)
+              .single();
+
+            if (product) {
+              await supabase
+                .from('products')
+                .update({ stock: product.stock - item.quantity })
+                .eq('id', item.product_id);
             }
+          }
+
+          // Update vale balance - only mark as used if balance reaches 0
+          if (paymentData.method === 'vales' && paymentData.selectedVale) {
+            const newValeBalance = paymentData.selectedVale.disponible - paymentData.amount;
+            const newValeStatus = newValeBalance <= 0 ? 'USADO' : 'HABILITADO';
+            
+            await supabase
+              .from('vales_devolucion')
+              .update({
+                disponible: Math.max(0, newValeBalance),
+                estatus: newValeStatus
+              })
+              .eq('id', paymentData.selectedVale.id);
           }
         }
 
