@@ -253,13 +253,13 @@ Generado el ${new Date().toLocaleString('es-MX')}
       key: 'apertura', 
       label: 'Apertura', 
       sortable: true,
-      render: (value: number) => \`$${value.toLocaleString('es-MX')}`
+      render: (value: number) => '$' + value.toLocaleString('es-MX')
     },
     { 
       key: 'cierre', 
       label: 'Cierre', 
       sortable: true,
-      render: (value: number) => \`$${value.toLocaleString('es-MX')}`
+      render: (value: number) => '$' + value.toLocaleString('es-MX')
     },
     { 
       key: 'total_ventas', 
