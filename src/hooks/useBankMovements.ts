@@ -25,7 +25,7 @@ export function useBankMovements() {
       const { data, error } = await supabase
         .from('bank_movements')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('fecha', { ascending: false });
 
       if (error) throw error;
 

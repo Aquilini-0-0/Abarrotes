@@ -34,7 +34,7 @@ export function useCatalogos() {
       const { data: conceptosData, error: conceptosError } = await supabase
         .from('expense_concepts')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('nombre', { ascending: true });
 
       if (conceptosError) throw conceptosError;
 
@@ -42,7 +42,7 @@ export function useCatalogos() {
       const { data: cuentasData, error: cuentasError } = await supabase
         .from('bank_accounts')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('banco', { ascending: true });
 
       if (cuentasError) throw cuentasError;
 

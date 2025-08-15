@@ -13,7 +13,7 @@ export function useSuppliers() {
       const { data, error } = await supabase
         .from('suppliers')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('name', { ascending: true });
 
       if (error) throw error;
 

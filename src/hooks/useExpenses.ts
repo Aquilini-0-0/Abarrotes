@@ -13,7 +13,7 @@ export function useExpenses() {
       const { data, error } = await supabase
         .from('expenses')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('date', { ascending: false });
 
       if (error) throw error;
 

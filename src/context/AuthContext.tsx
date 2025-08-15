@@ -31,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      setLoading(true);
       const { user: authUser } = await signInWithEmail(email, password);
       
       if (authUser) {
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           console.error('Error fetching user profile:', error);
+          setLoading(false);
           return false;
         }
 
@@ -51,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (userProfile.role !== 'Admin') {
             console.log('User does not have Admin role, denying ERS access');
             await signOut(); // Sign out the user
+            setLoading(false);
             return false;
           }
 
@@ -62,12 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             avatar: userProfile.avatar
           };
           setUser(userData);
+          setLoading(false);
           return true;
         }
       }
+      setLoading(false);
       return false;
     } catch (error) {
       console.error('Login error:', error);
+      setLoading(false);
       return false;
     }
   };
