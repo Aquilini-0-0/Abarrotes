@@ -385,13 +385,13 @@ export function usePOS() {
 
       // Handle credit sales differently
       if (paymentData.method === 'credit') {
-        // Update order to mark as credit (pending status)
+        // Update order to mark as credit (pending status) with remaining balance
         const { error: updateError } = await supabase
           .from('sales')
           .update({
             status: 'pending',
             amount_paid: 0,
-            remaining_balance: orderData.total
+            remaining_balance: orderData.total // This makes it appear in credit payments modal
           })
           .eq('id', orderId);
 
@@ -491,8 +491,8 @@ export function usePOS() {
           }
         }
 
-        // Update client balance for non-credit payments (reduce balance)
-        if (paymentData.method !== 'credit' && orderData.client_id) {
+        // For non-credit payments, reduce client balance if they had previous credit
+        if (paymentData.method !== 'credit' && orderData.client_id && newAmountPaid > 0) {
           const { data: client } = await supabase
             .from('clients')
             .select('balance')
