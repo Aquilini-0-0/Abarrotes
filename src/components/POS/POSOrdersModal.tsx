@@ -424,7 +424,7 @@ return (
                   <div className="space-y-3">
                     {selectedOrderDetail.payments.map((payment, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        {order.status === 'pending' && order.total > 0 && (
+                        <div>
                           <div className="font-medium text-gray-900">Pago #{payment.reference}</div>
                           <div className="text-sm text-gray-500">
                             Crédito
@@ -469,7 +469,5 @@ return (
     )}
   </div>
 );
-
-
 
 }
