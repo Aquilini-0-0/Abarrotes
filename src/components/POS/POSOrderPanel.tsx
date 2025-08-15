@@ -528,11 +528,18 @@ export function POSOrderPanel({
       setShowEditItemModal(false);
       setEditingItem(null);
     }}
-    onSave={(updated) => {
-      onUpdateQuantity(updated.id, updated.quantity);
-      onUpdateItemPrice(updated.id, updated.price_level, updated.unit_price);
+    onSave={(updatedItem) => {
+      // Update quantity first
+      onUpdateQuantity(updatedItem.id, updatedItem.quantity);
+      // Then update price level and unit price
+      onUpdateItemPrice(updatedItem.id, updatedItem.price_level, updatedItem.unit_price);
+      // Close modal after successful update
       setShowEditItemModal(false);
       setEditingItem(null);
+      // Trigger parent update for last order
+      if (onRefreshData) {
+        onRefreshData();
+      }
     }}
   />
 )}

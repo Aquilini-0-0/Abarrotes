@@ -61,12 +61,11 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
       quantity,
       price_level: priceLevel,
       unit_price: currentPrice,
-      total: totalAmount,
+      total: quantity * currentPrice,
       tara_option: selectedTara || undefined
     };
 
     onSave(updatedItem);
-    onClose();
   };
 
   const handlePasswordSubmit = () => {
