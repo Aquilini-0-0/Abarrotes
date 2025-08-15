@@ -42,51 +42,51 @@ export function ReporteCajas() {
   const [salesDetail, setSalesDetail] = useState<any[]>([]);
   const [loadingSalesDetail, setLoadingSalesDetail] = useState(false);
 
-  const fetchReportes = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('cash_registers')
-        .select(`
-          *,
-          users!cash_registers_user_id_fkey(name)
-        `)
-        .eq('user_id', user?.id)
-        .order('opened_at', { ascending: false });
+const fetchReportes = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('cash_registers')
+        .select(`
+          *,
+          users!cash_registers_user_id_fkey(name)
+        `)
+        // .eq('user_id', user?.id) // Elimina o comenta esta línea
+        .order('opened_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) throw error;
 
-      const formattedReports: CashRegisterReport[] = data.map(register => {
-        const openingDate = new Date(register.opened_at).toISOString().split('T')[0];
-        const difference = register.closing_amount ? register.closing_amount - (register.opening_amount + register.total_cash) : 0;
-        const numeroTickets = Math.floor(register.total_sales / 500); // Estimate tickets
-        const ticketPromedio = numeroTickets > 0 ? register.total_sales / numeroTickets : 0;
-        
-        return {
-          id: register.id,
-          caja: `CAJA-${register.id.slice(-2).toUpperCase()}`,
-          usuario: register.users?.name || 'Usuario',
-          fecha: openingDate,
-          apertura: register.opening_amount,
-          cierre: register.closing_amount || 0,
-          ventas_efectivo: register.total_cash,
-          ventas_tarjeta: register.total_card,
-          ventas_transferencia: register.total_transfer,
-          total_ventas: register.total_sales,
-          diferencia: difference,
-          numero_tickets: numeroTickets,
-          ticket_promedio: ticketPromedio,
-          status: register.status
-        };
-      });
-      
-      setReportesCaja(formattedReports);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error fetching cash registers');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      const formattedReports: CashRegisterReport[] = data.map(register => {
+        const openingDate = new Date(register.opened_at).toISOString().split('T')[0];
+        const difference = register.closing_amount ? register.closing_amount - (register.opening_amount + register.total_cash) : 0;
+        const numeroTickets = Math.floor(register.total_sales / 500);
+        const ticketPromedio = numeroTickets > 0 ? register.total_sales / numeroTickets : 0;
+        
+        return {
+          id: register.id,
+          caja: `CAJA-${register.id.slice(-2).toUpperCase()}`,
+          usuario: register.users?.name || 'Usuario',
+          fecha: openingDate,
+          apertura: register.opening_amount,
+          cierre: register.closing_amount || 0,
+          ventas_efectivo: register.total_cash,
+          ventas_tarjeta: register.total_card,
+          ventas_transferencia: register.total_transfer,
+          total_ventas: register.total_sales,
+          diferencia: difference,
+          numero_tickets: numeroTickets,
+          ticket_promedio: ticketPromedio,
+          status: register.status
+        };
+      });
+      
+      setReportesCaja(formattedReports);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error fetching cash registers');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // Auto-sync for real-time updates
   useAutoSync({
