@@ -81,7 +81,7 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
         `)
         .eq('status', 'pending')
         .gt('remaining_balance', 0)
-        .order('date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
