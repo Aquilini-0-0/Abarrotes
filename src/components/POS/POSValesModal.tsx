@@ -376,7 +376,7 @@ export function POSValesModal({ onClose }: POSValesModalProps) {
         {showForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-              <div className="bg-gradient-to-r from-orange-600 to-red-600 p-4 rounded-t-lg">
+              <div className=" bg-gradient-to-br from-orange-400 via-red-500 to-red-400 p-4 rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <h3 className="text-white font-bold">Nuevo Vale por Devolución</h3>
                   <button
