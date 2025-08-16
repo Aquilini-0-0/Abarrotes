@@ -131,7 +131,7 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column - Controls 
+            {/* Left Column - Controls */}
             <div className="space-y-6">
               {/* Quantity 
               <div>
@@ -156,11 +156,9 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
                     </p>
                   </div>
                 )}
-*/}
-                
               </div>
 
-              
+              */}
               {/*
               <div>
                 <label className="block text-gray-700 font-medium mb-2">Selección de Tara</label>
