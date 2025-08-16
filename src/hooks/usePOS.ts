@@ -14,6 +14,28 @@ export function usePOS() {
   const [error, setError] = useState<string | null>(null);
   const [productPriceOverrides, setProductPriceOverrides] = useState<Record<string, { price1?: number; price2?: number; price3?: number; price4?: number; price5?: number }>>({});
 
+  // Check for existing open cash register on component mount
+  const checkExistingCashRegister = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cash_registers')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('status', 'open')
+        .order('opened_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setCashRegister(data);
+      }
+    } catch (err) {
+      console.error('Error checking existing cash register:', err);
+    }
+  };
+
   // Add refresh function to force re-fetch of all data
   const refreshAllData = async () => {
     await Promise.all([fetchProducts(), fetchClients(), fetchOrders()]);
@@ -665,7 +687,7 @@ export function usePOS() {
   useEffect(() => {
     const initialize = async () => {
       setLoading(true);
-      await Promise.all([fetchProducts(), fetchClients(), fetchOrders()]);
+      await Promise.all([fetchProducts(), fetchClients(), fetchOrders(), checkExistingCashRegister()]);
       setLoading(false);
     };
 
