@@ -133,7 +133,7 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Controls 
             <div className="space-y-6">
-              {/* Quantity
+              {/* Quantity 
               <div>
                 <label className="block text-gray-700 font-medium mb-2 flex items-center">
                   <Package className="h-4 w-4 mr-2 text-blue-600" />
@@ -156,8 +156,10 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
                     </p>
                   </div>
                 )}
+*/}
+                
               </div>
-              */}
+
               
               {/*
               <div>
