@@ -5,22 +5,23 @@ import { X, CreditCard, DollarSign, Smartphone, Calculator, AlertTriangle, Lock,
 import { POSOrder, POSClient, PaymentBreakdown, Payment } from '../../types/pos';
 
 import { supabase } from '../../lib/supabase';
+import { useProducts } from '../../hooks/useProducts';
 
 
 
 interface Vale {
 
-  id: string;
+  id: string;
 
-  folio_vale: string;
+  folio_vale: string;
 
-  cliente: string;
+  cliente: string;
 
-  importe: number;
+  importe: number;
 
-  disponible: number;
+  disponible: number;
 
-  estatus: 'HABILITADO' | 'USADO' | 'VENCIDO';
+  estatus: 'HABILITADO' | 'USADO' | 'VENCIDO';
 
 }
 
@@ -28,1082 +29,1195 @@ interface Vale {
 
 interface POSPaymentModalProps {
 
-  order: POSOrder;
+  order: POSOrder;
 
-  client: POSClient | null;
+  client: POSClient | null;
 
-  onClose: () => void;
+  onClose: () => void;
 
-  onConfirm: (paymentData: any) => void;
+  onConfirm: (paymentData: any) => void;
 
-  onProcessPayment?: (orderId: string, paymentData: any) => Promise<any>;
+  onProcessPayment?: (orderId: string, paymentData: any) => Promise<any>;
 
 }
 
 
 
 export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPayment }: POSPaymentModalProps) {
+  const { products } = useProducts();
 
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer' | 'credit' | 'mixed' | 'vales'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer' | 'credit' | 'mixed' | 'vales'>('cash');
 
-  const [paymentBreakdown, setPaymentBreakdown] = useState<PaymentBreakdown>({
+  const [paymentBreakdown, setPaymentBreakdown] = useState<PaymentBreakdown>({
 
-    cash: order.total || 0,
+    cash: order.total || 0,
 
-    card: 0,
+    card: 0,
 
-    transfer: 0,
+    transfer: 0,
 
-    credit: 0
+    credit: 0
 
-  });
+  });
 
-  const [cashReceived, setCashReceived] = useState(order.total || 0);
+  const [cashReceived, setCashReceived] = useState(order.total || 0);
 
-  const [paymentAmount, setPaymentAmount] = useState(order.total || 0);
+  const [paymentAmount, setPaymentAmount] = useState(order.total || 0);
 
-  const [isPartialPayment, setIsPartialPayment] = useState(false);
+  const [isPartialPayment, setIsPartialPayment] = useState(false);
 
-  const [printTicket, setPrintTicket] = useState(true);
+  const [printTicket, setPrintTicket] = useState(true);
 
-  const [printA4, setPrintA4] = useState(false);
+  const [printA4, setPrintA4] = useState(false);
 
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const [showCreditAuthModal, setShowCreditAuthModal] = useState(false);
+  const [showCreditAuthModal, setShowCreditAuthModal] = useState(false);
 
-  const [adminPassword, setAdminPassword] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
 
-  const [clientVales, setClientVales] = useState<Vale[]>([]);
+  const [clientVales, setClientVales] = useState<Vale[]>([]);
 
-  const [selectedVale, setSelectedVale] = useState<Vale | null>(null);
+  const [selectedVale, setSelectedVale] = useState<Vale | null>(null);
 
-  const [loadingVales, setLoadingVales] = useState(false);
+  const [loadingVales, setLoadingVales] = useState(false);
+  const [showStockValidation, setShowStockValidation] = useState(false);
+  const [stockIssues, setStockIssues] = useState<Array<{product_name: string, required: number, available: number}>>([]);
+  const [pendingPaymentData, setPendingPaymentData] = useState<any>(null);
 
 
 
-  const orderTotal = order.total || 0;
+  const orderTotal = order.total || 0;
 
-  const change = cashReceived - paymentAmount;
+  const change = cashReceived - paymentAmount;
 
-  const totalPayment = paymentMethod === 'mixed'
+  const totalPayment = paymentMethod === 'mixed'
 
-    ? paymentBreakdown.cash + paymentBreakdown.card + paymentBreakdown.transfer + paymentBreakdown.credit
+    ? paymentBreakdown.cash + paymentBreakdown.card + paymentBreakdown.transfer + paymentBreakdown.credit
 
-    : paymentAmount;
+    : paymentAmount;
 
-  const paymentComplete = Math.abs(totalPayment - paymentAmount) < 0.01;
+  const paymentComplete = Math.abs(totalPayment - paymentAmount) < 0.01;
 
-  
+  
 
-  // Check if credit exceeds limit
+  // Check if credit exceeds limit
 
-  const creditExceeded = client && (paymentMethod === 'credit' || paymentBreakdown.credit > 0) &&
+  const creditExceeded = client && (paymentMethod === 'credit' || paymentBreakdown.credit > 0) &&
 
-    (client.balance + paymentAmount) > client.credit_limit;
+    (client.balance + paymentAmount) > client.credit_limit;
 
 
 
-  // Show payment history if order has payments
+  // Show payment history if order has payments
 
-  const hasPayments = order.payments && order.payments.length > 0;
+  const hasPayments = order.payments && order.payments.length > 0;
 
-  const totalPaid = order.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+  const totalPaid = order.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
 
-  const remainingBalance = orderTotal - totalPaid;
+  const remainingBalance = orderTotal - totalPaid;
 
 
 
-  const validateAdminPassword = (password: string) => {
+  const validateAdminPassword = (password: string) => {
 
-    return password === 'admin123'; // En producción, validar contra la base de datos
+    return password === 'admin123'; // En producción, validar contra la base de datos
 
-  };
+  };
 
 
 
-  // Fetch client vales when payment method changes to vales
+  // Fetch client vales when payment method changes to vales
 
-  React.useEffect(() => {
+  React.useEffect(() => {
 
-    if (paymentMethod === 'vales' && client) {
+    if (paymentMethod === 'vales' && client) {
 
-      fetchClientVales();
+      fetchClientVales();
 
-    }
+    }
 
-  }, [paymentMethod, client]);
+  }, [paymentMethod, client]);
 
 
 
-  const fetchClientVales = async () => {
+  const fetchClientVales = async () => {
 
-    if (!client) return;
+    if (!client) return;
 
-    
+    
 
-    setLoadingVales(true);
+    setLoadingVales(true);
 
-    try {
+    try {
 
-      const { data, error } = await supabase
+      const { data, error } = await supabase
 
-        .from('vales_devolucion')
+        .from('vales_devolucion')
 
-        .select('*')
+        .select('*')
 
-        .eq('cliente', client.name)
+        .eq('cliente', client.name)
 
-        .eq('estatus', 'HABILITADO')
+        .eq('estatus', 'HABILITADO')
 
-        .gt('disponible', 0)
+        .gt('disponible', 0)
 
-        .order('fecha_expedicion', { ascending: false });
+        .order('fecha_expedicion', { ascending: false });
 
 
 
-      if (error) throw error;
+      if (error) throw error;
 
 
 
-      const formattedVales: Vale[] = data.map(item => ({
+      const formattedVales: Vale[] = data.map(item => ({
 
-        id: item.id,
+        id: item.id,
 
-        folio_vale: item.folio_vale,
+        folio_vale: item.folio_vale,
 
-        cliente: item.cliente,
+        cliente: item.cliente,
 
-        importe: item.importe,
+        importe: item.importe,
 
-        disponible: item.disponible,
+        disponible: item.disponible,
 
-        estatus: item.estatus
+        estatus: item.estatus
 
-      }));
+      }));
 
-      
+      
 
-      setClientVales(formattedVales);
+      setClientVales(formattedVales);
 
-    } catch (err) {
+    } catch (err) {
 
-      console.error('Error fetching client vales:', err);
+      console.error('Error fetching client vales:', err);
 
-      setClientVales([]);
+      setClientVales([]);
 
-    } finally {
+    } finally {
 
-      setLoadingVales(false);
+      setLoadingVales(false);
 
-    }
+    }
 
-  };
+  };
 
 
 
-  const handlePaymentBreakdownChange = (method: keyof PaymentBreakdown, amount: number) => {
+  const handlePaymentBreakdownChange = (method: keyof PaymentBreakdown, amount: number) => {
 
-    setPaymentBreakdown(prev => ({
+    setPaymentBreakdown(prev => ({
 
-      ...prev,
+      ...prev,
 
-      [method]: amount
+      [method]: amount
 
-    }));
+    }));
 
-  };
+  };
 
 
 
-  const handleQuickCash = (amount: number) => {
+  const handleQuickCash = (amount: number) => {
 
-    setCashReceived(amount);
+    setCashReceived(amount);
 
-    setPaymentBreakdown(prev => ({
+    setPaymentBreakdown(prev => ({
 
-      ...prev,
+      ...prev,
 
-      cash: Math.min(amount, order.total)
+      cash: Math.min(amount, order.total)
 
-    }));
+    }));
 
-  };
+  };
 
 
 
-  // --- MODIFICACIÓN: Lógica de confirmación ahora verifica primero la autorización ---
+  // --- MODIFICACIÓN: Lógica de confirmación ahora verifica primero la autorización ---
 
-  const handleConfirm = () => {
+  const handleConfirm = () => {
 
-    if (isProcessing) return; // Prevent double submission
+    if (isProcessing) return; // Prevent double submission
 
-    
+    
 
-    if (!paymentComplete && paymentMethod === 'mixed') {
+    if (!paymentComplete && paymentMethod === 'mixed') {
 
-      alert('El total de pagos debe coincidir con el importe del pedido');
+      alert('El total de pagos debe coincidir con el importe del pedido');
 
-      return;
+      return;
 
-    }
+    }
 
 
 
-    // NUEVA LÓGICA: Si excede el límite de crédito, muestra el modal de autorización
+    // Validate stock before processing payment
+    validateStockBeforePayment();
+  };
 
-    const creditAmount = paymentMethod === 'credit' ? order.total : paymentMethod === 'mixed' ? paymentBreakdown.credit : 0;
+  const validateStockBeforePayment = async () => {
+    try {
+      const issues: Array<{product_name: string, required: number, available: number}> = [];
+      
+      // Check stock for each item in the order
+      for (const item of order.items) {
+        const product = products.find(p => p.id === item.product_id);
+        if (product && item.quantity > product.stock) {
+          issues.push({
+            product_name: item.product_name,
+            required: item.quantity,
+            available: product.stock
+          });
+        }
+      }
+      
+      if (issues.length > 0) {
+        setStockIssues(issues);
+        setShowStockValidation(true);
+        return;
+      }
+      
+      // If no stock issues, proceed with payment
+      proceedWithPayment();
+    } catch (err) {
+      console.error('Error validating stock:', err);
+      // If validation fails, proceed anyway
+      proceedWithPayment();
+    }
+  };
 
-    const creditExceededCondition = client && creditAmount > 0 && (client.balance + creditAmount) > client.credit_limit;
+  const proceedWithPayment = () => {
 
+    // NUEVA LÓGICA: Si excede el límite de crédito, muestra el modal de autorización
 
+    const creditAmount = paymentMethod === 'credit' ? order.total : paymentMethod === 'mixed' ? paymentBreakdown.credit : 0;
 
-    if (creditExceededCondition) {
+    const creditExceededCondition = client && creditAmount > 0 && (client.balance + creditAmount) > client.credit_limit;
 
-      setShowCreditAuthModal(true);
 
-      return;
 
-    }
+    if (creditExceededCondition) {
 
-    
+      setShowCreditAuthModal(true);
 
-    // Si no requiere autorización, procesa el pago directamente
+      return;
 
-    processPayment();
+    }
 
-  };
+    
 
+    // Si no requiere autorización, procesa el pago directamente
 
+    processPayment();
 
-  // --- NUEVA FUNCIÓN: Para manejar la autorización del administrador ---
+  };
 
-  const handleCreditAuth = () => {
 
-    if (!validateAdminPassword(adminPassword)) {
 
-      alert('Contraseña de administrador incorrecta');
+  const handleStockValidationConfirm = (proceed: boolean) => {
+    setShowStockValidation(false);
+    if (proceed) {
+      proceedWithPayment();
+    }
+    setStockIssues([]);
+  };
 
-      setAdminPassword('');
+  // --- NUEVA FUNCIÓN: Para manejar la autorización del administrador ---
 
-      return;
+  const handleCreditAuth = () => {
 
-    }
+    if (!validateAdminPassword(adminPassword)) {
 
+      alert('Contraseña de administrador incorrecta');
 
+      setAdminPassword('');
 
-    // Si la contraseña es correcta, cierra el modal y procede con el pago
+      return;
 
-    setShowCreditAuthModal(false);
+    }
 
-    setAdminPassword('');
 
-    processPayment();
 
-  };
+    // Si la contraseña es correcta, cierra el modal y procede con el pago
 
-  
+    setShowCreditAuthModal(false);
 
-  const processPayment = () => {
+    setAdminPassword('');
 
-    setIsProcessing(true);
+    processPayment();
 
-    
+  };
 
-    const paymentData = {
+  
 
-      method: paymentMethod,
+  const processPayment = () => {
 
-      breakdown: paymentMethod === 'mixed' ? paymentBreakdown : undefined,
+    setIsProcessing(true);
 
-      cashReceived: paymentMethod === 'cash' ? cashReceived : undefined,
+    
 
-      change: paymentMethod === 'cash' ? change : 0,
+    const paymentData = {
 
-      selectedVale: paymentMethod === 'vales' ? selectedVale : undefined,
+      method: paymentMethod,
 
-      printTicket,
+      breakdown: paymentMethod === 'mixed' ? paymentBreakdown : undefined,
 
-      printA4
+      cashReceived: paymentMethod === 'cash' ? cashReceived : undefined,
 
-    };
+      change: paymentMethod === 'cash' ? change : 0,
 
+      selectedVale: paymentMethod === 'vales' ? selectedVale : undefined,
 
+      printTicket,
 
-    // Simulate processing delay
+      printA4
 
-    setTimeout(() => {
+    };
 
-      onConfirm(paymentData);
 
-      setIsProcessing(false);
 
-    }, 1000);
+    // Simulate processing delay
 
-  };
+    setTimeout(() => {
 
+      onConfirm(paymentData);
 
+      setIsProcessing(false);
 
-  return (
+    }, 1000);
 
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  };
 
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-xs sm:max-w-lg lg:max-w-2xl w-full mx-2 sm:mx-4 max-h-[90vh] overflow-y-auto border border-gray-200">
 
 
+  return (
 
-        {/* Header */}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
-        <div className="bg-gradient-to-r from-orange-500 to-red-500 p-3 sm:p-4 rounded-t-xl sm:rounded-t-2xl">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-xs sm:max-w-lg lg:max-w-2xl w-full mx-2 sm:mx-4 max-h-[90vh] overflow-y-auto border border-gray-200">
 
-          <div className="flex items-center justify-between">
 
-            <h2 className="text-white font-bold text-lg sm:text-xl">Procesar Pago</h2>
 
-            <button onClick={onClose} className="text-white hover:opacity-80 transition">
+        {/* Header */}
 
-              <X size={20} className="sm:w-6 sm:h-6" />
+        <div className="bg-gradient-to-r from-orange-500 to-red-500 p-3 sm:p-4 rounded-t-xl sm:rounded-t-2xl">
 
-            </button>
+          <div className="flex items-center justify-between">
 
-          </div>
+            <h2 className="text-white font-bold text-lg sm:text-xl">Procesar Pago</h2>
 
-        </div>
+            <button onClick={onClose} className="text-white hover:opacity-80 transition">
 
+              <X size={20} className="sm:w-6 sm:h-6" />
 
+            </button>
 
-        <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 lg:space-y-6">
+          </div>
 
-          {/* Order Summary */}
+        </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
 
-            <div className="flex justify-between mb-1 sm:mb-2 text-gray-600 text-sm">
 
-              <span>Cliente:</span>
+        <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 lg:space-y-6">
 
-              <span className="font-semibold">{order.client_name}</span>
+          {/* Order Summary */}
 
-            </div>
+          <div className="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
 
-            <div className="flex justify-between mb-1 sm:mb-2 text-gray-600 text-sm">
+            <div className="flex justify-between mb-1 sm:mb-2 text-gray-600 text-sm">
 
-              <span>Artículos:</span>
+              <span>Cliente:</span>
 
-              <span>{order.items.length} productos</span>
+              <span className="font-semibold">{order.client_name}</span>
 
-            </div>
+            </div>
 
-            <div className="flex justify-between mb-1 sm:mb-2 text-gray-600 text-sm">
+            <div className="flex justify-between mb-1 sm:mb-2 text-gray-600 text-sm">
 
-              <span>Subtotal:</span>
+              <span>Artículos:</span>
 
-              <span className="font-mono font-semibold">${order.subtotal.toFixed(2)}</span>
+              <span>{order.items.length} productos</span>
 
-            </div>
+            </div>
 
-            {order.discount_total > 0 && (
+            <div className="flex justify-between mb-1 sm:mb-2 text-gray-600 text-sm">
 
-              <div className="flex justify-between text-red-500 font-medium text-sm">
+              <span>Subtotal:</span>
 
-                <span>Descuento:</span>
+              <span className="font-mono font-semibold">${order.subtotal.toFixed(2)}</span>
 
-                <span>-${order.discount_total.toFixed(2)}</span>
+            </div>
 
-              </div>
+            {order.discount_total > 0 && (
 
-            )}
+              <div className="flex justify-between text-red-500 font-medium text-sm">
 
-            <div className="border-t border-gray-300 pt-2 sm:pt-3">
+                <span>Descuento:</span>
 
-              <div className="flex justify-between items-center">
+                <span>-${order.discount_total.toFixed(2)}</span>
 
-                <span className="text-orange-600 font-bold text-base sm:text-lg">TOTAL:</span>
+              </div>
 
-                <span className="text-red-600 font-bold text-xl sm:text-2xl font-mono">${order.total.toFixed(2)}</span>
+            )}
 
-              </div>
+            <div className="border-t border-gray-300 pt-2 sm:pt-3">
 
-            </div>
+              <div className="flex justify-between items-center">
 
-          </div>
+                <span className="text-orange-600 font-bold text-base sm:text-lg">TOTAL:</span>
 
+                <span className="text-red-600 font-bold text-xl sm:text-2xl font-mono">${order.total.toFixed(2)}</span>
 
+              </div>
 
-          {/* Credit limit warning (now handled by the modal trigger logic) */}
+            </div>
 
-          {creditExceeded && (
+          </div>
 
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
 
-              <div className="flex items-center">
 
-                <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
+          {/* Credit limit warning (now handled by the modal trigger logic) */}
 
-                <div>
+          {creditExceeded && (
 
-                  <p className="text-red-800 font-medium">Límite de crédito excedido</p>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
 
-                  <p className="text-red-600 text-sm">
+              <div className="flex items-center">
 
-                    Límite: ${client?.credit_limit.toLocaleString('es-MX')} | 
+                <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
 
-                    Usado: ${client?.balance.toLocaleString('es-MX')} | 
+                <div>
 
-                    Este pedido: ${order.total.toLocaleString('es-MX')}
+                  <p className="text-red-800 font-medium">Límite de crédito excedido</p>
 
-                  </p>
+                  <p className="text-red-600 text-sm">
 
-                </div>
+                    Límite: ${client?.credit_limit.toLocaleString('es-MX')} | 
 
-              </div>
+                    Usado: ${client?.balance.toLocaleString('es-MX')} | 
 
-            </div>
+                    Este pedido: ${order.total.toLocaleString('es-MX')}
 
-          )}
+                  </p>
 
+                </div>
 
+              </div>
 
-          {/* Método de Pago */}
+            </div>
 
-          <div>
+          )}
 
-            <h3 className="text-gray-800 font-bold mb-2 sm:mb-3 text-sm sm:text-base">Método de Pago</h3>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
 
-              {[
+          {/* Método de Pago */}
 
-                { method: 'cash', label: 'Efectivo', color: 'from-green-400 to-green-600', icon: <DollarSign size={20} /> },
+          <div>
 
-                { method: 'card', label: 'Tarjeta', color: 'from-blue-400 to-blue-600', icon: <CreditCard size={20} /> },
+            <h3 className="text-gray-800 font-bold mb-2 sm:mb-3 text-sm sm:text-base">Método de Pago</h3>
 
-                { method: 'transfer', label: 'Transferencia', color: 'from-purple-400 to-purple-600', icon: <Smartphone size={20} /> },
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
 
-                { method: 'credit', label: 'Crédito', color: 'from-yellow-400 to-yellow-600', icon: <CreditCard size={20} /> },
+              {[
 
-                { method: 'mixed', label: 'Mixto', color: 'from-orange-400 to-red-500', icon: <Calculator size={20} /> },
+                { method: 'cash', label: 'Efectivo', color: 'from-green-400 to-green-600', icon: <DollarSign size={20} /> },
 
-                { method: 'vales', label: 'Vales', color: 'from-pink-400 to-pink-600', icon: <FileText size={20} /> }
+                { method: 'card', label: 'Tarjeta', color: 'from-blue-400 to-blue-600', icon: <CreditCard size={20} /> },
 
-              ].map((btn) => (
+                { method: 'transfer', label: 'Transferencia', color: 'from-purple-400 to-purple-600', icon: <Smartphone size={20} /> },
 
-                <button
+                { method: 'credit', label: 'Crédito', color: 'from-yellow-400 to-yellow-600', icon: <CreditCard size={20} /> },
 
-                  key={btn.method}
+                { method: 'mixed', label: 'Mixto', color: 'from-orange-400 to-red-500', icon: <Calculator size={20} /> },
 
-                  onClick={() => setPaymentMethod(btn.method)}
+                { method: 'vales', label: 'Vales', color: 'from-pink-400 to-pink-600', icon: <FileText size={20} /> }
 
-                  disabled={(btn.method === 'credit' || btn.method === 'vales') && !client}
+              ].map((btn) => (
 
-                  className={`p-2 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold border transition
+                <button
 
-                    ${paymentMethod === btn.method
+                  key={btn.method}
 
-                      ? `bg-gradient-to-br ${btn.color} text-white shadow-md`
+                  onClick={() => setPaymentMethod(btn.method)}
 
-                      : 'bg-gray-50 border-gray-300 hover:bg-gray-100 text-gray-700'}
+                  disabled={(btn.method === 'credit' || btn.method === 'vales') && !client}
 
-                    ${(btn.method === 'credit' || btn.method === 'vales') && !client ? 'opacity-40 cursor-not-allowed' : ''}
+                  className={`p-2 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold border transition
 
-                  `}
+                    ${paymentMethod === btn.method
 
-                >
+                      ? `bg-gradient-to-br ${btn.color} text-white shadow-md`
 
-                  <div className="flex flex-col items-center">
+                      : 'bg-gray-50 border-gray-300 hover:bg-gray-100 text-gray-700'}
 
-                    <div className="w-4 h-4 sm:w-5 sm:h-5 mb-1">{React.cloneElement(btn.icon, { size: window.innerWidth < 640 ? 16 : 20 })}</div>
+                    ${(btn.method === 'credit' || btn.method === 'vales') && !client ? 'opacity-40 cursor-not-allowed' : ''}
 
-                    {btn.label}
+                  `}
 
-                  </div>
+                >
 
-                </button>
+                  <div className="flex flex-col items-center">
 
-              ))}
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 mb-1">{React.cloneElement(btn.icon, { size: window.innerWidth < 640 ? 16 : 20 })}</div>
 
-            </div>
+                    {btn.label}
 
-          </div>
+                  </div>
 
+                </button>
 
+              ))}
 
-          {/* Pago en Efectivo */}
+            </div>
 
-          {paymentMethod === 'cash' && (
+          </div>
 
-            <div>
 
-              <h4 className="text-gray-800 font-semibold mb-2 text-sm sm:text-base">Pago en Efectivo</h4>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          {/* Pago en Efectivo */}
 
-                <div>
+          {paymentMethod === 'cash' && (
 
-                  <label className="block text-gray-600 text-xs sm:text-sm mb-1">Efectivo Recibido</label>
+            <div>
 
-                  <input
+              <h4 className="text-gray-800 font-semibold mb-2 text-sm sm:text-base">Pago en Efectivo</h4>
 
-                    type="number"
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
 
-                    step="0.01"
+                <div>
 
-                    value={cashReceived}
+                  <label className="block text-gray-600 text-xs sm:text-sm mb-1">Efectivo Recibido</label>
 
-                    onChange={(e) => setCashReceived(parseFloat(e.target.value) || 0)}
+                  <input
 
-                    className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    type="number"
 
-                    placeholder="0.00"
+                    step="0.01"
 
-                  />
+                    value={cashReceived}
 
-                </div>
+                    onChange={(e) => setCashReceived(parseFloat(e.target.value) || 0)}
 
-                <div>
+                    className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
 
-                  <label className="block text-gray-600 text-xs sm:text-sm mb-1">Cambio</label>
+                    placeholder="0.00"
 
-                  <div className={`border rounded-lg px-2 sm:px-3 py-1 sm:py-2 font-mono text-sm ${
+                  />
 
-                    change >= 0 ? 'text-green-600 border-green-400' : 'text-red-600 border-red-400'
+                </div>
 
-                  }`}>
+                <div>
 
-                    ${change.toFixed(2)}
+                  <label className="block text-gray-600 text-xs sm:text-sm mb-1">Cambio</label>
 
-                  </div>
+                  <div className={`border rounded-lg px-2 sm:px-3 py-1 sm:py-2 font-mono text-sm ${
 
-                </div>
+                    change >= 0 ? 'text-green-600 border-green-400' : 'text-red-600 border-red-400'
 
-              </div>
+                  }`}>
 
-            </div>
+                    ${change.toFixed(2)}
 
-          )}
+                  </div>
 
+                </div>
 
+              </div>
 
-          {/* Pago Mixto */}
+            </div>
 
-          {paymentMethod === 'mixed' && (
+          )}
 
-            <div>
 
-              <h4 className="text-gray-800 font-semibold mb-2 text-sm sm:text-base">Pago Mixto</h4>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+          {/* Pago Mixto */}
 
-                {['cash','card','transfer','credit'].map((type) => (
+          {paymentMethod === 'mixed' && (
 
-                  <div key={type}>
+            <div>
 
-                    <label className="block text-gray-600 text-xs sm:text-sm mb-1">{type.charAt(0).toUpperCase() + type.slice(1)}</label>
+              <h4 className="text-gray-800 font-semibold mb-2 text-sm sm:text-base">Pago Mixto</h4>
 
-                    <input
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
 
-                      type="number"
+                {['cash','card','transfer','credit'].map((type) => (
 
-                      step="0.01"
+                  <div key={type}>
 
-                      value={paymentBreakdown[type]}
+                    <label className="block text-gray-600 text-xs sm:text-sm mb-1">{type.charAt(0).toUpperCase() + type.slice(1)}</label>
 
-                      onChange={(e) => handlePaymentBreakdownChange(type, parseFloat(e.target.value) || 0)}
+                    <input
 
-                      className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                      type="number"
 
-                      placeholder="0.00"
+                      step="0.01"
 
-                      disabled={type === 'credit' && !client}
+                      value={paymentBreakdown[type]}
 
-                    />
+                      onChange={(e) => handlePaymentBreakdownChange(type, parseFloat(e.target.value) || 0)}
 
-                  </div>
+                      className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
 
-                ))}
+                      placeholder="0.00"
 
-              </div>
+                      disabled={type === 'credit' && !client}
 
-              <div className="mt-2 sm:mt-3 bg-gray-50 border border-gray-200 rounded-lg p-2 sm:p-3">
+                    />
 
-                <div className="flex justify-between text-sm text-gray-600">
+                  </div>
 
-                  <span>Total Pagos:</span>
+                ))}
 
-                  <span className={`${paymentComplete ? 'text-green-600' : 'text-red-600'} font-mono`}>${totalPayment.toFixed(2)}</span>
+              </div>
 
-                </div>
+              <div className="mt-2 sm:mt-3 bg-gray-50 border border-gray-200 rounded-lg p-2 sm:p-3">
 
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm text-gray-600">
 
-                  <span className="text-gray-600">Total Pedido:</span>
+                  <span>Total Pagos:</span>
 
-                  <span className="font-semibold">${order.total.toFixed(2)}</span>
+                  <span className={`${paymentComplete ? 'text-green-600' : 'text-red-600'} font-mono`}>${totalPayment.toFixed(2)}</span>
 
-                </div>
+                </div>
 
-                <div className="flex justify-between text-sm border-t border-gray-300 pt-1 sm:pt-2 mt-1 sm:mt-2">
+                <div className="flex justify-between text-sm">
 
-                  <span className="font-semibold text-gray-800">Diferencia:</span>
+                  <span className="text-gray-600">Total Pedido:</span>
 
-                  <span className={`${Math.abs(totalPayment - order.total) < 0.01 ? 'text-green-600' : 'text-red-600'} font-bold`}>
+                  <span className="font-semibold">${order.total.toFixed(2)}</span>
 
-                    {(totalPayment - order.total).toFixed(2)}
+                </div>
 
-                  </span>
+                <div className="flex justify-between text-sm border-t border-gray-300 pt-1 sm:pt-2 mt-1 sm:mt-2">
 
-                </div>
+                  <span className="font-semibold text-gray-800">Diferencia:</span>
 
-              </div>
+                  <span className={`${Math.abs(totalPayment - order.total) < 0.01 ? 'text-green-600' : 'text-red-600'} font-bold`}>
 
-            </div>
+                    {(totalPayment - order.total).toFixed(2)}
 
-          )}
+                  </span>
 
+                </div>
 
+              </div>
 
-          {/* Pago con Vales */}
+            </div>
 
-          {paymentMethod === 'vales' && (
+          )}
 
-            <div>
 
-              <h4 className="text-gray-800 font-semibold mb-2 text-sm sm:text-base">Pago con Vales por Devolución</h4>
 
-              {loadingVales ? (
+          {/* Pago con Vales */}
 
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+          {paymentMethod === 'vales' && (
 
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500 mx-auto mb-2"></div>
+            <div>
 
-                  <p className="text-gray-600">Cargando vales del cliente...</p>
+              <h4 className="text-gray-800 font-semibold mb-2 text-sm sm:text-base">Pago con Vales por Devolución</h4>
 
-                </div>
+              {loadingVales ? (
 
-              ) : clientVales.length === 0 ? (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500 mx-auto mb-2"></div>
 
-                  <div className="flex items-center">
+                  <p className="text-gray-600">Cargando vales del cliente...</p>
 
-                    <AlertTriangle className="h-5 w-5 text-yellow-600 mr-3" />
+                </div>
 
-                    <div>
+              ) : clientVales.length === 0 ? (
 
-                      <p className="text-yellow-800 font-medium">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
 
-                        El cliente {client?.name} no tiene vales disponibles.
+                  <div className="flex items-center">
 
-                      </p>
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 mr-3" />
 
-                      <p className="text-yellow-600 text-sm">
+                    <div>
 
-                        Seleccione otro método de pago para continuar.
+                      <p className="text-yellow-800 font-medium">
 
-                      </p>
+                        El cliente {client?.name} no tiene vales disponibles.
 
-                    </div>
+                      </p>
 
-                  </div>
+                      <p className="text-yellow-600 text-sm">
 
-                </div>
+                        Seleccione otro método de pago para continuar.
 
-              ) : (
+                      </p>
 
-                <div className="space-y-3">
+                    </div>
 
-                  <div>
+                  </div>
 
-                    <label className="block text-gray-600 text-xs sm:text-sm mb-1">Seleccionar Vale</label>
+                </div>
 
-                    <select
+              ) : (
 
-                      value={selectedVale?.id || ''}
+                <div className="space-y-3">
 
-                      onChange={(e) => {
+                  <div>
 
-                        const vale = clientVales.find(v => v.id === e.target.value);
+                    <label className="block text-gray-600 text-xs sm:text-sm mb-1">Seleccionar Vale</label>
 
-                        setSelectedVale(vale || null);
+                    <select
 
-                        if (vale) {
+                      value={selectedVale?.id || ''}
 
-                          setPaymentAmount(Math.min(vale.disponible, order.total));
+                      onChange={(e) => {
 
-                        }
+                        const vale = clientVales.find(v => v.id === e.target.value);
 
-                      }}
+                        setSelectedVale(vale || null);
 
-                      className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        if (vale) {
 
-                    >
+                          setPaymentAmount(Math.min(vale.disponible, order.total));
 
-                      <option value="">Seleccionar vale</option>
+                        }
 
-                      {clientVales.map(vale => (
+                      }}
 
-                        <option key={vale.id} value={vale.id}>
+                      className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
 
-                          {vale.folio_vale} - ${vale.disponible.toFixed(2)} disponible
+                    >
 
-                        </option>
+                      <option value="">Seleccionar vale</option>
 
-                      ))}
+                      {clientVales.map(vale => (
 
-                    </select>
+                        <option key={vale.id} value={vale.id}>
 
-                  </div>
+                          {vale.folio_vale} - ${vale.disponible.toFixed(2)} disponible
 
-                  
+                        </option>
 
-                  {selectedVale && (
+                      ))}
 
-                    <div className="bg-pink-50 border border-pink-200 rounded-lg p-3">
+                    </select>
 
-                      <div className="space-y-2 text-sm">
+                  </div>
 
-                        <div className="flex justify-between">
+                  
 
-                          <span className="text-gray-600">Folio Vale:</span>
+                  {selectedVale && (
 
-                          <span className="font-mono text-pink-600">{selectedVale.folio_vale}</span>
+                    <div className="bg-pink-50 border border-pink-200 rounded-lg p-3">
 
-                        </div>
+                      <div className="space-y-2 text-sm">
 
-                        <div className="flex justify-between">
+                        <div className="flex justify-between">
 
-                          <span className="text-gray-600">Disponible:</span>
+                          <span className="text-gray-600">Folio Vale:</span>
 
-                          <span className="font-mono text-green-600">${selectedVale.disponible.toFixed(2)}</span>
+                          <span className="font-mono text-pink-600">{selectedVale.folio_vale}</span>
 
-                        </div>
+                        </div>
 
-                        <div className="flex justify-between">
+                        <div className="flex justify-between">
 
-                          <span className="text-gray-600">Total Pedido:</span>
+                          <span className="text-gray-600">Disponible:</span>
 
-                          <span className="font-mono text-gray-900">${order.total.toFixed(2)}</span>
+                          <span className="font-mono text-green-600">${selectedVale.disponible.toFixed(2)}</span>
 
-                        </div>
+                        </div>
 
-                        <div className="flex justify-between border-t pt-2">
+                        <div className="flex justify-between">
 
-                          <span className="font-semibold">Resultado:</span>
+                          <span className="text-gray-600">Total Pedido:</span>
 
-                          <span className={`font-bold ${selectedVale.disponible >= order.total ? 'text-green-600' : 'text-red-600'}`}>
+                          <span className="font-mono text-gray-900">${order.total.toFixed(2)}</span>
 
-                            {selectedVale.disponible >= order.total ? 'Vale cubre el total' : 'Vale insuficiente'}
+                        </div>
 
-                          </span>
+                        <div className="flex justify-between border-t pt-2">
 
-                        </div>
+                          <span className="font-semibold">Resultado:</span>
 
-                        {selectedVale.disponible < order.total && (
+                          <span className={`font-bold ${selectedVale.disponible >= order.total ? 'text-green-600' : 'text-red-600'}`}>
 
-                          <div className="bg-red-50 border border-red-200 rounded-lg p-2 mt-2">
+                            {selectedVale.disponible >= order.total ? 'Vale cubre el total' : 'Vale insuficiente'}
 
-                            <div className="flex items-center">
+                          </span>
 
-                              <AlertTriangle className="h-4 w-4 text-red-600 mr-2" />
+                        </div>
 
-                              <span className="text-red-800 text-sm font-medium">
+                        {selectedVale.disponible < order.total && (
 
-                                El vale no cubre el total del pedido. Faltan ${(order.total - selectedVale.disponible).toFixed(2)}
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-2 mt-2">
 
-                              </span>
+                            <div className="flex items-center">
 
-                            </div>
+                              <AlertTriangle className="h-4 w-4 text-red-600 mr-2" />
 
-                          </div>
+                              <span className="text-red-800 text-sm font-medium">
 
-                        )}
+                                El vale no cubre el total del pedido. Faltan ${(order.total - selectedVale.disponible).toFixed(2)}
 
-                      </div>
+                              </span>
 
-                    </div>
+                            </div>
 
-                  )}
+                          </div>
 
-                </div>
+                        )}
 
-              )}
+                      </div>
 
-            </div>
+                    </div>
 
-          )}
+                  )}
 
+                </div>
 
+              )}
 
-          {/* Opciones de Impresión */}
+            </div>
 
-          <div>
+          )}
 
-            <h4 className="text-gray-800 font-semibold mb-2 text-sm sm:text-base">Opciones de Impresión</h4>
 
-            <div className="space-y-2">
 
-              <label className="flex items-center space-x-2 text-gray-600 text-sm">
+          {/* Opciones de Impresión */}
 
-                <input type="checkbox" checked={printTicket} onChange={(e) => setPrintTicket(e.target.checked)} className="w-4 h-4" />
+          <div>
 
-                <span>Imprimir Ticket</span>
+            <h4 className="text-gray-800 font-semibold mb-2 text-sm sm:text-base">Opciones de Impresión</h4>
 
-              </label>
+            <div className="space-y-2">
 
-              <label className="flex items-center space-x-2 text-gray-600 text-sm">
+              <label className="flex items-center space-x-2 text-gray-600 text-sm">
 
-                <input type="checkbox" checked={printA4} onChange={(e) => setPrintA4(e.target.checked)} className="w-4 h-4" />
+                <input type="checkbox" checked={printTicket} onChange={(e) => setPrintTicket(e.target.checked)} className="w-4 h-4" />
 
-                <span>Formato A4</span>
+                <span>Imprimir Ticket</span>
 
-              </label>
+              </label>
 
-            </div>
+              <label className="flex items-center space-x-2 text-gray-600 text-sm">
 
-          </div>
+                <input type="checkbox" checked={printA4} onChange={(e) => setPrintA4(e.target.checked)} className="w-4 h-4" />
 
+                <span>Formato A4</span>
 
+              </label>
 
-          {/* Botones */}
+            </div>
 
-          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-3 sm:pt-4 border-t border-gray-200">
+          </div>
 
-            <button
 
-              onClick={onClose}
 
-              className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-white text-orange-600 border border-orange-500 hover:bg-orange-50 rounded-lg font-semibold text-sm"
+          {/* Botones */}
 
-            >
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-3 sm:pt-4 border-t border-gray-200">
 
-              Cancelar
+            <button
 
-            </button>
+              onClick={onClose}
 
-            <button
+              className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-white text-orange-600 border border-orange-500 hover:bg-orange-50 rounded-lg font-semibold text-sm"
 
-              onClick={handleConfirm}
+            >
 
-              // --- CAMBIO CLAVE AQUÍ: Hemos eliminado la condición de crédito ---
+              Cancelar
 
-              disabled={
+            </button>
 
-                isProcessing ||
+            <button
 
-                (paymentMethod === 'cash' && change < 0) ||
+              onClick={handleConfirm}
 
-                (paymentMethod === 'mixed' && !paymentComplete) ||
+              // --- CAMBIO CLAVE AQUÍ: Hemos eliminado la condición de crédito ---
 
-                (paymentMethod === 'credit' && !client) || // El botón solo se deshabilita si no hay cliente para crédito
+              disabled={
 
-                (paymentMethod === 'vales' && (!selectedVale || selectedVale.disponible < order.total))
+                isProcessing ||
 
-              }
+                (paymentMethod === 'cash' && change < 0) ||
 
-              className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-bold shadow disabled:opacity-50 text-sm transition-all ${
+                (paymentMethod === 'mixed' && !paymentComplete) ||
 
-                isProcessing 
+                (paymentMethod === 'credit' && !client) || // El botón solo se deshabilita si no hay cliente para crédito
 
-                  ? 'bg-gray-400 cursor-not-allowed' 
+                (paymentMethod === 'vales' && (!selectedVale || selectedVale.disponible < order.total))
 
-                  : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
+              }
 
-              } text-white`}
+              className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-bold shadow disabled:opacity-50 text-sm transition-all ${
 
-            >
+                isProcessing 
 
-              {isProcessing ? (
+                  ? 'bg-gray-400 cursor-not-allowed' 
 
-                <div className="flex items-center justify-center">
+                  : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
 
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              } text-white`}
 
-                  Procesando pago...
+            >
 
-                </div>
+              {isProcessing ? (
 
-              ) : (
+                <div className="flex items-center justify-center">
 
-                'Confirmar Pago'
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
 
-              )}
+                  Procesando pago...
 
-            </button>
+                </div>
 
-          </div>
+              ) : (
 
-        </div>
+                'Confirmar Pago'
 
+              )}
 
+            </button>
 
-        {/* Credit Authorization Modal */}
+          </div>
 
-        {showCreditAuthModal && (
+        </div>
 
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+        {/* Stock Validation Modal */}
+        {showStockValidation && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="bg-red-600 p-4 border-b border-red-700 rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="h-5 w-5 text-white" />
+                    <h3 className="text-white font-bold">Stock Insuficiente</h3>
+                  </div>
+                  <button
+                    onClick={() => handleStockValidationConfirm(false)}
+                    className="text-red-100 hover:text-white"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-3" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    No hay stock suficiente para este pedido
+                  </h4>
+                  <p className="text-gray-600 text-sm mb-4">
+                    Los siguientes productos no tienen stock suficiente en el sistema:
+                  </p>
+                  
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                    <div className="space-y-2">
+                      {stockIssues.map((issue, index) => (
+                        <div key={index} className="text-sm text-red-800">
+                          <div className="font-medium">{issue.product_name}</div>
+                          <div className="text-xs">
+                            Requerido: {issue.required} | Disponible: {issue.available}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <p className="text-gray-600 text-sm">
+                    ¿Seguro que quieres pagar este pedido?
+                  </p>
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => handleStockValidationConfirm(true)}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  >
+                    Sí, Pagar de Todas Formas
+                  </button>
+                  <button
+                    onClick={() => handleStockValidationConfirm(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    No, Cancelar Pago
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
 
-              <div className="bg-red-600 p-4 border-b border-red-700 rounded-t-lg">
 
-                <div className="flex items-center justify-between">
+        {/* Credit Authorization Modal */}
 
-                  <div className="flex items-center space-x-2">
+        {showCreditAuthModal && (
 
-                    <Lock className="h-5 w-5 text-white" />
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
 
-                    <h3 className="text-white font-bold">Autorización Requerida</h3>
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
 
-                  </div>
+              <div className="bg-red-600 p-4 border-b border-red-700 rounded-t-lg">
 
-                  <button
+                <div className="flex items-center justify-between">
 
-                    onClick={() => {
+                  <div className="flex items-center space-x-2">
 
-                      setShowCreditAuthModal(false);
+                    <Lock className="h-5 w-5 text-white" />
 
-                      setAdminPassword('');
+                    <h3 className="text-white font-bold">Autorización Requerida</h3>
 
-                    }}
+                  </div>
 
-                    className="text-red-100 hover:text-white"
+                  <button
 
-                  >
+                    onClick={() => {
 
-                    <X size={20} />
+                      setShowCreditAuthModal(false);
 
-                  </button>
+                      setAdminPassword('');
 
-                </div>
+                    }}
 
-              </div>
+                    className="text-red-100 hover:text-white"
 
-              <div className="p-6">
+                  >
 
-                <div className="text-center mb-6">
+                    <X size={20} />
 
-                  <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-3" />
+                  </button>
 
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                </div>
 
-                    Límite de Crédito Excedido
+              </div>
 
-                  </h4>
+              <div className="p-6">
 
-                  <p className="text-gray-600 text-sm">
+                <div className="text-center mb-6">
 
-                    El cliente {client?.name} excederá su límite de crédito con esta venta.
+                  <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-3" />
 
-                    Se requiere autorización de administrador para continuar.
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
 
-                  </p>
+                    Límite de Crédito Excedido
 
-                  <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  </h4>
 
-                    <div className="text-sm text-yellow-800">
+                  <p className="text-gray-600 text-sm">
 
-                      <p>Límite: ${client?.credit_limit.toLocaleString('es-MX')}</p>
+                    El cliente {client?.name} excederá su límite de crédito con esta venta.
 
-                      <p>Saldo actual: ${client?.balance.toLocaleString('es-MX')}</p>
+                    Se requiere autorización de administrador para continuar.
 
-                      <p>Este pedido: ${order.total.toLocaleString('es-MX')}</p>
+                  </p>
 
-                      <p className="font-bold">Nuevo saldo: ${((client?.balance || 0) + order.total).toLocaleString('es-MX')}</p>
+                  <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
 
-                    </div>
+                    <div className="text-sm text-yellow-800">
 
-                  </div>
+                      <p>Límite: ${client?.credit_limit.toLocaleString('es-MX')}</p>
 
-                </div>
+                      <p>Saldo actual: ${client?.balance.toLocaleString('es-MX')}</p>
 
-                <div className="space-y-4">
+                      <p>Este pedido: ${order.total.toLocaleString('es-MX')}</p>
 
-                  <div>
+                      <p className="font-bold">Nuevo saldo: ${((client?.balance || 0) + order.total).toLocaleString('es-MX')}</p>
 
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    </div>
 
-                      Contraseña de Administrador
+                  </div>
 
-                    </label>
+                </div>
 
-                    <input
+                <div className="space-y-4">
 
-                      type="password"
+                  <div>
 
-                      value={adminPassword}
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
 
-                      onChange={(e) => setAdminPassword(e.target.value)}
+                      Contraseña de Administrador
 
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                    </label>
 
-                      placeholder="Ingrese contraseña..."
+                    <input
 
-                      autoFocus
+                      type="password"
 
-                      onKeyDown={(e) => {
+                      value={adminPassword}
 
-                        if (e.key === 'Enter') {
+                      onChange={(e) => setAdminPassword(e.target.value)}
 
-                          handleCreditAuth();
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
 
-                        }
+                      placeholder="Ingrese contraseña..."
 
-                      }}
+                      autoFocus
 
-                    />
+                      onKeyDown={(e) => {
 
-                  </div>
+                        if (e.key === 'Enter') {
 
-                  <div className="flex space-x-3">
+                          handleCreditAuth();
 
-                    <button
+                        }
 
-                      onClick={handleCreditAuth}
+                      }}
 
-                      disabled={!adminPassword.trim()}
+                    />
 
-                      className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  </div>
 
-                    >
+                  <div className="flex space-x-3">
 
-                      Autorizar Venta
+                    <button
 
-                    </button>
+                      onClick={handleCreditAuth}
 
-                    <button
+                      disabled={!adminPassword.trim()}
 
-                      onClick={() => {
+                      className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
 
-                        setShowCreditAuthModal(false);
+                    >
 
-                        setAdminPassword('');
+                      Autorizar Venta
 
-                      }}
+                    </button>
 
-                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                    <button
 
-                    >
+                      onClick={() => {
 
-                      Cancelar
+                        setShowCreditAuthModal(false);
 
-                    </button>
+                        setAdminPassword('');
 
-                  </div>
+                      }}
 
-                </div>
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
 
-              </div>
+                    >
 
-            </div>
+                      Cancelar
 
-          </div>
+                    </button>
 
-        )}
+                  </div>
 
-      </div>
+                </div>
 
-    </div>
+              </div>
 
-  );
+            </div>
+
+          </div>
+
+        )}
+
+      </div>
+
+    </div>
+
+  );
 
 }
