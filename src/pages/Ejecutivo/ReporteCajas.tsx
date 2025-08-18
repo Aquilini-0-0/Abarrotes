@@ -43,51 +43,51 @@ export function ReporteCajas() {
   const [loadingSalesDetail, setLoadingSalesDetail] = useState(false);
 
 const fetchReportes = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('cash_registers')
-        .select(`
-          *,
-          users!cash_registers_user_id_fkey(name)
-        `)
-        .order('opened_at', { ascending: false });
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('cash_registers')
+        .select(`
+          *,
+          users!cash_registers_user_id_fkey(name)
+        `)
+        .order('opened_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) throw error;
 
       const formattedReports: CashRegisterReport[] = [];
       
       for (const register of data) {
-        const openingDate = new Date(register.opened_at).toISOString().split('T')[0];
-        const difference = register.closing_amount ? register.closing_amount - (register.opening_amount + register.total_cash) : 0;
-        const numeroTickets = Math.floor(register.total_sales / 500);
-        const ticketPromedio = numeroTickets > 0 ? register.total_sales / numeroTickets : 0;
-        
-        return {
-          id: register.id,
-          caja: `CAJA-${register.id.slice(-2).toUpperCase()}`,
-          usuario: register.users?.name || 'Usuario',
-          fecha: openingDate,
-          apertura: register.opening_amount,
-          cierre: register.closing_amount || 0,
-          ventas_efectivo: register.total_cash,
-          ventas_tarjeta: register.total_card,
-          ventas_transferencia: register.total_transfer,
-          total_ventas: register.total_sales,
-          diferencia: difference,
-          numero_tickets: numeroTickets,
-          ticket_promedio: ticketPromedio,
-          status: register.status
-        };
-      });
-      
-      setReportesCaja(formattedReports);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error fetching cash registers');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        const openingDate = new Date(register.opened_at).toISOString().split('T')[0];
+        const difference = register.closing_amount ? register.closing_amount - (register.opening_amount + register.total_cash) : 0;
+        const numeroTickets = Math.floor(register.total_sales / 500);
+        const ticketPromedio = numeroTickets > 0 ? register.total_sales / numeroTickets : 0;
+        
+        formattedReports.push({
+          id: register.id,
+          caja: `CAJA-${register.id.slice(-2).toUpperCase()}`,
+          usuario: register.users?.name || 'Usuario',
+          fecha: openingDate,
+          apertura: register.opening_amount,
+          cierre: register.closing_amount || 0,
+          ventas_efectivo: register.total_cash,
+          ventas_tarjeta: register.total_card,
+          ventas_transferencia: register.total_transfer,
+          total_ventas: register.total_sales,
+          diferencia: difference,
+          numero_tickets: numeroTickets,
+          ticket_promedio: ticketPromedio,
+          status: register.status
+        });
+      }
+      
+      setReportesCaja(formattedReports);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error fetching cash registers');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // Auto-sync for real-time updates
   useAutoSync({
@@ -130,41 +130,27 @@ const fetchReportes = useCallback(async () => {
       if (cashError) throw cashError;
 
       // Query sales that occurred during the cash register session
+      let query = supabase
+        .from('sales')
+        .select(`
           *,
-        // Fetch real sales for this cash register session
-        let salesQuery = supabase
-          .from('sales')
-          .select('total')
-          .eq('created_by', register.user_id)
-          .gte('created_at', register.opened_at);
-
-        if (register.closed_at) {
-          salesQuery = salesQuery.lte('created_at', register.closed_at);
-        }
-
-        const { data: salesData } = await salesQuery;
-        const realTotalSales = salesData?.reduce((sum, sale) => sum + sale.total, 0) || 0;
-        const realNumeroTickets = salesData?.length || 0;
-        const realTicketPromedio = realNumeroTickets > 0 ? realTotalSales / realNumeroTickets : 0;
-        const difference = register.closing_amount ? register.closing_amount - (register.opening_amount + realTotalSales) : 0;
-        
-        formattedReports.push({
+          sale_items(
             product_name,
             quantity,
             price,
             total
           )
         `)
-          ventas_efectivo: realTotalSales, // Use real sales data
+        .gte('created_at', cashRegister.opened_at);
 
       // If cash register is closed, filter by closed_at time
-          total_ventas: realTotalSales, // Use real sales data
+      if (cashRegister.closed_at) {
         query = query.lte('created_at', cashRegister.closed_at);
-          numero_tickets: realNumeroTickets, // Use real ticket count
-          ticket_promedio: realTicketPromedio,
-      const { data: sales, error: salesError } = await query.order('created_at', { ascending: false });
-        });
       }
+
+      const { data: sales, error: salesError } = await query.order('created_at', { ascending: false });
+
+      if (salesError) throw salesError;
 
       setSalesDetail(sales || []);
     } catch (err) {
