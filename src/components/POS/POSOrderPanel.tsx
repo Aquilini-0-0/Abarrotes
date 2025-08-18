@@ -50,6 +50,7 @@ export function POSOrderPanel({
   const [showCreditAuthModal, setShowCreditAuthModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [pendingAction, setPendingAction] = useState<'save' | 'pay' | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(searchClient.toLowerCase()) ||
@@ -73,6 +74,11 @@ export function POSOrderPanel({
   const creditExceeded = client && (isCredit || order?.is_credit) && (creditUsed + orderTotal) > client.credit_limit;
 
   const handleApplyDiscount = () => {
+    if (discountAmount > (order?.subtotal || 0)) {
+      alert('El descuento no puede ser mayor al subtotal del pedido');
+      return;
+    }
+    
     if (order) {
       onApplyDiscount(discountAmount);
     }
@@ -112,10 +118,33 @@ export function POSOrderPanel({
     setPendingAction(null);
   };
 
-  const handleSaveClick = () => {
-    // Save order without payment processing
-    // Orders are saved as "pending" by default
-    onSave();
+  const handleSaveClick = async () => {
+    if (isSaving) return; // Prevent multiple saves
+    
+    setIsSaving(true);
+    try {
+      await onSave();
+    } catch (err) {
+      console.error('Error saving order:', err);
+      if (err instanceof Error && err.message.includes('stock')) {
+        // Extract product names from error message or check order items
+        const stockIssues = order?.items.filter(item => {
+          const product = products?.find(p => p.id === item.product_id);
+          return product && item.quantity > product.stock;
+        }) || [];
+        
+        if (stockIssues.length > 0) {
+          const productNames = stockIssues.map(item => item.product_name).join(', ');
+          alert(`No se pudo guardar el pedido porque no hay stock suficiente para: ${productNames}`);
+        } else {
+          alert('No se pudo guardar el pedido por falta de stock');
+        }
+      } else {
+        alert('Error al guardar el pedido');
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePayClick = () => {
@@ -382,6 +411,7 @@ export function POSOrderPanel({
         step="0.01"
         value={discountAmount}
         onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
+        max={order?.subtotal || 0}
         className="bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs w-12 sm:w-16 lg:w-20 focus:outline-none focus:ring-1 focus:ring-orange-500"
         placeholder="0.00"
       />
@@ -420,13 +450,22 @@ export function POSOrderPanel({
 
     <button
       onClick={handleSaveClick}
-      disabled={!order?.items.length}
+      disabled={!order?.items.length || isSaving}
       className="bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 disabled:from-gray-200 disabled:to-gray-300 disabled:cursor-not-allowed text-orange-700 disabled:text-gray-500 py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 border border-orange-300 disabled:border-gray-300 flex flex-col items-center justify-center min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-      </svg>
-      GUARDAR
+      {isSaving ? (
+        <>
+          <div className="animate-spin rounded-full h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-4 lg:w-4 border-b-2 border-current mb-0.5"></div>
+          GUARDANDO...
+        </>
+      ) : (
+        <>
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          GUARDAR
+        </>
+      )}
     </button>
 
     <button

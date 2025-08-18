@@ -46,8 +46,8 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
       return;
     }
 
-    // Validación de precio menor al costo
-    if (useCustomPrice && customPrice < productCost) {
+    // Validación de precio libre - SIEMPRE pedir contraseña para precio libre
+    if (useCustomPrice) {
       setShowPasswordModal(true);
       return;
     }

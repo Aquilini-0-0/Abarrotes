@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileText, Search, Eye, Download, DollarSign } from 'lucide-react';
+import { X, FileText, Search, Eye, Download, DollarSign, Plus, Truck } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
+import { useSales } from '../../hooks/useSales';
 
 interface Remision {
   id: string;
@@ -19,15 +22,29 @@ interface Remision {
   observaciones: string;
 }
 
+interface NewRemision {
+  sale_id: string;
+  folio_remision: string;
+  observaciones: string;
+}
 interface POSRemisionesModalProps {
   onClose: () => void;
 }
 
 export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
+  const { user } = useAuth();
+  const { sales } = useSales();
   const [remisiones, setRemisiones] = useState<Remision[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [searchSale, setSearchSale] = useState('');
+  const [newRemision, setNewRemision] = useState<NewRemision>({
+    sale_id: '',
+    folio_remision: '',
+    observaciones: ''
+  });
 
   useEffect(() => {
     fetchRemisiones();
@@ -35,60 +52,39 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
 
   const fetchRemisiones = async () => {
     try {
-      // Simulamos datos de remisiones
-      const mockRemisiones: Remision[] = [
-        {
-          id: '1',
-          folio: 'VTA-001',
-          folio_remision: 'REM-001',
-          fecha: '2025-01-15',
-          importe: 3250.00,
-          cliente: 'Supermercado El Águila',
-          estatus: 'CERRADA',
-          tipo_pago: 'Contado',
-          forma_pago: 'Efectivo',
-          caja: 'CAJA-01',
-          dev: 'NO',
-          factura: 'FAC-001',
-          vendedor: 'Juan Pérez',
-          cajero: 'María García',
-          observaciones: 'Entrega inmediata'
-        },
-        {
-          id: '2',
-          folio: 'VTA-002',
-          folio_remision: 'REM-002',
-          fecha: '2025-01-15',
-          importe: 1580.00,
-          cliente: 'Tienda La Esquina',
-          estatus: 'CERRADA',
-          tipo_pago: 'Crédito',
-          forma_pago: 'Crédito',
-          caja: 'CAJA-02',
-          dev: 'NO',
-          factura: 'Pendiente',
-          vendedor: 'Carlos López',
-          cajero: 'Ana Martínez',
-          observaciones: 'Cliente frecuente'
-        },
-        {
-          id: '3',
-          folio: 'VTA-003',
-          folio_remision: 'REM-003',
-          fecha: '2025-01-14',
-          importe: 2100.00,
-          cliente: 'Abarrotes Don José',
-          estatus: 'CERRADA',
-          tipo_pago: 'Contado',
-          forma_pago: 'Tarjeta',
-          caja: 'CAJA-01',
-          dev: 'NO',
-          factura: 'FAC-003',
-          vendedor: 'Juan Pérez',
-          cajero: 'Juan Pérez',
-          observaciones: 'Pago con tarjeta de débito'
-        }
-      ];
+      // Fetch real remisiones from database
+      const { data, error } = await supabase
+        .from('sales')
+        .select(`
+          *,
+          sale_items (
+            product_name,
+            quantity,
+            price,
+            total
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const mockRemisiones: Remision[] = data.map((sale, index) => ({
+        id: sale.id,
+        folio: `VTA-${(index + 1).toString().padStart(3, '0')}`,
+        folio_remision: `REM-${(index + 1).toString().padStart(3, '0')}`,
+        fecha: sale.date,
+        importe: sale.total,
+        cliente: sale.client_name,
+        estatus: 'CERRADA',
+        tipo_pago: sale.status === 'paid' ? 'Contado' : 'Crédito',
+        forma_pago: sale.status === 'paid' ? 'Efectivo' : 'Crédito',
+        caja: 'CAJA-01',
+        dev: 'NO',
+        factura: sale.status === 'paid' ? `FAC-${sale.id.slice(-3)}` : 'Pendiente',
+        vendedor: user?.name || 'Usuario',
+        cajero: user?.name || 'Usuario',
+        observaciones: 'Remisión generada automáticamente'
+      }));
       
       setRemisiones(mockRemisiones);
     } catch (err) {
@@ -97,6 +93,58 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
       setLoading(false);
     }
   };
+
+  const handleCreateRemision = async () => {
+    if (!newRemision.sale_id || !newRemision.folio_remision.trim()) {
+      alert('Por favor complete todos los campos requeridos');
+      return;
+    }
+
+    const selectedSale = sales.find(s => s.id === newRemision.sale_id);
+    if (!selectedSale) {
+      alert('Venta no encontrada');
+      return;
+    }
+
+    try {
+      // In a real system, we would create a remisiones table
+      // For now, we'll simulate by adding to our local state
+      const newRemisionData: Remision = {
+        id: `rem-${Date.now()}`,
+        folio: `VTA-${Date.now().toString().slice(-6)}`,
+        folio_remision: newRemision.folio_remision,
+        fecha: new Date().toISOString().split('T')[0],
+        importe: selectedSale.total,
+        cliente: selectedSale.client_name,
+        estatus: 'CERRADA',
+        tipo_pago: selectedSale.status === 'paid' ? 'Contado' : 'Crédito',
+        forma_pago: selectedSale.status === 'paid' ? 'Efectivo' : 'Crédito',
+        caja: 'CAJA-01',
+        dev: 'NO',
+        factura: selectedSale.status === 'paid' ? `FAC-${selectedSale.id.slice(-3)}` : 'Pendiente',
+        vendedor: user?.name || 'Usuario',
+        cajero: user?.name || 'Usuario',
+        observaciones: newRemision.observaciones
+      };
+
+      setRemisiones(prev => [newRemisionData, ...prev]);
+      setNewRemision({
+        sale_id: '',
+        folio_remision: '',
+        observaciones: ''
+      });
+      setShowForm(false);
+      alert('Remisión creada exitosamente');
+    } catch (err) {
+      console.error('Error creating remision:', err);
+      alert('Error al crear la remisión');
+    }
+  };
+
+  const filteredSales = sales.filter(sale =>
+    sale.client_name.toLowerCase().includes(searchSale.toLowerCase()) ||
+    sale.id.toLowerCase().includes(searchSale.toLowerCase())
+  );
 
   const filteredRemisiones = remisiones.filter(remision => {
     const matchesSearch = remision.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -125,6 +173,124 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
           </div>
         </div>
 
+        {/* New Remision Form Modal */}
+        {showForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="bg-gradient-to-r from-orange-600 to-red-600 p-4 rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-white font-bold">Nueva Remisión de Entrega</h3>
+                  <button
+                    onClick={() => setShowForm(false)}
+                    className="text-orange-100 hover:text-white"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Seleccionar Pedido
+                  </label>
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchSale}
+                      onChange={(e) => setSearchSale(e.target.value)}
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      placeholder="Buscar pedido por cliente o folio..."
+                    />
+                  </div>
+                  
+                  <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
+                    {filteredSales.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500">
+                        No se encontraron pedidos
+                      </div>
+                    ) : (
+                      filteredSales.map(sale => (
+                        <div
+                          key={sale.id}
+                          onClick={() => setNewRemision(prev => ({ ...prev, sale_id: sale.id }))}
+                          className={`p-3 border-b border-gray-100 cursor-pointer hover:bg-orange-50 ${
+                            newRemision.sale_id === sale.id ? 'bg-orange-100 border-orange-300' : ''
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                #{sale.id.slice(-6).toUpperCase()} - {sale.client_name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {new Date(sale.date).toLocaleDateString('es-MX')} • {sale.items.length} productos
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-green-600">
+                                ${sale.total.toLocaleString('es-MX')}
+                              </div>
+                              <div className={`text-xs px-2 py-1 rounded-full ${
+                                sale.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {sale.status === 'paid' ? 'Pagado' : 'Pendiente'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Folio de Remisión
+                  </label>
+                  <input
+                    type="text"
+                    value={newRemision.folio_remision}
+                    onChange={(e) => setNewRemision(prev => ({ ...prev, folio_remision: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="REM-001"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Observaciones
+                  </label>
+                  <textarea
+                    value={newRemision.observaciones}
+                    onChange={(e) => setNewRemision(prev => ({ ...prev, observaciones: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    rows={3}
+                    placeholder="Observaciones de la remisión..."
+                  />
+                </div>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleCreateRemision}
+                    disabled={!newRemision.sale_id || !newRemision.folio_remision.trim()}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Crear Remisión
+                  </button>
+                  <button
+                    onClick={() => setShowForm(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="p-6 overflow-y-auto max-h-[calc(95vh-120px)]">
           {/* Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -189,6 +355,13 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
               </select>
             </div>
 
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:opacity-90"
+            >
+              <Plus size={16} />
+              <span>Nueva Remisión</span>
+            </button>
             <div className="text-sm text-gray-600">
               Mostrando {filteredRemisiones.length} de {remisiones.length} remisiones
             </div>

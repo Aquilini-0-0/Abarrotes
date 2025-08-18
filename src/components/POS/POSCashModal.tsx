@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { X, DollarSign, Calculator, TrendingUp, Clock } from 'lucide-react';
 import { CashRegister } from '../../types/pos';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 interface POSCashModalProps {
   cashRegister: CashRegister | null;
@@ -10,10 +13,50 @@ interface POSCashModalProps {
 }
 
 export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseRegister }: POSCashModalProps) {
+  const { user } = useAuth();
   const [openingAmount, setOpeningAmount] = useState('');
   const [closingAmount, setClosingAmount] = useState(0);
   const [isOpening, setIsOpening] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [totalSales, setTotalSales] = useState(0);
+  const [loadingSales, setLoadingSales] = useState(false);
+
+  // Fetch sales data when cash register is available
+  useEffect(() => {
+    if (cashRegister) {
+      fetchSalesForCashRegister();
+    }
+  }, [cashRegister]);
+
+  const fetchSalesForCashRegister = async () => {
+    if (!cashRegister || !user) return;
+    
+    setLoadingSales(true);
+    try {
+      let query = supabase
+        .from('sales')
+        .select('total')
+        .eq('created_by', user.id)
+        .gte('created_at', cashRegister.opened_at);
+
+      // If cash register is closed, filter by closed_at time
+      if (cashRegister.closed_at) {
+        query = query.lte('created_at', cashRegister.closed_at);
+      }
+
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      const total = data?.reduce((sum, sale) => sum + sale.total, 0) || 0;
+      setTotalSales(total);
+    } catch (err) {
+      console.error('Error fetching sales for cash register:', err);
+      setTotalSales(0);
+    } finally {
+      setLoadingSales(false);
+    }
+  };
 
   const handleOpenRegister = async () => {
     setIsOpening(true);
@@ -153,8 +196,12 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                 <div className="grid grid-cols-4 gap-4 border-t border-gray-300 pt-4">
                   <div className="text-center">
                     <div className="text-gray-500 text-sm">Ventas Total</div>
-                    <div className="text-gray-900 font-mono font-bold">
-                      ${cashRegister.total_sales.toFixed(2)}
+                    <div className="text-gray-900 font-mono font-bold flex items-center justify-center">
+                      {loadingSales ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                      ) : (
+                        `$${totalSales.toFixed(2)}`
+                      )}
                     </div>
                   </div>
                   <div className="text-center">
@@ -184,7 +231,7 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                     <label className="block text-gray-600 text-sm mb-2">Efectivo Esperado</label>
                     <div className="bg-gray-100 px-4 py-3 rounded-lg text-center">
                       <div className="text-yellow-500 font-mono text-xl">
-                        ${expectedCash.toFixed(2)}
+                        ${(cashRegister.opening_amount + totalSales).toFixed(2)}
                       </div>
                       <div className="text-gray-400 text-xs">Apertura + Ventas en efectivo</div>
                     </div>
@@ -206,18 +253,18 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600">Diferencia:</span>
                     <span className={`font-mono font-bold text-lg ${
-                      Math.abs(difference) < 0.01
+                      Math.abs(closingAmount - (cashRegister.opening_amount + totalSales)) < 0.01
                         ? 'text-green-500'
-                        : difference > 0
+                        : (closingAmount - (cashRegister.opening_amount + totalSales)) > 0
                         ? 'text-blue-500'
                         : 'text-red-500'
                     }`}>
-                      {difference > 0 ? '+' : ''}${difference.toFixed(2)}
+                      {(closingAmount - (cashRegister.opening_amount + totalSales)) > 0 ? '+' : ''}${(closingAmount - (cashRegister.opening_amount + totalSales)).toFixed(2)}
                     </span>
                   </div>
-                  {Math.abs(difference) >= 0.01 && (
+                  {Math.abs(closingAmount - (cashRegister.opening_amount + totalSales)) >= 0.01 && (
                     <div className="text-xs text-gray-400 mt-1">
-                      {difference > 0 ? 'Sobrante en caja' : 'Faltante en caja'}
+                      {(closingAmount - (cashRegister.opening_amount + totalSales)) > 0 ? 'Sobrante en caja' : 'Faltante en caja'}
                     </div>
                   )}
                 </div>
