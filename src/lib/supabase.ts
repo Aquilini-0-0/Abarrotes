@@ -45,6 +45,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
       }),
       insert: () => ({ 
         select: () => ({ 
+        limit: () => ({ 
+          maybeSingle: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
+          single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') })
+        })
           single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }) 
         }) 
       }),

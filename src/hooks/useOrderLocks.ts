@@ -138,15 +138,15 @@ export function useOrderLocks() {
   };
 
   const cleanupUserLocks = async () => {
-    // Skip cleanup if page is being unloaded to prevent "Failed to fetch" errors
-    if (document.visibilityState === 'hidden') {
-      console.warn('Skipping lock cleanup due to page unload - locks will expire automatically');
-      return;
-    }
-
     // Skip cleanup if Supabase is not configured
     if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
       console.warn('Skipping lock cleanup - Supabase not configured');
+      return;
+    }
+
+    // Skip cleanup if page is being unloaded to prevent "Failed to fetch" errors
+    if (document.visibilityState === 'hidden') {
+      console.warn('Skipping lock cleanup due to page unload - locks will expire automatically');
       return;
     }
 
@@ -156,6 +156,17 @@ export function useOrderLocks() {
       // Check if Supabase is available before attempting cleanup
       if (!supabase) {
         console.warn('Supabase client not available for lock cleanup');
+        return;
+      }
+
+      // Test connection before attempting cleanup
+      const { error: testError } = await supabase
+        .from('order_locks')
+        .select('id')
+        .limit(1);
+
+      if (testError) {
+        console.warn('Supabase connection test failed, skipping cleanup:', testError.message);
         return;
       }
 

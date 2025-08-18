@@ -23,7 +23,30 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
       return;
     }
 
+    // Test Supabase connection before starting auto-sync
+    const testConnection = async () => {
+      try {
+        const { error } = await supabase
+          .from('users')
+          .select('id')
+          .limit(1);
+        
+        if (error) {
+          console.warn('Supabase connection test failed - skipping auto-sync:', error.message);
+          return false;
+        }
+        return true;
+      } catch (err) {
+        console.warn('Supabase connection test failed - skipping auto-sync');
+        return false;
+      }
+    };
+
     const checkForUpdates = async () => {
+      // Test connection first
+      const isConnected = await testConnection();
+      if (!isConnected) return;
+
       try {
         let hasUpdates = false;
 
