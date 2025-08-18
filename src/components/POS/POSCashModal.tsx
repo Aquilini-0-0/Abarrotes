@@ -213,7 +213,6 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-600 text-sm mb-2">Efectivo Esperado</label>
-                       ${totalSales.toFixed(2)}
                       <div className="text-yellow-500 font-mono text-xl">
                         ${(cashRegister.opening_amount + totalSales).toFixed(2)}
                       </div>
