@@ -194,8 +194,8 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                 </div>
 
                 
-                <div className="flex justify-center border-t border-gray-300 pt-4">
-  <div className="text-center">
+                <div className="grid grid-cols-4 gap-4 border-t border-gray-300 pt-4">
+  <div className="col-span-4 text-center">
     <div className="text-gray-500 text-sm">Ventas Total</div>
     <div className="text-gray-900 font-mono font-bold flex items-center justify-center">
       {loadingSales ? (
