@@ -617,7 +617,7 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
       </div>
 
     {/* Footer compacto */}
-<div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 py-1 sm:py-2 px-2 sm:px-3 border-t border-red-700">
+<div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 py-1 sm:py-2 px-2 sm:px-3">
   <div className="grid grid-cols-3 gap-1 sm:gap-2">
     
     {/* Botón Procesar */}
