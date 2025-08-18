@@ -206,7 +206,6 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                     </div>
                   </div>
                 </div>
-              </div>
 
 
               <div className="mb-6">
@@ -271,5 +270,7 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
             </div>
           )}
         </div>
+      </div>
+    </div>
   );
 }
