@@ -97,21 +97,21 @@ export function Kardex() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card title="Entradas Total">
           <div className="text-center">
-            <div className="text-3xl font-bold text-green-600">{totalEntradas}</div>
+            <div className="text-3xl font-bold text-green-600">{totalEntradas.toFixed(3)}</div>
             <div className="text-sm text-gray-500">Unidades ingresadas</div>
           </div>
         </Card>
 
         <Card title="Salidas Total">
           <div className="text-center">
-            <div className="text-3xl font-bold text-red-600">{totalSalidas}</div>
+            <div className="text-3xl font-bold text-red-600">{totalSalidas.toFixed(3)}</div>
             <div className="text-sm text-gray-500">Unidades salidas</div>
           </div>
         </Card>
 
         <Card title="Saldo Actual">
           <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600">{(totalEntradas - totalSalidas)}</div>
+            <div className="text-3xl font-bold text-blue-600">{(totalEntradas - totalSalidas).toFixed(3)}</div>
             <div className="text-sm text-gray-500">Unidades disponibles</div>
           </div>
         </Card>

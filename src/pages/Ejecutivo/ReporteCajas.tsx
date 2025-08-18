@@ -51,12 +51,13 @@ const fetchReportes = useCallback(async () => {
           *,
           users!cash_registers_user_id_fkey(name)
         `)
-        // .eq('user_id', user?.id) // Elimina o comenta esta línea
         .order('opened_at', { ascending: false });
 
       if (error) throw error;
 
-      const formattedReports: CashRegisterReport[] = data.map(register => {
+      const formattedReports: CashRegisterReport[] = [];
+      
+      for (const register of data) {
         const openingDate = new Date(register.opened_at).toISOString().split('T')[0];
         const difference = register.closing_amount ? register.closing_amount - (register.opening_amount + register.total_cash) : 0;
         const numeroTickets = Math.floor(register.total_sales / 500);
@@ -129,27 +130,41 @@ const fetchReportes = useCallback(async () => {
       if (cashError) throw cashError;
 
       // Query sales that occurred during the cash register session
-      let query = supabase
-        .from('sales')
-        .select(`
           *,
-          sale_items (
+        // Fetch real sales for this cash register session
+        let salesQuery = supabase
+          .from('sales')
+          .select('total')
+          .eq('created_by', register.user_id)
+          .gte('created_at', register.opened_at);
+
+        if (register.closed_at) {
+          salesQuery = salesQuery.lte('created_at', register.closed_at);
+        }
+
+        const { data: salesData } = await salesQuery;
+        const realTotalSales = salesData?.reduce((sum, sale) => sum + sale.total, 0) || 0;
+        const realNumeroTickets = salesData?.length || 0;
+        const realTicketPromedio = realNumeroTickets > 0 ? realTotalSales / realNumeroTickets : 0;
+        const difference = register.closing_amount ? register.closing_amount - (register.opening_amount + realTotalSales) : 0;
+        
+        formattedReports.push({
             product_name,
             quantity,
             price,
             total
           )
         `)
-        .gte('created_at', cashRegister.opened_at);
+          ventas_efectivo: realTotalSales, // Use real sales data
 
       // If cash register is closed, filter by closed_at time
-      if (cashRegister.closed_at) {
+          total_ventas: realTotalSales, // Use real sales data
         query = query.lte('created_at', cashRegister.closed_at);
-      }
-
+          numero_tickets: realNumeroTickets, // Use real ticket count
+          ticket_promedio: realTicketPromedio,
       const { data: sales, error: salesError } = await query.order('created_at', { ascending: false });
-
-      if (salesError) throw salesError;
+        });
+      }
 
       setSalesDetail(sales || []);
     } catch (err) {

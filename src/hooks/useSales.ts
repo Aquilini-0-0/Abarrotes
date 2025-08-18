@@ -139,8 +139,18 @@ export function useSales() {
       fetchSales();
     };
     
+    // Listen for real-time updates from POS
+    const handlePOSUpdate = () => {
+      fetchSales();
+    };
+    
     window.addEventListener('refreshData', handleRefresh);
-    return () => window.removeEventListener('refreshData', handleRefresh);
+    window.addEventListener('posDataUpdate', handlePOSUpdate);
+    
+    return () => {
+      window.removeEventListener('refreshData', handleRefresh);
+      window.removeEventListener('posDataUpdate', handlePOSUpdate);
+    };
   }, []);
 
   return {

@@ -373,6 +373,9 @@ export function usePOS() {
         window.triggerSync();
       }
       
+      // Trigger ERS sales sync
+      window.dispatchEvent(new CustomEvent('posDataUpdate'));
+      
       return saleData;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error saving order');
@@ -470,6 +473,50 @@ export function usePOS() {
 
         // If fully paid, create inventory movements and update stock
         if (newStatus === 'paid') {
+          // Check for negative stock and create notification for admin
+          const stockIssues = [];
+          
+          for (const item of orderData.sale_items) {
+            const { data: product } = await supabase
+              .from('products')
+              .select('stock')
+              .eq('id', item.product_id)
+              .single();
+
+            if (product && item.quantity > product.stock) {
+              stockIssues.push({
+                product_name: item.product_name,
+                required: item.quantity,
+                available: product.stock,
+                deficit: item.quantity - product.stock
+              });
+            }
+          }
+
+          // If there are stock issues, create notification for admin
+          if (stockIssues.length > 0) {
+            try {
+              // In a real system, you would create a notifications table
+              // For now, we'll log it and could extend to create admin notifications
+              console.warn('ADMIN NOTIFICATION: Venta con stock negativo procesada', {
+                orderId: orderId,
+                user: user?.name,
+                stockIssues: stockIssues,
+                timestamp: new Date().toISOString()
+              });
+              
+              // You could extend this to create actual notifications in the database
+              // await supabase.from('admin_notifications').insert({
+              //   type: 'negative_stock_sale',
+              //   message: `Venta procesada con stock insuficiente por ${user?.name}`,
+              //   data: { orderId, stockIssues },
+              //   created_at: new Date().toISOString()
+              // });
+            } catch (notificationError) {
+              console.error('Error creating admin notification:', notificationError);
+            }
+          }
+
           // Handle vales payment
           if (paymentData.method === 'vales' && paymentData.selectedVale) {
             // Mark vale as used
@@ -552,6 +599,9 @@ export function usePOS() {
       if (window.triggerSync) {
         window.triggerSync();
       }
+      
+      // Trigger ERS sales sync
+      window.dispatchEvent(new CustomEvent('posDataUpdate'));
       
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error processing payment');
