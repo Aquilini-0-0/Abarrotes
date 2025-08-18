@@ -49,7 +49,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
           maybeSingle: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
           single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') })
         })
-          single: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }) 
         }) 
       }),
       update: () => ({ 
