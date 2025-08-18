@@ -277,6 +277,14 @@ export function usePOS() {
   // Save order to database
   const saveOrder = async (order: POSOrder) => {
     try {
+      // Validate stock before saving
+      for (const item of order.items) {
+        const product = products.find(p => p.id === item.product_id);
+        if (product && item.quantity > product.stock) {
+          throw new Error(`No se puede guardar el pedido porque no hay stock suficiente para ${item.product_name}. Disponible: ${product.stock} unidades, Solicitado: ${item.quantity} unidades`);
+        }
+      }
+
       let saleData;
       let isNewOrder = order.id.startsWith('temp-');
       
