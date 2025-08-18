@@ -4,6 +4,7 @@ import { DataTable } from '../../components/Common/DataTable';
 import { useSales } from '../../hooks/useSales';
 import { BarChart3, TrendingUp, DollarSign, ShoppingCart, Eye, X, User, FileText, Calculator, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAutoSync } from '../../hooks/useAutoSync';
 
 export function ReportesVentas() {
   const { sales, loading, error } = useSales();
@@ -14,6 +15,16 @@ export function ReportesVentas() {
     cliente: '',
     fechaInicio: '',
     fechaFin: ''
+  });
+
+  // Auto-sync for real-time updates from POS
+  useAutoSync({
+    onDataUpdate: () => {
+      // Force refresh of sales data
+      window.dispatchEvent(new CustomEvent('refreshData'));
+    },
+    interval: 3000, // Update every 3 seconds
+    tables: ['sales', 'sale_items']
   });
 
   // Expandir datos de ventas con información detallada

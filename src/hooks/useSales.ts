@@ -144,12 +144,19 @@ export function useSales() {
       fetchSales();
     };
     
+    // Listen for manual sync from header
+    const handleManualSync = () => {
+      fetchSales();
+    };
+    
     window.addEventListener('refreshData', handleRefresh);
     window.addEventListener('posDataUpdate', handlePOSUpdate);
+    window.addEventListener('manualSync', handleManualSync);
     
     return () => {
       window.removeEventListener('refreshData', handleRefresh);
       window.removeEventListener('posDataUpdate', handlePOSUpdate);
+      window.removeEventListener('manualSync', handleManualSync);
     };
   }, []);
 

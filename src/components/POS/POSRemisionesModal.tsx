@@ -52,41 +52,40 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
 
   const fetchRemisiones = async () => {
     try {
-      // Fetch real remisiones from database
       const { data, error } = await supabase
-        .from('sales')
+        .from('remisiones')
         .select(`
           *,
-          sale_items (
-            product_name,
-            quantity,
-            price,
-            total
+          sales!remisiones_sale_id_fkey (
+            client_name,
+            total,
+            status,
+            created_at
           )
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const mockRemisiones: Remision[] = data.map((sale, index) => ({
-        id: sale.id,
-        folio: `VTA-${(index + 1).toString().padStart(3, '0')}`,
-        folio_remision: `REM-${(index + 1).toString().padStart(3, '0')}`,
-        fecha: sale.date,
-        importe: sale.total,
-        cliente: sale.client_name,
-        estatus: 'CERRADA',
-        tipo_pago: sale.status === 'paid' ? 'Contado' : 'Crédito',
-        forma_pago: sale.status === 'paid' ? 'Efectivo' : 'Crédito',
-        caja: 'CAJA-01',
-        dev: 'NO',
-        factura: sale.status === 'paid' ? `FAC-${sale.id.slice(-3)}` : 'Pendiente',
-        vendedor: user?.name || 'Usuario',
-        cajero: user?.name || 'Usuario',
-        observaciones: 'Remisión generada automáticamente'
+      const formattedRemisiones: Remision[] = data.map(remision => ({
+        id: remision.id,
+        folio: remision.folio,
+        folio_remision: remision.folio_remision,
+        fecha: remision.fecha,
+        importe: remision.importe,
+        cliente: remision.cliente,
+        estatus: remision.estatus,
+        tipo_pago: remision.tipo_pago,
+        forma_pago: remision.forma_pago,
+        caja: remision.caja,
+        dev: remision.dev,
+        factura: remision.factura,
+        vendedor: remision.vendedor,
+        cajero: remision.cajero,
+        observaciones: remision.observaciones
       }));
       
-      setRemisiones(mockRemisiones);
+      setRemisiones(formattedRemisiones);
     } catch (err) {
       console.error('Error fetching remisiones:', err);
     } finally {
@@ -107,24 +106,46 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
     }
 
     try {
-      // In a real system, we would create a remisiones table
-      // For now, we'll simulate by adding to our local state
+      const { data, error } = await supabase
+        .from('remisiones')
+        .insert({
+          folio: `VTA-${Date.now().toString().slice(-6)}`,
+          folio_remision: newRemision.folio_remision,
+          sale_id: newRemision.sale_id,
+          fecha: new Date().toISOString().split('T')[0],
+          importe: selectedSale.total,
+          cliente: selectedSale.client_name,
+          estatus: 'CERRADA',
+          tipo_pago: selectedSale.status === 'paid' ? 'Contado' : 'Crédito',
+          forma_pago: selectedSale.status === 'paid' ? 'Efectivo' : 'Crédito',
+          caja: 'CAJA-01',
+          dev: 'NO',
+          factura: selectedSale.status === 'paid' ? `FAC-${selectedSale.id.slice(-3)}` : 'Pendiente',
+          vendedor: user?.name || 'Usuario',
+          cajero: user?.name || 'Usuario',
+          observaciones: newRemision.observaciones
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
       const newRemisionData: Remision = {
-        id: `rem-${Date.now()}`,
-        folio: `VTA-${Date.now().toString().slice(-6)}`,
+        id: data.id,
+        folio: data.folio,
         folio_remision: newRemision.folio_remision,
-        fecha: new Date().toISOString().split('T')[0],
-        importe: selectedSale.total,
-        cliente: selectedSale.client_name,
-        estatus: 'CERRADA',
-        tipo_pago: selectedSale.status === 'paid' ? 'Contado' : 'Crédito',
-        forma_pago: selectedSale.status === 'paid' ? 'Efectivo' : 'Crédito',
-        caja: 'CAJA-01',
-        dev: 'NO',
-        factura: selectedSale.status === 'paid' ? `FAC-${selectedSale.id.slice(-3)}` : 'Pendiente',
-        vendedor: user?.name || 'Usuario',
-        cajero: user?.name || 'Usuario',
-        observaciones: newRemision.observaciones
+        fecha: data.fecha,
+        importe: data.importe,
+        cliente: data.cliente,
+        estatus: data.estatus,
+        tipo_pago: data.tipo_pago,
+        forma_pago: data.forma_pago,
+        caja: data.caja,
+        dev: data.dev,
+        factura: data.factura,
+        vendedor: data.vendedor,
+        cajero: data.cajero,
+        observaciones: data.observaciones
       };
 
       setRemisiones(prev => [newRemisionData, ...prev]);

@@ -58,10 +58,30 @@ const fetchReportes = useCallback(async () => {
       const formattedReports: CashRegisterReport[] = [];
       
       for (const register of data) {
+        // Fetch sales for this specific cash register session
+        let salesQuery = supabase
+          .from('sales')
+          .select('id, total, created_at')
+          .eq('created_by', register.user_id)
+          .gte('created_at', register.opened_at);
+
+        // If cash register is closed, filter by closed_at time
+        if (register.closed_at) {
+          salesQuery = salesQuery.lte('created_at', register.closed_at);
+        }
+
+        const { data: salesData, error: salesError } = await salesQuery;
+        
+        if (salesError) {
+          console.error('Error fetching sales for register:', salesError);
+        }
+
+        const actualTotalSales = salesData?.reduce((sum, sale) => sum + sale.total, 0) || 0;
+        const actualTicketCount = salesData?.length || 0;
+        const actualTicketPromedio = actualTicketCount > 0 ? actualTotalSales / actualTicketCount : 0;
+        
         const openingDate = new Date(register.opened_at).toISOString().split('T')[0];
         const difference = register.closing_amount ? register.closing_amount - (register.opening_amount + register.total_cash) : 0;
-        const numeroTickets = Math.floor(register.total_sales / 500);
-        const ticketPromedio = numeroTickets > 0 ? register.total_sales / numeroTickets : 0;
         
         formattedReports.push({
           id: register.id,
@@ -73,10 +93,10 @@ const fetchReportes = useCallback(async () => {
           ventas_efectivo: register.total_cash,
           ventas_tarjeta: register.total_card,
           ventas_transferencia: register.total_transfer,
-          total_ventas: register.total_sales,
+          total_ventas: actualTotalSales,
           diferencia: difference,
-          numero_tickets: numeroTickets,
-          ticket_promedio: ticketPromedio,
+          numero_tickets: actualTicketCount,
+          ticket_promedio: actualTicketPromedio,
           status: register.status
         });
       }
