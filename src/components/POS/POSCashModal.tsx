@@ -204,24 +204,7 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                       )}
                     </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-gray-500 text-sm">Efectivo</div>
-                    <div className="text-green-500 font-mono">
-                      ${cashRegister.total_cash.toFixed(2)}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-gray-500 text-sm">Tarjeta</div>
-                    <div className="text-blue-500 font-mono">
-                      ${cashRegister.total_card.toFixed(2)}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-gray-500 text-sm">Transferencia</div>
-                    <div className="text-purple-500 font-mono">
-                      ${cashRegister.total_transfer.toFixed(2)}
-                    </div>
-                  </div>
+   
                 </div>
               </div>
 
