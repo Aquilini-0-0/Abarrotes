@@ -24,7 +24,10 @@ export function ReportesVentas() {
       window.dispatchEvent(new CustomEvent('refreshData'));
     },
     interval: 3000, // Update every 3 seconds
-    tables: ['sales', 'sale_items']
+    tables: [
+      'sales',
+      { name: 'sale_items', timestampColumn: 'created_at' }
+    ]
   });
 
   // Expandir datos de ventas con información detallada
