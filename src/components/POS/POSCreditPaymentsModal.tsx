@@ -676,7 +676,7 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
         {showSaleDetail && selectedSale && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-2 sm:p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-xs sm:max-w-2xl lg:max-w-4xl max-h-[95vh] overflow-hidden">
-              <div className="bg-blue-600 p-2 sm:p-4 rounded-t-lg">
+              <div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 p-2 sm:p-4 rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <h3 className="text-white font-bold text-sm sm:text-base lg:text-lg">Detalle de Venta a Crédito</h3>
                   <button
