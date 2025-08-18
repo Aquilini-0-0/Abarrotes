@@ -201,7 +201,8 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                       ${cashRegister.total_sales.toFixed(2)}
                     </div>
                   </div>
-</div> </div>
+               </div>
+              </div>
 
 
               <div className="mb-6">
