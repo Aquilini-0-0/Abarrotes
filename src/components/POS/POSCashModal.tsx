@@ -194,7 +194,14 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                 </div>
 
                 
-<div className="grid grid-cols-4 gap-4 border-t border-gray-300 pt-4"> <div className="text-center"> <div className="text-gray-500 text-sm">Ventas Total</div> <div className="text-gray-900 font-mono font-bold flex items-center justify-center"> {loadingSales ? ( <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div> ) : ( $${totalSales.toFixed(2)} )} </div> </div> </div> </div>
+             <div className="grid grid-cols-4 gap-4 border-t border-gray-300 pt-4">
+                  <div className="text-center">
+                    <div className="text-gray-500 text-sm">Ventas Total</div>
+                    <div className="text-gray-900 font-mono font-bold">
+                      ${cashRegister.total_sales.toFixed(2)}
+                    </div>
+                  </div>
+
 
 
               <div className="mb-6">
