@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useSales } from '../../hooks/useSales';
+import { supabase } from '../../lib/supabase';
 import { FileText, Truck, Printer, ChevronLeft, ChevronRight, SkipForward, Download } from 'lucide-react';
 
 interface Remision {
