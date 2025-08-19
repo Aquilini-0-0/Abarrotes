@@ -507,20 +507,22 @@ export function usePOS() {
               });
               
               // Create notification for admin in the database
-              await supabase.from('admin_notifications').insert({
-                type: 'negative_stock_sale',
-                title: 'Venta con Stock Negativo',
-                message: `Venta procesada con stock insuficiente por ${user?.name}`,
-                data: { 
-                  orderId, 
-                  stockIssues,
-                  user_name: user?.name,
-                  sale_total: orderData.total
-                },
-                created_at: new Date().toISOString()
-              }).select().catch(notifError => {
+              try {
+                await supabase.from('admin_notifications').insert({
+                  type: 'negative_stock_sale',
+                  title: 'Venta con Stock Negativo',
+                  message: `Venta procesada con stock insuficiente por ${user?.name}`,
+                  data: { 
+                    orderId, 
+                    stockIssues,
+                    user_name: user?.name,
+                    sale_total: orderData.total
+                  },
+                  created_at: new Date().toISOString()
+                }).select();
+              } catch (notifError) {
                 console.warn('Could not create admin notification (table may not exist):', notifError);
-              });
+              }
             } catch (notificationError) {
               console.error('Error creating admin notification:', notificationError);
             }
