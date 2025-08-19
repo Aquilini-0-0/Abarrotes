@@ -267,7 +267,7 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                     ? 'text-blue-900'
                     : 'text-red-900'
                 }`}>
-                  Diferencia Final
+                  Ganancias
                 </h4>
                 <div className="text-center">
                   <div className={`font-mono font-bold text-3xl ${
