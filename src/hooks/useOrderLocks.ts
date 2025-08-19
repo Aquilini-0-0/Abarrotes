@@ -153,9 +153,9 @@ export function useOrderLocks() {
       return;
     }
 
-    // Skip cleanup if page is being unloaded to prevent "Failed to fetch" errors
-    if (document.visibilityState === 'hidden') {
-      console.warn('Skipping lock cleanup due to page unload - locks will expire automatically');
+    // Skip cleanup if page is being unloaded or network is unavailable
+    if (document.visibilityState === 'hidden' || !navigator.onLine) {
+      console.warn('Skipping lock cleanup due to page unload or network unavailable - locks will expire automatically');
       return;
     }
 
@@ -168,15 +168,30 @@ export function useOrderLocks() {
         return;
       }
 
-      // Test connection before attempting cleanup
-      const { error: testError } = await supabase
-        .from('order_locks')
-        .select('id')
-        .limit(1);
+      // Test connection with timeout before attempting cleanup
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+      
+      try {
+        const { error: testError } = await supabase
+          .from('order_locks')
+          .select('id')
+          .limit(1)
+          .abortSignal(controller.signal);
 
-      if (testError) {
-        console.warn('Supabase connection test failed, skipping cleanup:', testError.message);
-        return;
+        clearTimeout(timeoutId);
+        
+        if (testError) {
+          console.warn('Supabase connection test failed, skipping cleanup:', testError.message);
+          return;
+        }
+      } catch (testErr) {
+        clearTimeout(timeoutId);
+        if (testErr.name === 'AbortError') {
+          console.warn('Supabase connection timeout, skipping cleanup');
+          return;
+        }
+        throw testErr;
       }
 
       const { error } = await supabase
@@ -190,8 +205,10 @@ export function useOrderLocks() {
       }
     } catch (err) {
       // Handle network errors gracefully - this is non-critical functionality
-      if (err instanceof TypeError && err.message.includes('fetch')) {
+      if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('Failed to fetch'))) {
         console.warn('Network error during lock cleanup (non-critical) - continuing without cleanup');
+      } else if (err.name === 'AbortError') {
+        console.warn('Lock cleanup aborted due to timeout (non-critical)');
       } else {
         console.warn('Could not cleanup locks (non-critical):', err instanceof Error ? err.message : 'Unknown error');
       }

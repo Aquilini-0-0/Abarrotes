@@ -47,6 +47,12 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
       const isConnected = await testConnection();
       if (!isConnected) return;
 
+      // Skip if network is unavailable
+      if (!navigator.onLine) {
+        console.warn('Network unavailable - skipping auto-sync');
+        return;
+      }
+
       try {
         let hasUpdates = false;
 
@@ -55,12 +61,19 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
           const timestampColumn = typeof tableConfig === 'string' ? 'updated_at' : (tableConfig.timestampColumn || 'updated_at');
           
           try {
+            // Add timeout to prevent hanging requests
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            
             const { data, error } = await supabase
               .from(tableName)
               .select(timestampColumn)
               .order(timestampColumn, { ascending: false })
               .limit(1)
+              .abortSignal(controller.signal)
               .maybeSingle();
+
+            clearTimeout(timeoutId);
 
             if (error) continue;
 
@@ -70,6 +83,10 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
               hasUpdates = true;
             }
           } catch (tableError) {
+            if (tableError.name === 'AbortError') {
+              console.warn(`Timeout checking updates for table ${tableName} - skipping`);
+              continue;
+            }
             // Skip this table if there's an error
             console.warn(`Error checking updates for table ${tableName}:`, tableError);
             continue;
@@ -81,8 +98,11 @@ export function useAutoSync({ onDataUpdate, interval = 5000, tables = [] }: Auto
         }
       } catch (err) {
         // Handle network errors gracefully
-        if (err instanceof TypeError && err.message.includes('fetch')) {
+        if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('Failed to fetch'))) {
           console.warn('Network error during auto-sync (Supabase may not be configured) - skipping update');
+          return;
+        } else if (err.name === 'AbortError') {
+          console.warn('Auto-sync aborted due to timeout - skipping update');
           return;
         }
         console.warn('Error checking for updates:', err);
