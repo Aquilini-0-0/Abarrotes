@@ -360,6 +360,10 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
 
     // Si la contraseña es correcta, cierra el modal y procede con el pago
+    setShowCreditAuthModal(false);
+    setAdminPassword('');
+    processPayment();
+  };
 
   const processPayment = (overrideStock = false) => {
     setIsProcessing(true);
@@ -380,24 +384,6 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       onConfirm(paymentData);
       setIsProcessing(false);
     }, 1000);
-  };
-
-      printA4
-
-    };
-
-
-
-    // Simulate processing delay
-
-    setTimeout(() => {
-
-      onConfirm(paymentData);
-
-      setIsProcessing(false);
-
-    }, 1000);
-
   };
 
 
@@ -550,7 +536,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                   key={btn.method}
 
-                  onClick={() => setPaymentMethod(btn.method)}
+                  onClick={() => setPaymentMethod(btn.method as 'cash' | 'card' | 'transfer' | 'credit' | 'mixed' | 'vales')}
 
                   disabled={(btn.method === 'credit' || btn.method === 'vales') && !client}
 
@@ -664,9 +650,9 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                       step="0.01"
 
-                      value={paymentBreakdown[type]}
+                      value={paymentBreakdown[type as keyof PaymentBreakdown]}
 
-                      onChange={(e) => handlePaymentBreakdownChange(type, parseFloat(e.target.value) || 0)}
+                      onChange={(e) => handlePaymentBreakdownChange(type as keyof PaymentBreakdown, parseFloat(e.target.value) || 0)}
 
                       className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
 
