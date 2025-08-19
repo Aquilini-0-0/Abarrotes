@@ -85,8 +85,6 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const [pendingPaymentData, setPendingPaymentData] = useState<any>(null);
   const [stockOverride, setStockOverride] = useState(false);
 
-
-
   // Calculate remaining balance for paid orders - fetch from database
   const [orderData, setOrderData] = useState<any>(null);
   const [loadingOrderData, setLoadingOrderData] = useState(true);
@@ -130,17 +128,6 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
     fetchOrderData();
   }, [order.id, order.total]);
 
-  if (loadingOrderData) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-6">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando información del pedido...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Calculate payment amounts based on database data
   const amountPaid = orderData?.amount_paid || 0;
   const orderTotal = orderData?.total || order.total;
@@ -161,6 +148,17 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       }));
     }
   }, [amountToPay, loadingOrderData]);
+
+  if (loadingOrderData) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando información del pedido...</p>
+        </div>
+      </div>
+    );
+  }
 
 
   const change = cashReceived - paymentAmount;
