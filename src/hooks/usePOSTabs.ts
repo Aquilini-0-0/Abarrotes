@@ -29,7 +29,7 @@ export function usePOSTabs() {
   }, []);
 
   const createNewTab = useCallback(() => {
-    const newOrder = initializeOrder('Cliente General', 'general');
+    const newOrder = initializeOrder('Cliente General', null);
     const tabId = `tab-${Date.now()}`;
     
     const newTab: OrderTab = {
@@ -129,7 +129,7 @@ export function usePOSTabs() {
           setActiveTabId(newActiveTab.id);
         } else {
           // Create new tab if no tabs left
-          const newOrder = initializeOrder('Cliente General', 'general');
+          const newOrder = initializeOrder('Cliente General', null);
           const newTabId = `tab-${Date.now()}`;
           const newTab: OrderTab = {
             id: newTabId,
