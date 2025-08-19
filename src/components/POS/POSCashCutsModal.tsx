@@ -376,33 +376,23 @@ Generado el ${new Date().toLocaleString('es-MX')}
                   </div>
                 </div>
 
-                {/* Sales Breakdown */}
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4 sm:mb-6">
-                  <div className="bg-gray-50 px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-200">
-                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Desglose de Ventas</h4>
-                  </div>
-                  <div className="p-2 sm:p-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-                      <div className="text-center p-2 sm:p-3 bg-green-50 rounded-lg">
-                        </div>
-                      </div>
-                      <div className="text-center p-2 sm:p-3 bg-blue-50 rounded-lg">
-                        </div>
-                      </div>
-                      <div className="text-center p-2 sm:p-3 bg-purple-50 rounded-lg">
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-2 sm:mt-4 pt-2 sm:pt-4 border-t border-gray-200">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm sm:text-lg font-semibold text-gray-900">Total Ventas:</span>
-                        <span className="text-lg sm:text-2xl font-bold text-orange-600">
-                          ${selectedCut.total_sales.toLocaleString('es-MX')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+{/* Sales Breakdown */}
+<div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4 sm:mb-6">
+  <div className="bg-gray-50 px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-200">
+    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Desglose de Ventas</h4>
+  </div>
+  <div className="p-2 sm:p-4">
+    <div className="mt-2 sm:mt-4 pt-2 sm:pt-4">
+      <div className="flex justify-between items-center">
+        <span className="text-sm sm:text-lg font-semibold text-gray-900">Total Ventas:</span>
+        <span className="text-lg sm:text-2xl font-bold text-orange-600">
+          ${selectedCut.total_sales.toLocaleString('es-MX')}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
