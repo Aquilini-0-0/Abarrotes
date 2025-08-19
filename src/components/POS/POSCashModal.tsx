@@ -262,20 +262,7 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
               }`}>
                 <div className="text-center">
                  
-                  <div className={`text-sm mt-1 font-medium ${
-                    Math.abs(difference) < 0.01
-                      ? 'text-green-600'
-                      : difference > 0
-                      ? 'text-blue-600'
-                      : 'text-red-600'
-                  }`}>
-                    {Math.abs(difference) < 0.01
-                      ? '✅ Caja cuadrada perfectamente'
-                      : difference > 0
-                      ? '📈 Sobrante en caja'
-                      : '📉 Faltante en caja'
-                    }
-                  </div>
+                  
                 </div>
               </div>
 
