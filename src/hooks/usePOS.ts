@@ -496,8 +496,6 @@ export function usePOS() {
           // If there are stock issues, create notification for admin
           if (stockIssues.length > 0) {
             try {
-              // In a real system, you would create a notifications table
-              // For now, we'll log it and could extend to create admin notifications
               console.warn('ADMIN NOTIFICATION: Venta con stock negativo procesada', {
                 orderId: orderId,
                 user: user?.name,
@@ -505,13 +503,21 @@ export function usePOS() {
                 timestamp: new Date().toISOString()
               });
               
-              // You could extend this to create actual notifications in the database
-              // await supabase.from('admin_notifications').insert({
-              //   type: 'negative_stock_sale',
-              //   message: `Venta procesada con stock insuficiente por ${user?.name}`,
-              //   data: { orderId, stockIssues },
-              //   created_at: new Date().toISOString()
-              // });
+              // Create notification for admin in the database
+              await supabase.from('admin_notifications').insert({
+                type: 'negative_stock_sale',
+                title: 'Venta con Stock Negativo',
+                message: `Venta procesada con stock insuficiente por ${user?.name}`,
+                data: { 
+                  orderId, 
+                  stockIssues,
+                  user_name: user?.name,
+                  sale_total: orderData.total
+                },
+                created_at: new Date().toISOString()
+              }).catch(notifError => {
+                console.warn('Could not create admin notification (table may not exist):', notifError);
+              });
             } catch (notificationError) {
               console.error('Error creating admin notification:', notificationError);
             }

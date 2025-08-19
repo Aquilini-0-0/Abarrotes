@@ -304,7 +304,7 @@ export function POSOrderPanel({
       <div className="mt-1 sm:mt-2 bg-red-50 border border-red-200 rounded-md p-1 sm:p-2 flex items-center space-x-1">
         <AlertTriangle size={12} className="sm:w-3.5 sm:h-3.5 text-red-600" />
         <span className="text-red-700 font-bold text-[10px] sm:text-xs">
-          ¡LÍMITE DE CRÉDITO EXCEDIDO!
+          ${(order?.total || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
         </span>
       </div>
     )}
