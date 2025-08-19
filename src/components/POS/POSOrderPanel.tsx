@@ -547,7 +547,7 @@ export function POSOrderPanel({
                         ${clientOption.credit_limit.toLocaleString('es-MX')}
                       </td>
                       <td className="p-2 sm:p-3 text-center text-orange-600 font-semibold">
-                        Nivel {clientOption.default_price_level}
+                        Precio {clientOption.default_price_level || 1}
                       </td>
                     </tr>
                   ))}

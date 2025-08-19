@@ -12,7 +12,7 @@ interface POSTaraModalProps {
   product: POSProduct;
   quantity: number;
   priceLevel: 1 | 2 | 3 | 4 | 5;
-  client?: { default_price_level: 1 | 2 | 3 | 4 | 5 } | null;
+  client: { default_price_level: 1 | 2 | 3 | 4 | 5 } | null;
   onClose: () => void;
   onConfirm: (product: POSProduct, finalQuantity: number, priceLevel: 1 | 2 | 3 | 4 | 5, finalUnitPrice: number) => void;
 }
@@ -21,9 +21,18 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
   const [selectedTara, setSelectedTara] = useState<TaraOption | null>(null);
   const [pesoBruto, setPesoBruto] = useState(0);
   const [cantidadCajas, setCantidadCajas] = useState(1);
-  const [currentPriceLevel, setCurrentPriceLevel] = useState<1 | 2 | 3 | 4 | 5>(
-    client?.default_price_level || priceLevel
-  );
+  const [currentPriceLevel, setCurrentPriceLevel] = useState<1 | 2 | 3 | 4 | 5>(1);
+
+  // Force client selection if not provided
+  React.useEffect(() => {
+    if (!client) {
+      alert('Debe seleccionar un cliente antes de agregar productos');
+      onClose();
+      return;
+    }
+    // Set the price level to client's default when client is available
+    setCurrentPriceLevel(client.default_price_level);
+  }, [client, onClose]);
 
   const taraOptions: TaraOption[] = [
     { id: '1', name: 'SIN TARA', weight: 0.0 },
@@ -35,8 +44,13 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
 
   const pesoTaraTotal = selectedTara ? selectedTara.weight * cantidadCajas : 0;
   const pesoNeto = pesoBruto - pesoTaraTotal;
-  const precioKilo = product.prices[`price${currentPriceLevel}`];
+  const precioKilo = product.prices[`price${currentPriceLevel}`] || 0;
   const precioFinal = pesoNeto * precioKilo;
+
+  // Don't render if no client is selected
+  if (!client) {
+    return null;
+  }
 
   const handleConfirm = () => {
     if (!selectedTara) {
@@ -144,7 +158,7 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
               </div>
               {client && (
                 <div className="mt-2 text-sm text-gray-600">
-                  Cliente seleccionado usa Precio {client.default_price_level} por defecto
+                  Cliente {client.name} usa Precio {client.default_price_level} por defecto
                 </div>
               )}
             </div>
@@ -300,8 +314,8 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!selectedTara || (selectedTara.id !== '1' && (pesoBruto <= 0 || pesoNeto <= 0)) || (selectedTara?.id === '1' ? quantity : pesoNeto) > product.stock}
-              className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-bold"
+              disabled={!selectedTara || (selectedTara.id !== '1' && pesoNeto <= 0) || (selectedTara.id === '1' && pesoBruto <= 0)}
+              className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-colors shadow-lg"
             >
               Agregar al Pedido
             </button>

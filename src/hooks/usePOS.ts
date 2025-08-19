@@ -112,7 +112,7 @@ export function usePOS() {
         rfc: client.rfc,
         credit_limit: Number(client.credit_limit) || 0,
         balance: Number(client.balance) || 0,
-        default_price_level: 1, // Default to price level 1
+        default_price_level: client.default_price_level || 1,
         zone: client.zone
       }));
 
@@ -733,6 +733,24 @@ export function usePOS() {
 
       // Clear cash register to allow opening a new one
       setCashRegister(null);
+      
+      // Update the total_sales in the database with actual calculated sales
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('total')
+        .eq('created_by', user?.id)
+        .gte('created_at', cashRegister.opened_at)
+        .lte('created_at', new Date().toISOString());
+
+      if (!salesError && salesData) {
+        const actualTotalSales = salesData.reduce((sum, sale) => sum + sale.total, 0);
+        
+        // Update the cash register with the actual total sales
+        await supabase
+          .from('cash_registers')
+          .update({ total_sales: actualTotalSales })
+          .eq('id', cashRegister.id);
+      }
       
       // Trigger automatic sync
       if (window.triggerSync) {

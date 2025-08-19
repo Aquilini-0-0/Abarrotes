@@ -15,6 +15,7 @@ interface POSProductPanelProps {
   onProductSelect: (product: POSProduct) => void;
   onEditProduct?: (product: POSProduct) => void;
   onGetEffectivePrice?: (product: POSProduct, level: 1 | 2 | 3 | 4 | 5) => number;
+  selectedClient?: { default_price_level: 1 | 2 | 3 | 4 | 5 } | null;
 }
 
 export function POSProductPanel({
@@ -28,7 +29,8 @@ export function POSProductPanel({
   onAddProduct,
   onProductSelect,
   onEditProduct,
-  onGetEffectivePrice
+  onGetEffectivePrice,
+  selectedClient
 }: POSProductPanelProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -36,6 +38,8 @@ export function POSProductPanel({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
 
+  // Use client's default price level or fallback to selectedPriceLevel
+  const effectivePriceLevel = selectedClient?.default_price_level || selectedPriceLevel;
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -56,6 +60,10 @@ export function POSProductPanel({
         setSelectedIndex(prev => Math.max(prev - 1, 0));
       } else if (e.key === 'Enter' && filteredProducts[selectedIndex]) {
         e.preventDefault();
+        if (!selectedClient) {
+          alert('Debe seleccionar un cliente antes de agregar productos');
+          return;
+        }
         onAddProduct(filteredProducts[selectedIndex]);
       } else if (e.key === '+') {
         e.preventDefault();
@@ -68,7 +76,7 @@ export function POSProductPanel({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [filteredProducts, selectedIndex, quantity, onQuantityChange, onAddProduct]);
+  }, [filteredProducts, selectedIndex, quantity, onQuantityChange, onAddProduct, selectedClient]);
 
   // Auto-scroll to selected item
   useEffect(() => {
@@ -148,6 +156,18 @@ export function POSProductPanel({
             </div>
           </div>
 
+          {/* Client Price Level Indicator */}
+          <div className="col-span-2 sm:col-span-2">
+            <label className="block text-orange-50 text-[10px] sm:text-xs mb-0.5 sm:mb-1 font-medium">Precio</label>
+            <div className="bg-white border border-orange-300 text-gray-900 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-1 lg:py-2 rounded-lg text-center font-bold text-[10px] sm:text-xs lg:text-sm">
+              P{effectivePriceLevel}
+            </div>
+            {selectedClient && (
+              <div className="text-orange-100 text-[8px] sm:text-[10px] text-center mt-0.5">
+                Cliente: P{selectedClient.default_price_level}
+              </div>
+            )}
+          </div>
         </div>
 
       </div>
@@ -168,9 +188,10 @@ export function POSProductPanel({
             </thead>
             <tbody>
               {filteredProducts.map((product, index) => {
-                const currentPrice = getPriceForLevel(product, selectedPriceLevel);
+                const currentPrice = getPriceForLevel(product, effectivePriceLevel);
                 const isSelected = index === selectedIndex;
                 const isLowStock = product.stock < 10;
+                const displayPrice = getPriceForLevel(product, effectivePriceLevel);
                 
                 return (
                   <tr
@@ -232,8 +253,13 @@ export function POSProductPanel({
                       <span className={`font-mono font-bold ${
                         isSelected ? 'text-yellow-200' : 'text-green-600'
                       }`}>
-                        ${currentPrice.toFixed(2)}
+                        ${displayPrice.toFixed(2)}
                       </span>
+                      {selectedClient && (
+                        <div className={`text-[8px] sm:text-[10px] ${isSelected ? 'text-orange-100' : 'text-orange-600'}`}>
+                          P{effectivePriceLevel}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -260,6 +286,17 @@ export function POSProductPanel({
           <div>
             Productos: {filteredProducts.length} de {products.length}
           </div>
+          <div className="text-center">
+            {selectedClient ? (
+              <span className="text-orange-600 font-semibold">
+                Cliente: {selectedClient.name} (P{selectedClient.default_price_level})
+              </span>
+            ) : (
+              <span className="text-red-600 font-semibold">
+                ⚠️ Seleccione un cliente
+              </span>
+            )}
+          </div>
           <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
             <span className="bg-white px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-orange-200 text-[8px] sm:text-xs">↑↓ Navegar</span>
             <span className="bg-white px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-orange-200 text-[8px] sm:text-xs">Enter: Agregar</span>
@@ -278,9 +315,9 @@ export function POSProductPanel({
             product_name: editingProduct.name,
             product_code: editingProduct.code,
             quantity: quantity,
-            price_level: selectedPriceLevel,
-            unit_price: editingProduct.prices[`price${selectedPriceLevel}`],
-            total: quantity * editingProduct.prices[`price${selectedPriceLevel}`]
+            price_level: effectivePriceLevel,
+            unit_price: editingProduct.prices[`price${effectivePriceLevel}`],
+            total: quantity * editingProduct.prices[`price${effectivePriceLevel}`]
           }}
           product={editingProduct}
           onClose={() => {

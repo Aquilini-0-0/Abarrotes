@@ -189,6 +189,7 @@ export function POSLayout() {
   };
 
   const handleSelectClient = (client: POSClient) => {
+    // Update the price level to match client's default
     setSelectedPriceLevel(client.default_price_level);
     if (currentOrder) {
       const updatedOrder = { ...currentOrder, client_id: client.id, client_name: client.name };
@@ -491,9 +492,15 @@ export function POSLayout() {
             onProductSelect={(product) => {
               // Always show tara modal for all products
               setSelectedProduct(product);
+              // Check if client is selected before opening tara modal
+              if (!selectedClient) {
+                alert('Debe seleccionar un cliente antes de agregar productos');
+                return;
+              }
               setShowTaraModal(true);
             }}
             onGetEffectivePrice={getEffectivePrice}
+            selectedClient={selectedClient}
           />
         </div>
       </div>
