@@ -43,7 +43,7 @@ const menuItems = [
   {
     title: 'Contabilidad - Gastos',
     items: [
-      { name: 'Control de Catálogos', path: '/contabilidad/catalogos', icon: Settings },
+      { name: 'Cuentas Bancarias', path: '/contabilidad/catalogos', icon: Settings },
       { name: 'Registro de Gastos', path: '/contabilidad/gastos', icon: CreditCard },
       { name: 'Movimientos Bancarios', path: '/contabilidad/bancarios', icon: BarChart3 },
       { name: 'Movimientos de efectivo POS', path: '/contabilidad/movimientos-efectivo', icon: Calculator },
