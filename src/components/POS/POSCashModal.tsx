@@ -254,7 +254,7 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
 
               {/* Diferencia */}
              
-              </div>
+
 
               {/* Botones de Acción */}
               <div className="flex space-x-3">
