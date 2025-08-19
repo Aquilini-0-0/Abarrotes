@@ -253,17 +253,7 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
               </div>
 
               {/* Diferencia */}
-              <div className={`rounded-xl p-4 border-2 ${
-                Math.abs(difference) < 0.01
-                  ? 'bg-green-50 border-green-300'
-                  : difference > 0
-                  ? 'bg-blue-50 border-blue-300'
-                  : 'bg-red-50 border-red-300'
-              }`}>
-                <div className="text-center">
-                 
-                  
-                </div>
+             
               </div>
 
               {/* Botones de Acción */}
