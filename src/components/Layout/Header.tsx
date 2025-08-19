@@ -24,6 +24,18 @@ export function Header() {
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
     try {
+      // Fetch notifications from database
+      const { data: dbNotifications, error: dbError } = await supabase
+        .from('admin_notifications')
+        .select('*')
+        .eq('read', false)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (dbError) {
+        console.warn('Could not fetch database notifications (table may not exist):', dbError);
+      }
+
       // Obtener productos con stock bajo
       const { data: products, error: productsError } = await supabase
         .from('products')
@@ -43,6 +55,20 @@ export function Header() {
 
       // Crear notificaciones basadas en los datos
       const newNotifications: Notification[] = [];
+
+      // Add database notifications first
+      if (dbNotifications && dbNotifications.length > 0) {
+        dbNotifications.forEach(dbNotif => {
+          newNotifications.push({
+            id: `db-${dbNotif.id}`,
+            title: dbNotif.title,
+            message: dbNotif.message,
+            type: dbNotif.type as 'info' | 'warning' | 'error' | 'success',
+            date: dbNotif.created_at,
+            read: dbNotif.read
+          });
+        });
+      }
 
       // Notificaciones de stock bajo
       if (products && products.length > 0) {
@@ -146,6 +172,20 @@ export function Header() {
   }, []);
 
   const markAsRead = (notificationId: string) => {
+    // If it's a database notification, mark it as read in the database
+    if (notificationId.startsWith('db-')) {
+      const dbId = notificationId.replace('db-', '');
+      supabase
+        .from('admin_notifications')
+        .update({ read: true })
+        .eq('id', dbId)
+        .then(({ error }) => {
+          if (error) {
+            console.warn('Could not mark database notification as read:', error);
+          }
+        });
+    }
+    
     setNotifications(prev => prev.map(notif => 
       notif.id === notificationId ? { ...notif, read: true } : notif
     ));

@@ -50,7 +50,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
   const [paymentBreakdown, setPaymentBreakdown] = useState<PaymentBreakdown>({
 
-    cash: order.total || 0,
+    cash: 0,
 
     card: 0,
 
@@ -61,8 +61,8 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   });
 
   const [cashReceived, setCashReceived] = useState(order.total || 0);
-
-  const [paymentAmount, setPaymentAmount] = useState(order.total || 0);
+  const [cashReceived, setCashReceived] = useState(0);
+  const [paymentAmount, setPaymentAmount] = useState(0);
 
   const [isPartialPayment, setIsPartialPayment] = useState(false);
 
@@ -88,7 +88,25 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
 
 
+  // Calculate remaining balance for paid orders
+  const amountPaid = order.amount_paid || 0;
   const orderTotal = order.total || 0;
+  const remainingBalance = orderTotal - amountPaid;
+  const isAlreadyPaid = amountPaid > 0;
+  
+  // Use remaining balance as the amount to pay
+  const amountToPay = remainingBalance > 0 ? remainingBalance : orderTotal;
+
+  // Initialize payment amounts with remaining balance
+  React.useEffect(() => {
+    setCashReceived(amountToPay);
+    setPaymentAmount(amountToPay);
+    setPaymentBreakdown(prev => ({
+      ...prev,
+      cash: amountToPay
+    }));
+  }, [amountToPay]);
+
 
   const change = cashReceived - paymentAmount;
 
@@ -230,7 +248,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
       ...prev,
 
-      cash: Math.min(amount, order.total)
+      cash: Math.min(amount, amountToPay)
 
     }));
 
@@ -304,7 +322,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
     // NUEVA LÓGICA: Si excede el límite de crédito, muestra el modal de autorización
 
-    const creditAmount = paymentMethod === 'credit' ? order.total : paymentMethod === 'mixed' ? paymentBreakdown.credit : 0;
+    const creditAmount = paymentMethod === 'credit' ? amountToPay : paymentMethod === 'mixed' ? paymentBreakdown.credit : 0;
 
     const creditExceededCondition = client && creditAmount > 0 && (client.balance + creditAmount) > client.credit_limit;
 
@@ -421,6 +439,16 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
           {/* Order Summary */}
 
           <div className="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
+            {isAlreadyPaid && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                  <span className="text-blue-800 font-medium text-sm">
+                    Pedido con pagos previos - Solo se cobrará el saldo pendiente
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-between mb-1 sm:mb-2 text-gray-600 text-sm">
 
@@ -439,10 +467,22 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
             </div>
 
             <div className="flex justify-between mb-1 sm:mb-2 text-gray-600 text-sm">
+            {isAlreadyPaid && (
+              <>
+                <div className="flex justify-between mb-1 sm:mb-2 text-gray-600 text-sm">
+                  <span>Total Original:</span>
+                  <span className="font-mono font-semibold">${orderTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between mb-1 sm:mb-2 text-blue-600 text-sm">
+                  <span>Ya Pagado:</span>
+                  <span className="font-mono font-semibold">-${amountPaid.toFixed(2)}</span>
+                </div>
+              </>
+            )}
 
-              <span>Subtotal:</span>
 
-              <span className="font-mono font-semibold">${order.subtotal.toFixed(2)}</span>
+              <span>{isAlreadyPaid ? 'Saldo Pendiente:' : 'Subtotal:'}</span>
+              <span className="font-mono font-semibold">${(isAlreadyPaid ? remainingBalance : order.subtotal).toFixed(2)}</span>
 
             </div>
 
@@ -463,8 +503,12 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
               <div className="flex justify-between items-center">
 
                 <span className="text-orange-600 font-bold text-base sm:text-lg">TOTAL:</span>
-
-                <span className="text-red-600 font-bold text-xl sm:text-2xl font-mono">${order.total.toFixed(2)}</span>
+                <span className="text-orange-600 font-bold text-base sm:text-lg">
+                  {isAlreadyPaid ? 'POR PAGAR:' : 'TOTAL:'}
+                </span>
+                <span className="text-red-600 font-bold text-xl sm:text-2xl font-mono">
+                  ${amountToPay.toFixed(2)}
+                </span>
 
               </div>
 
@@ -597,6 +641,16 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
                     onChange={(e) => setCashReceived(parseFloat(e.target.value) || 0)}
 
                     className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              {isAlreadyPaid && (
+                <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium">Información del Pedido:</p>
+                    <p>• Total original: ${orderTotal.toFixed(2)}</p>
+                    <p>• Ya pagado: ${amountPaid.toFixed(2)}</p>
+                    <p className="font-bold">• Solo se cobrará: ${amountToPay.toFixed(2)}</p>
+                  </div>
+                </div>
+              )}
 
                     placeholder="0.00"
 
@@ -682,7 +736,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                   <span className="text-gray-600">Total Pedido:</span>
 
-                  <span className="font-semibold">${order.total.toFixed(2)}</span>
+                  <span className="font-semibold">${amountToPay.toFixed(2)}</span>
 
                 </div>
 
@@ -691,8 +745,8 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
                   <span className="font-semibold text-gray-800">Diferencia:</span>
 
                   <span className={`${Math.abs(totalPayment - order.total) < 0.01 ? 'text-green-600' : 'text-red-600'} font-bold`}>
-
-                    {(totalPayment - order.total).toFixed(2)}
+                  <span className={`${Math.abs(totalPayment - amountToPay) < 0.01 ? 'text-green-600' : 'text-red-600'} font-bold`}>
+                    {(totalPayment - amountToPay).toFixed(2)}
 
                   </span>
 
@@ -772,7 +826,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                         if (vale) {
 
-                          setPaymentAmount(Math.min(vale.disponible, order.total));
+                          setPaymentAmount(Math.min(vale.disponible, amountToPay));
 
                         }
 
@@ -826,7 +880,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                           <span className="text-gray-600">Total Pedido:</span>
 
-                          <span className="font-mono text-gray-900">${order.total.toFixed(2)}</span>
+                          <span className="font-mono text-gray-900">${amountToPay.toFixed(2)}</span>
 
                         </div>
 
@@ -835,14 +889,14 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
                           <span className="font-semibold">Resultado:</span>
 
                           <span className={`font-bold ${selectedVale.disponible >= order.total ? 'text-green-600' : 'text-red-600'}`}>
-
-                            {selectedVale.disponible >= order.total ? 'Vale cubre el total' : 'Vale insuficiente'}
+                          <span className={`font-bold ${selectedVale.disponible >= amountToPay ? 'text-green-600' : 'text-red-600'}`}>
+                            {selectedVale.disponible >= amountToPay ? 'Vale cubre el total' : 'Vale insuficiente'}
 
                           </span>
 
                         </div>
 
-                        {selectedVale.disponible < order.total && (
+                        {selectedVale.disponible < amountToPay && (
 
                           <div className="bg-red-50 border border-red-200 rounded-lg p-2 mt-2">
 
@@ -852,7 +906,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                               <span className="text-red-800 text-sm font-medium">
 
-                                El vale no cubre el total del pedido. Faltan ${(order.total - selectedVale.disponible).toFixed(2)}
+                                El vale no cubre el total del pedido. Faltan ${(amountToPay - selectedVale.disponible).toFixed(2)}
 
                               </span>
 
@@ -940,7 +994,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                 (paymentMethod === 'credit' && !client) || // El botón solo se deshabilita si no hay cliente para crédito
 
-                (paymentMethod === 'vales' && (!selectedVale || selectedVale.disponible < order.total))
+                (paymentMethod === 'vales' && (!selectedVale || selectedVale.disponible < amountToPay))
 
               }
 
@@ -1115,8 +1169,8 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
                       <p>Saldo actual: ${client?.balance.toLocaleString('es-MX')}</p>
 
                       <p>Este pedido: ${order.total.toLocaleString('es-MX')}</p>
-
-                      <p className="font-bold">Nuevo saldo: ${((client?.balance || 0) + order.total).toLocaleString('es-MX')}</p>
+                      <p>Este pedido: ${amountToPay.toLocaleString('es-MX')}</p>
+                      <p className="font-bold">Nuevo saldo: ${((client?.balance || 0) + amountToPay).toLocaleString('es-MX')}</p>
 
                     </div>
 
