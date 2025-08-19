@@ -307,8 +307,13 @@ export function Catalogos() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-           
-
+              <div className="flex items-center space-x-2">
+                <Settings size={16} />
+                <span>Gestión de Precios</span>
+              </div>
+            </button>
+          </nav>
+        </div>
         <div className="p-6">
           {activeTab === 'conceptos' ? (
             <DataTable
