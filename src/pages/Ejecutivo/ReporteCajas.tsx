@@ -51,7 +51,6 @@ const fetchReportes = useCallback(async () => {
           *,
           users!cash_registers_user_id_fkey(name)
         `)
-        .eq('user_id', user?.id)
         .order('opened_at', { ascending: false });
 
       if (error) throw error;
@@ -162,6 +161,7 @@ const fetchReportes = useCallback(async () => {
             total
           )
         `)
+        .eq('created_by', cashRegister.user_id)
         .gte('created_at', cashRegister.opened_at);
 
       // If cash register is closed, filter by closed_at time

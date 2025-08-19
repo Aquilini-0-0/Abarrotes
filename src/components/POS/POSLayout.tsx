@@ -261,12 +261,27 @@ export function POSLayout() {
           ? paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer + paymentData.breakdown.credit
           : currentOrder.total;
           
-        const result = await processPayment(currentOrder.id, {
+        // For vale payments, calculate the amounts
+        let processPaymentData = {
           amount: paymentAmount,
           method: paymentData.method,
           reference: paymentData.reference,
           stockOverride: paymentData.stockOverride
-        });
+        };
+
+        if (paymentData.method === 'vales' && paymentData.selectedVale) {
+          const valeAmount = Math.min(paymentData.selectedVale.disponible, currentOrder.total);
+          const cashAmount = Math.max(0, currentOrder.total - valeAmount);
+          
+          processPaymentData = {
+            ...processPaymentData,
+            selectedVale: paymentData.selectedVale,
+            valeAmount: valeAmount,
+            cashAmount: cashAmount
+          };
+        }
+        
+        const result = await processPayment(currentOrder.id, processPaymentData);
         
         setLastOrder({
           id: currentOrder.id,
@@ -295,13 +310,27 @@ export function POSLayout() {
           ? paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer + paymentData.breakdown.credit
           : currentOrder.total;
           
-        const result = await processPayment(savedOrder.id, {
+        // For vale payments, calculate the amounts
+        let processPaymentData = {
           amount: paymentAmount,
           method: paymentData.method,
           reference: paymentData.reference,
           selectedVale: paymentData.selectedVale,
           stockOverride: paymentData.stockOverride
-        });
+        };
+
+        if (paymentData.method === 'vales' && paymentData.selectedVale) {
+          const valeAmount = Math.min(paymentData.selectedVale.disponible, currentOrder.total);
+          const cashAmount = Math.max(0, currentOrder.total - valeAmount);
+          
+          processPaymentData = {
+            ...processPaymentData,
+            valeAmount: valeAmount,
+            cashAmount: cashAmount
+          };
+        }
+        
+        const result = await processPayment(savedOrder.id, processPaymentData);
         
         setLastOrder({
           id: savedOrder.id,

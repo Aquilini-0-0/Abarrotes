@@ -968,6 +968,12 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
                                 <span className="font-semibold">Total a Pagar:</span>
                                 <span className="font-bold text-orange-600">${amountToPay.toFixed(2)}</span>
                               </div>
+                              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 mt-2">
+                                <div className="text-xs text-yellow-800">
+                                  <p className="font-medium">Nota:</p>
+                                  <p>En la base de datos se guardará únicamente el importe pagado en efectivo (${(amountToPay - selectedVale.disponible).toFixed(2)})</p>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         )}

@@ -391,6 +391,8 @@ export function usePOS() {
     reference?: string;
     selectedVale?: any;
     stockOverride?: boolean;
+    valeAmount?: number;
+    cashAmount?: number;
   }) => {
     try {
       // Get current order data
@@ -442,6 +444,90 @@ export function usePOS() {
         }
 
         return { newAmountPaid: 0, newRemainingBalance: orderData.total, newStatus: 'pending' };
+      } else if (paymentData.method === 'vales' && paymentData.selectedVale) {
+        // Handle vale payment - save only the cash amount paid
+        const valeAmount = paymentData.valeAmount || Math.min(paymentData.selectedVale.disponible, orderData.total);
+        const cashAmount = paymentData.cashAmount || Math.max(0, orderData.total - valeAmount);
+        const totalPaidInCash = cashAmount; // Only the cash portion
+        
+        // Create payment record for cash portion only
+        if (cashAmount > 0) {
+          const { error: paymentError } = await supabase
+            .from('payments')
+            .insert({
+              sale_id: orderId,
+              amount: cashAmount,
+              payment_method: 'cash',
+              reference: paymentData.reference || `VALE-CASH-${Date.now().toString().slice(-6)}`,
+              created_by: user?.id
+            });
+
+          if (paymentError) throw paymentError;
+        }
+
+        // Update vale balance
+        const newValeBalance = paymentData.selectedVale.disponible - valeAmount;
+        const newValeStatus = newValeBalance <= 0 ? 'USADO' : 'HABILITADO';
+        
+        await supabase
+          .from('vales_devolucion')
+          .update({
+            disponible: Math.max(0, newValeBalance),
+            estatus: newValeStatus
+          })
+          .eq('id', paymentData.selectedVale.id);
+
+        // Calculate new totals - save only cash amount as the total
+        const newAmountPaid = (orderData.amount_paid || 0) + cashAmount;
+        const adjustedTotal = cashAmount; // Save only the cash amount as total
+        const newRemainingBalance = 0; // Fully paid since vale covered the rest
+        const newStatus = 'paid';
+
+        // Update order with adjusted total (cash amount only)
+        const { error: updateError } = await supabase
+          .from('sales')
+          .update({
+            total: adjustedTotal, // Save only cash amount
+            amount_paid: newAmountPaid,
+            remaining_balance: newRemainingBalance,
+            status: newStatus
+          })
+          .eq('id', orderId);
+
+        if (updateError) throw updateError;
+
+        // Process inventory movements for the full order (regardless of payment method)
+        for (const item of orderData.sale_items) {
+          // Create inventory movement
+          await supabase
+            .from('inventory_movements')
+            .insert({
+              product_id: item.product_id,
+              product_name: item.product_name,
+              type: 'salida',
+              quantity: item.quantity,
+              date: orderData.date,
+              reference: `POS-VALE-${orderId.slice(-6)}`,
+              user_name: user?.name || 'POS User',
+              created_by: user?.id
+            });
+
+          // Update product stock
+          const { data: product } = await supabase
+            .from('products')
+            .select('stock')
+            .eq('id', item.product_id)
+            .single();
+
+          if (product) {
+            await supabase
+              .from('products')
+              .update({ stock: product.stock - item.quantity })
+              .eq('id', item.product_id);
+          }
+        }
+
+        return { newAmountPaid, newRemainingBalance, newStatus };
       } else {
         // For non-credit payments, process normally
         // Create payment record
@@ -528,22 +614,6 @@ export function usePOS() {
             }
           }
 
-          // Handle vales payment
-          if (paymentData.method === 'vales' && paymentData.selectedVale) {
-            // Update vale balance - only mark as used if balance reaches 0
-            const valePaymentAmount = Math.min(paymentData.selectedVale.disponible, orderData.total);
-            const newValeBalance = paymentData.selectedVale.disponible - valePaymentAmount;
-            const newValeStatus = newValeBalance <= 0 ? 'USADO' : 'HABILITADO';
-            
-            await supabase
-              .from('vales_devolucion')
-              .update({
-                disponible: Math.max(0, newValeBalance),
-                estatus: newValeStatus
-              })
-              .eq('id', paymentData.selectedVale.id);
-          }
-          
           for (const item of orderData.sale_items) {
             // Create inventory movement
             await supabase
