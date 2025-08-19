@@ -20,7 +20,7 @@ export function Catalogos() {
   } = useCatalogos();
 
   const { products, updateProduct } = useProducts();
-  const [activeTab, setActiveTab] = useState<'conceptos' | 'cuentas'>('conceptos');
+  const [activeTab, setActiveTab] = useState<'conceptos' | 'cuentas' | 'precios'>('conceptos');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [showPriceForm, setShowPriceForm] = useState(false);
@@ -322,6 +322,9 @@ export function Catalogos() {
                 <CreditCard size={16} />
                 <span>Precios de Productos</span>
               </div>
+            </button>
+          </nav>
+        </div>
             </button>
           </nav>
         </div>
