@@ -132,14 +132,12 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
     fetchOrderData();
   }, [order.id, order.total]);
 
-  // Calculate payment amounts based on database data
-  const amountPaid = orderData?.amount_paid || 0;
-  const orderTotal = orderData?.total || order.total;
-  const remainingBalance = orderData?.remaining_balance || (orderTotal - amountPaid);
-  const isAlreadyPaid = amountPaid > 0;
-  
-  // Use remaining balance as the amount to pay
-  const amountToPay = Math.max(0, remainingBalance);
+  // Fetch client vales when payment method changes to vales
+  React.useEffect(() => {
+    if (paymentMethod === 'vales' && client) {
+      fetchClientVales();
+    }
+  }, [paymentMethod, client]);
 
   // Initialize payment amounts with remaining balance
   React.useEffect(() => {
@@ -152,6 +150,16 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       }));
     }
   }, [amountToPay, loadingOrderData]);
+
+  // Calculate payment amounts based on database data
+  const amountPaid = orderData?.amount_paid || 0;
+  const orderTotal = orderData?.total || order.total;
+  const remainingBalance = orderData?.remaining_balance || (orderTotal - amountPaid);
+  const isAlreadyPaid = amountPaid > 0;
+  
+  // Use remaining balance as the amount to pay
+  const amountToPay = Math.max(0, remainingBalance);
+
 
   if (loadingOrderData) {
     return (
@@ -211,13 +219,6 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
     }
 
-  }, [paymentMethod, client]);
-
-
-
-  const fetchClientVales = async () => {
-
-    if (!client) return;
 
     
 
