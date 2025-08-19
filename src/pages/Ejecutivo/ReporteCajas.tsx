@@ -58,7 +58,7 @@ const fetchReportes = useCallback(async () => {
       const formattedReports: CashRegisterReport[] = [];
       
       for (const register of data) {
-        // Fetch sales for this specific cash register session
+        // Fetch sales for this specific cash register session with proper user and time filtering
         let salesQuery = supabase
           .from('sales')
           .select('id, total, created_at')
@@ -68,6 +68,9 @@ const fetchReportes = useCallback(async () => {
         // If cash register is closed, filter by closed_at time
         if (register.closed_at) {
           salesQuery = salesQuery.lte('created_at', register.closed_at);
+        } else {
+          // If still open, filter up to now
+          salesQuery = salesQuery.lte('created_at', new Date().toISOString());
         }
 
         const { data: salesData, error: salesError } = await salesQuery;
@@ -75,6 +78,8 @@ const fetchReportes = useCallback(async () => {
         if (salesError) {
           console.error('Error fetching sales for register:', salesError);
         }
+
+        console.log(`Sales for register ${register.id} (user: ${register.user_id}):`, salesData);
 
         const actualTotalSales = salesData?.reduce((sum, sale) => sum + sale.total, 0) || 0;
         const actualTicketCount = salesData?.length || 0;
@@ -140,16 +145,16 @@ const fetchReportes = useCallback(async () => {
   const fetchSalesDetail = async (reporte: CashRegisterReport) => {
     setLoadingSalesDetail(true);
     try {
-      // Get the cash register data to find opened_at and closed_at times
+      // Get the cash register data to find user_id, opened_at and closed_at times
       const { data: cashRegister, error: cashError } = await supabase
         .from('cash_registers')
-        .select('opened_at, closed_at')
+        .select('user_id, opened_at, closed_at')
         .eq('id', reporte.id)
         .single();
 
       if (cashError) throw cashError;
 
-      // Query sales that occurred during the cash register session
+      // Query sales that occurred during the cash register session for the specific user
       let query = supabase
         .from('sales')
         .select(`
@@ -167,11 +172,22 @@ const fetchReportes = useCallback(async () => {
       // If cash register is closed, filter by closed_at time
       if (cashRegister.closed_at) {
         query = query.lte('created_at', cashRegister.closed_at);
+      } else {
+        // If still open, filter up to now
+        query = query.lte('created_at', new Date().toISOString());
       }
 
       const { data: sales, error: salesError } = await query.order('created_at', { ascending: false });
 
       if (salesError) throw salesError;
+
+      console.log('Cash register data:', cashRegister);
+      console.log('Sales found for this cash register:', sales);
+      console.log('Query parameters:', {
+        user_id: cashRegister.user_id,
+        opened_at: cashRegister.opened_at,
+        closed_at: cashRegister.closed_at
+      });
 
       setSalesDetail(sales || []);
     } catch (err) {
