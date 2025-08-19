@@ -252,7 +252,6 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                 </div>
               </div>
 
-              {/* Diferencia */}
              
 
 
