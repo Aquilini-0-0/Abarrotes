@@ -135,6 +135,7 @@ export interface Database {
           zone: string;
           credit_limit: number;
           balance: number;
+          default_price_level: number;
           created_at: string;
           updated_at: string;
         };
@@ -148,6 +149,7 @@ export interface Database {
           zone?: string;
           credit_limit?: number;
           balance?: number;
+          default_price_level?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -161,6 +163,7 @@ export interface Database {
           zone?: string;
           credit_limit?: number;
           balance?: number;
+          default_price_level?: number;
           created_at?: string;
           updated_at?: string;
         };

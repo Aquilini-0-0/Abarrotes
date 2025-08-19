@@ -43,6 +43,7 @@ export interface Client {
   zone: string;
   credit_limit: number;
   balance: number;
+  default_price_level?: 1 | 2 | 3 | 4 | 5;
   default_price_level: 1 | 2 | 3 | 4 | 5;
 }
 
