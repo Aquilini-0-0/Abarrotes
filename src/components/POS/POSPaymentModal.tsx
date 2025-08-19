@@ -213,7 +213,10 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
   const fetchClientVales = async () => {
 
-    if (!client) return;
+    if (!client || client.id === null || client.name === 'Cliente General') {
+      setClientVales([]);
+      return;
+    }
 
     
 
