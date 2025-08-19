@@ -211,14 +211,9 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
   // Fetch client vales when payment method changes to vales
 
-  React.useEffect(() => {
+  const fetchClientVales = async () => {
 
-    if (paymentMethod === 'vales' && client) {
-
-      fetchClientVales();
-
-    }
-
+    if (!client) return;
 
     
 
