@@ -131,7 +131,41 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
                 <span className="text-gray-600">Precio por kilo:</span>
                 <span className="ml-2 font-bold text-blue-600">${precioKilo.toFixed(2)}</span>
               </div>
-
+               {/*
+              <div>
+                <span className="text-gray-600">Nivel de precio:</span>
+                <span className="ml-2 font-bold text-orange-600">P{currentPriceLevel}</span>
+              </div>
+              */}
+            </div>
+            
+            {/* Price Level Selector */}
+            <div className="mt-4 pt-4 border-t border-orange-200">
+              <label className="block text-gray-700 font-medium mb-2">Nivel de Precio</label>
+              <div className="grid grid-cols-5 gap-2">
+                {[1, 2, 3, 4, 5].map(level => (
+                  <button
+                    key={level}
+                    onClick={() => handlePriceLevelChange(level as 1 | 2 | 3 | 4 | 5)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      currentPriceLevel === level
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    P{level}
+                    <div className="text-xs">${product.prices[`price${level}`].toFixed(2)}</div>
+                  </button>
+                ))}
+              </div>
+              {client && (
+                <div className="mt-2 text-sm text-gray-600">
+                  Cliente {client.name} usa Precio {client.default_price_level} por defecto
+                </div>
+              )}
+            </div>
+          </div>
+          
             
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Tara Selection */}
