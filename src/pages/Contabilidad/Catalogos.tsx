@@ -298,22 +298,9 @@ export function Catalogos() {
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6">
             <button
-              onClick={() => setActiveTab('conceptos')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'conceptos'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <Settings size={16} />
-                <span>Conceptos de Gastos</span>
-              </div>
-            </button>
-            <button
               onClick={() => setActiveTab('cuentas')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'cuentas'
+                true
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
@@ -324,86 +311,14 @@ export function Catalogos() {
                 <span>Cuentas Bancarias</span>
               </div>
             </button>
-            <button
-              onClick={() => setActiveTab('precios')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'precios'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <Settings size={16} />
-                <span>Gestión de Precios</span>
-              </div>
-            </button>
           </nav>
         </div>
         <div className="p-6">
-          {activeTab === 'conceptos' ? (
-            <DataTable
-              data={conceptos}
-              columns={conceptosColumns}
-              title="Conceptos de Gastos"
-            />
-          ) : activeTab === 'cuentas' ? (
-            <DataTable
-              data={cuentas}
-              columns={cuentasColumns}
-              title="Cuentas Bancarias"
-            />
-          ) : (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Gestión de Precios</h3>
-                <button
-                  onClick={() => setShowPriceForm(true)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  <Plus size={16} />
-                  <span>Actualizar Precios</span>
-                </button>
-              </div>
-              <DataTable
-                data={products}
-                columns={[
-                  { key: 'code', label: 'Código', sortable: true },
-                  { key: 'name', label: 'Producto', sortable: true },
-                  { key: 'line', label: 'Línea', sortable: true },
-                  { 
-                    key: 'price', 
-                    label: 'Precio Actual', 
-                    sortable: true,
-                    render: (value: number) => `$${value.toFixed(2)}`
-                  },
-                  {
-                    key: 'actions',
-                    label: 'Acciones',
-                    render: (_, product: any) => (
-                      <button
-                        onClick={() => {
-                          setSelectedProduct(product);
-                          setNewPrices({
-                            price1: product.price,
-                            price2: product.price * 1.1,
-                            price3: product.price * 1.2,
-                            price4: product.price * 1.3,
-                            price5: product.price * 1.4
-                          });
-                          setShowPriceForm(true);
-                        }}
-                        className="p-1 text-blue-600 hover:text-blue-800"
-                        title="Editar precios"
-                      >
-                        <Edit size={16} />
-                      </button>
-                    )
-                  }
-                ]}
-                title="Productos"
-              />
-            </div>
-          )}
+          <DataTable
+            data={cuentas}
+            columns={cuentasColumns}
+            title="Cuentas Bancarias"
+          />
         </div>
       </div>
 
@@ -412,262 +327,90 @@ export function Catalogos() {
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="px-6 py-4 border-b border-gray-200 bg-blue-600 rounded-t-lg">
               <h2 className="text-lg font-semibold text-white">
-                {editingItem ? 'Editar' : 'Nuevo'} {activeTab === 'conceptos' ? 'Concepto' : 'Cuenta'}
+                {editingItem ? 'Editar' : 'Nueva'} Cuenta
               </h2>
             </div>
 
             <div className="p-6">
-              {activeTab === 'conceptos' ? (
-                <form onSubmit={handleSubmitConcepto} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre del Concepto
-                    </label>
-                    <input
-                      type="text"
-                      value={newConcepto.nombre}
-                      onChange={(e) => setNewConcepto(prev => ({ ...prev, nombre: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Categoría
-                    </label>
-                    <select
-                      value={newConcepto.categoria}
-                      onChange={(e) => setNewConcepto(prev => ({ ...prev, categoria: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Seleccionar categoría</option>
-                      <option value="Servicios">Servicios</option>
-                      <option value="Mantenimiento">Mantenimiento</option>
-                      <option value="Oficina">Oficina</option>
-                      <option value="Combustible">Combustible</option>
-                      <option value="Otros">Otros</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Descripción
-                    </label>
-                    <textarea
-                      value={newConcepto.descripcion}
-                      onChange={(e) => setNewConcepto(prev => ({ ...prev, descripcion: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      rows={3}
-                    />
-                  </div>
-                  <div className="flex space-x-3">
-                    <button
-                      type="submit"
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      {editingItem ? 'Actualizar' : 'Crear'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowForm(false);
-                        setEditingItem(null);
-                        setNewConcepto({ nombre: '', categoria: '', descripcion: '' });
-                      }}
-                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <form onSubmit={handleSubmitCuenta} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Banco
-                    </label>
-                    <select
-                      value={newCuenta.banco}
-                      onChange={(e) => setNewCuenta(prev => ({ ...prev, banco: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Seleccionar banco</option>
-                      <option value="BBVA">BBVA</option>
-                      <option value="Santander">Santander</option>
-                      <option value="Banorte">Banorte</option>
-                      <option value="Banamex">Banamex</option>
-                      <option value="HSBC">HSBC</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Número de Cuenta
-                    </label>
-                    <input
-                      type="text"
-                      value={newCuenta.numero_cuenta}
-                      onChange={(e) => setNewCuenta(prev => ({ ...prev, numero_cuenta: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="**** **** **** 1234"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tipo de Cuenta
-                    </label>
-                    <select
-                      value={newCuenta.tipo}
-                      onChange={(e) => setNewCuenta(prev => ({ ...prev, tipo: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Cheques">Cheques</option>
-                      <option value="Ahorros">Ahorros</option>
-                      <option value="Inversión">Inversión</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Saldo Inicial
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={newCuenta.saldo}
-                      onChange={(e) => setNewCuenta(prev => ({ ...prev, saldo: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      min="0"
-                    />
-                  </div>
-                  <div className="flex space-x-3">
-                    <button
-                      type="submit"
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      {editingItem ? 'Actualizar' : 'Crear'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowForm(false);
-                        setEditingItem(null);
-                        setNewCuenta({ banco: '', numero_cuenta: '', tipo: 'Cheques', saldo: 0 });
-                      }}
-                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Price Update Modal */}
-      {showPriceForm && selectedProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
-            <div className="px-6 py-4 border-b border-gray-200 bg-blue-600 rounded-t-lg">
-              <h2 className="text-lg font-semibold text-white">
-                Actualizar Precios - {selectedProduct.name}
-              </h2>
-            </div>
-
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Precio 1 (General)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={newPrices.price1}
-                      onChange={(e) => setNewPrices(prev => ({ ...prev, price1: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Precio 2 (Mayoreo)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={newPrices.price2}
-                      onChange={(e) => setNewPrices(prev => ({ ...prev, price2: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Precio 3 (Distribuidor)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={newPrices.price3}
-                      onChange={(e) => setNewPrices(prev => ({ ...prev, price3: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
+              <form onSubmit={handleSubmitCuenta} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Banco
+                  </label>
+                  <select
+                    value={newCuenta.banco}
+                    onChange={(e) => setNewCuenta(prev => ({ ...prev, banco: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Seleccionar banco</option>
+                    <option value="BBVA">BBVA</option>
+                    <option value="Santander">Santander</option>
+                    <option value="Banorte">Banorte</option>
+                    <option value="Banamex">Banamex</option>
+                    <option value="HSBC">HSBC</option>
+                  </select>
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Precio 4 (VIP)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={newPrices.price4}
-                      onChange={(e) => setNewPrices(prev => ({ ...prev, price4: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Precio 5 (Especial)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={newPrices.price5}
-                      onChange={(e) => setNewPrices(prev => ({ ...prev, price5: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <div className="text-sm text-gray-600">
-                      <p><strong>Producto:</strong> {selectedProduct.name}</p>
-                      <p><strong>Código:</strong> {selectedProduct.code}</p>
-                      <p><strong>Precio Actual:</strong> ${selectedProduct.price.toFixed(2)}</p>
-                    </div>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Número de Cuenta
+                  </label>
+                  <input
+                    type="text"
+                    value={newCuenta.numero_cuenta}
+                    onChange={(e) => setNewCuenta(prev => ({ ...prev, numero_cuenta: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="**** **** **** 1234"
+                    required
+                  />
                 </div>
-              </div>
-
-              <div className="flex space-x-3 mt-6">
-                <button
-                  onClick={handleUpdateProductPrices}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Actualizar Precios
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPriceForm(false);
-                    setSelectedProduct(null);
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de Cuenta
+                  </label>
+                  <select
+                    value={newCuenta.tipo}
+                    onChange={(e) => setNewCuenta(prev => ({ ...prev, tipo: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="Cheques">Cheques</option>
+                    <option value="Ahorros">Ahorros</option>
+                    <option value="Inversión">Inversión</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Saldo Inicial
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newCuenta.saldo}
+                    onChange={(e) => setNewCuenta(prev => ({ ...prev, saldo: parseFloat(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min="0"
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    {editingItem ? 'Actualizar' : 'Crear'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForm(false);
+                      setEditingItem(null);
+                      setNewCuenta({ banco: '', numero_cuenta: '', tipo: 'Cheques', saldo: 0 });
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

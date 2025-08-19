@@ -528,6 +528,36 @@ export function POSOrderPanel({
                   </tr>
                 </thead>
                 <tbody>
+                  {/* Cliente General */}
+                  <tr
+                    onClick={() => {
+                      const clienteGeneral = {
+                        id: 'general',
+                        name: 'Cliente General',
+                        rfc: 'XAXX010101000',
+                        credit_limit: 0,
+                        balance: 0,
+                        default_price_level: 1,
+                        zone: 'General'
+                      };
+                      onSelectClient(clienteGeneral);
+                      setShowClientModal(false);
+                      setSearchClient('');
+                      if (onRefreshData) {
+                        onRefreshData();
+                      }
+                    }}
+                    className="border-b border-orange-100 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 cursor-pointer transition-all duration-200 bg-blue-50"
+                  >
+                    <td className="p-2 sm:p-3 text-gray-900 font-bold">Cliente General</td>
+                    <td className="p-2 sm:p-3 text-gray-600 hidden sm:table-cell">XAXX010101000</td>
+                    <td className="p-2 sm:p-3 text-right text-green-600 font-mono font-semibold">
+                      $0
+                    </td>
+                    <td className="p-2 sm:p-3 text-center text-orange-600 font-semibold">
+                      Precio 1
+                    </td>
+                  </tr>
                   {filteredClients.map(clientOption => (
                     <tr
                       key={clientOption.id}

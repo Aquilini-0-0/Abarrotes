@@ -61,7 +61,18 @@ export function POSLayout() {
   // Get the actual client data based on the active order
   const getActiveClientData = (): POSClient | null => {
     const activeOrder = getActiveOrder();
-    if (!activeOrder?.client_id) return null;
+    if (!activeOrder?.client_id || activeOrder.client_id === 'general') {
+      // Return Cliente General data
+      return {
+        id: 'general',
+        name: 'Cliente General',
+        rfc: 'XAXX010101000',
+        credit_limit: 0,
+        balance: 0,
+        default_price_level: 1,
+        zone: 'General'
+      };
+    }
     
     const clientData = clients.find(c => c.id === activeOrder.client_id);
     console.log('Active client data:', clientData);

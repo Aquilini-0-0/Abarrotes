@@ -51,6 +51,7 @@ const fetchReportes = useCallback(async () => {
           *,
           users!cash_registers_user_id_fkey(name)
         `)
+        .eq('user_id', user?.id)
         .order('opened_at', { ascending: false });
 
       if (error) throw error;
@@ -93,7 +94,7 @@ const fetchReportes = useCallback(async () => {
           ventas_efectivo: register.total_cash,
           ventas_tarjeta: register.total_card,
           ventas_transferencia: register.total_transfer,
-          total_ventas: actualTotalSales,
+          total_ventas: register.total_sales || actualTotalSales,
           diferencia: difference,
           numero_tickets: actualTicketCount,
           ticket_promedio: actualTicketPromedio,

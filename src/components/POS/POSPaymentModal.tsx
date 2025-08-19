@@ -950,6 +950,27 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
                           </div>
 
                         )}
+                        
+                        {/* Pago mixto con efectivo si el vale no cubre el total */}
+                        {selectedVale.disponible < amountToPay && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                            <h5 className="font-semibold text-blue-900 mb-2">Completar con Efectivo</h5>
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Pago con Vale:</span>
+                                <span className="font-mono text-green-600">${selectedVale.disponible.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Pago en Efectivo:</span>
+                                <span className="font-mono text-blue-600">${(amountToPay - selectedVale.disponible).toFixed(2)}</span>
+                              </div>
+                              <div className="border-t pt-2 flex justify-between">
+                                <span className="font-semibold">Total a Pagar:</span>
+                                <span className="font-bold text-orange-600">${amountToPay.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                       </div>
 
@@ -1029,7 +1050,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                 (paymentMethod === 'credit' && !client) || // El botón solo se deshabilita si no hay cliente para crédito
 
-                (paymentMethod === 'vales' && (!selectedVale || selectedVale.disponible < order.total))
+                (paymentMethod === 'vales' && !selectedVale)
 
               }
 

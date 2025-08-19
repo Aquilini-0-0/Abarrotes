@@ -125,7 +125,7 @@ export function usePOS() {
   };
 
   // Initialize new order
-  const initializeOrder = (clientName: string = 'Cliente General', clientId?: string): POSOrder => {
+  const initializeOrder = (clientName: string = 'Cliente General', clientId: string = 'general'): POSOrder => {
     const newOrder: POSOrder = {
       id: `temp-${Date.now()}`,
       client_id: clientId,
@@ -530,12 +530,16 @@ export function usePOS() {
 
           // Handle vales payment
           if (paymentData.method === 'vales' && paymentData.selectedVale) {
-            // Mark vale as used
+            // Update vale balance - only mark as used if balance reaches 0
+            const valePaymentAmount = Math.min(paymentData.selectedVale.disponible, orderData.total);
+            const newValeBalance = paymentData.selectedVale.disponible - valePaymentAmount;
+            const newValeStatus = newValeBalance <= 0 ? 'USADO' : 'HABILITADO';
+            
             await supabase
               .from('vales_devolucion')
               .update({
-                estatus: 'USADO',
-                disponible: 0
+                disponible: Math.max(0, newValeBalance),
+                estatus: newValeStatus
               })
               .eq('id', paymentData.selectedVale.id);
           }
@@ -570,19 +574,6 @@ export function usePOS() {
             }
           }
 
-          // Update vale balance - only mark as used if balance reaches 0
-          if (paymentData.method === 'vales' && paymentData.selectedVale) {
-            const newValeBalance = paymentData.selectedVale.disponible - paymentData.amount;
-            const newValeStatus = newValeBalance <= 0 ? 'USADO' : 'HABILITADO';
-            
-            await supabase
-              .from('vales_devolucion')
-              .update({
-                disponible: Math.max(0, newValeBalance),
-                estatus: newValeStatus
-              })
-              .eq('id', paymentData.selectedVale.id);
-          }
         }
 
         // For non-credit payments, reduce client balance if they had previous credit
