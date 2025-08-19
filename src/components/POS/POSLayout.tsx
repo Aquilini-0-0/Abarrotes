@@ -65,11 +65,11 @@ export function POSLayout() {
       // Return Cliente General data
       return {
         id: 'general',
-      const initialOrder = initializeOrder('Cliente General', null);
+       name: 'Cliente General',
         rfc: 'XAXX010101000',
         credit_limit: 0,
         balance: 0,
-        client: { id: null, name: 'Cliente General', rfc: 'XAXX010101000', credit_limit: 0, balance: 0, default_price_level: 1, zone: 'General' },
+       default_price_level: 1,
         zone: 'General'
       };
     }
