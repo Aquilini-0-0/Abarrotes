@@ -620,15 +620,36 @@ export function ListadoCompras() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Producto *
                     </label>
-                    <input
-                      type="text"
+                    <AutocompleteInput
+                      options={products.map(product => ({
+                        id: product.id,
+                        label: `${product.name} - ${product.code}`,
+                        value: product.id
+                      }))}
                       value={newDetalle.producto}
-                      onChange={(e) => handleInputChange('producto', e.target.value)}
+                      onChange={(productId) => {
+                        const selectedProduct = products.find(p => p.id === productId);
+                        if (selectedProduct) {
+                          handleInputChange('producto', selectedProduct.name);
+                          handleInputChange('proveedor_id', ''); // Reset proveedor
+                          handleInputChange('codigo_barras', selectedProduct.code);
+                          handleInputChange('marca', selectedProduct.line);
+                          handleInputChange('unidad_medida', selectedProduct.unit);
+                          handleInputChange('costo_unitario', selectedProduct.cost);
+                          handleInputChange('precio1', selectedProduct.price1 || 0);
+                          handleInputChange('precio2', selectedProduct.price2 || 0);
+                          handleInputChange('precio3', selectedProduct.price3 || 0);
+                          handleInputChange('precio4', selectedProduct.price4 || 0);
+                          handleInputChange('precio5', selectedProduct.price5 || 0);
+                        } else {
+                          // If no product selected, allow manual entry
+                          handleInputChange('producto', productId);
+                        }
+                      }}
                       className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         validationErrors.producto ? 'border-red-300 bg-red-50' : 'border-gray-300'
                       }`}
-                      placeholder="Nombre del producto"
-                      required
+                      placeholder="Buscar producto existente o escribir nuevo..."
                     />
                     {validationErrors.producto && (
                       <p className="text-red-500 text-xs mt-1">{validationErrors.producto}</p>
