@@ -532,7 +532,7 @@ export function POSOrderPanel({
                   <tr
                     onClick={() => {
                       const clienteGeneral = {
-                        id: 'general',
+                        id: null,
                         name: 'Cliente General',
                         rfc: 'XAXX010101000',
                         credit_limit: 0,

@@ -184,7 +184,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          client_id: string;
+          client_id: string | null;
           client_name: string;
           date?: string;
           total?: number;
@@ -197,7 +197,7 @@ export interface Database {
         };
         Update: {
           id?: string;
-          client_id?: string;
+          client_id?: string | null;
           client_name?: string;
           date?: string;
           total?: number;

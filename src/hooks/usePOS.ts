@@ -125,7 +125,7 @@ export function usePOS() {
   };
 
   // Initialize new order
-  const initializeOrder = (clientName: string = 'Cliente General', clientId: string = 'general'): POSOrder => {
+  const initializeOrder = (clientName: string = 'Cliente General', clientId: string | null = null): POSOrder => {
     const newOrder: POSOrder = {
       id: `temp-${Date.now()}`,
       client_id: clientId,
