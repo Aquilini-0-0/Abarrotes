@@ -60,7 +60,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
   });
 
-  const [cashReceived, setCashReceived] = useState(0);
+  const [cashReceived, setCashReceived] = useState(order.total || 0);
   const [paymentAmount, setPaymentAmount] = useState(0);
 
   const [isPartialPayment, setIsPartialPayment] = useState(false);
@@ -822,7 +822,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                         if (vale) {
 
-                          setPaymentAmount(Math.min(vale.disponible, order.total));
+                          setPaymentAmount(Math.min(vale.disponible, amountToPay));
 
                         }
 
