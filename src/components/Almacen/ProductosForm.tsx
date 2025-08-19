@@ -201,18 +201,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Stock Inicial
-              </label>
-              <input
-                type="number"
-                value={formData.stock}
-                onChange={(e) => handleChange('stock', parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                min="0"
-              />
-            </div>
+            
 
             <div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
