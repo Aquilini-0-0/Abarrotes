@@ -141,7 +141,7 @@ const logout = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         // Always require fresh login - don't restore sessions
-        if (false && session?.user) {
+        if (session?.user) {
           const { data: userProfile } = await supabase
             .from('users')
             .select('*')
@@ -174,7 +174,7 @@ const logout = async () => {
         if (event === 'SIGNED_OUT') {
           setUser(null);
           window.location.href = '/login';
-        } else if (false && event === 'SIGNED_IN' && session?.user) {
+        } else if (event === 'SIGNED_IN' && session?.user) {
           const { data: userProfile } = await supabase
             .from('users')
             .select('*')
