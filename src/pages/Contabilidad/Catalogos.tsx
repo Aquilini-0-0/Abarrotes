@@ -20,7 +20,7 @@ export function Catalogos() {
   } = useCatalogos();
 
   const { products, updateProduct } = useProducts();
-  const [activeTab, setActiveTab] = useState<'conceptos' | 'cuentas' | 'precios'>('conceptos');
+  const [activeTab, setActiveTab] = useState<'conceptos' | 'cuentas'>('conceptos');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [showPriceForm, setShowPriceForm] = useState(false);
@@ -292,19 +292,8 @@ export function Catalogos() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              <div className="flex items-center space-x-2">
-                <Settings size={16} />
-                <span>Conceptos de Gastos</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('cuentas')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'cuentas'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
+            
+               
               <div className="flex items-center space-x-2">
                 <CreditCard size={16} />
                 <span>Cuentas Bancarias</span>
@@ -318,16 +307,7 @@ export function Catalogos() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              <div className="flex items-center space-x-2">
-                <CreditCard size={16} />
-                <span>Precios de Productos</span>
-              </div>
-            </button>
-          </nav>
-        </div>
-            </button>
-          </nav>
-        </div>
+           
 
         <div className="p-6">
           {activeTab === 'conceptos' ? (
