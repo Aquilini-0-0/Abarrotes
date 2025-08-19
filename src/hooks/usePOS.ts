@@ -518,7 +518,7 @@ export function usePOS() {
                   sale_total: orderData.total
                 },
                 created_at: new Date().toISOString()
-              }).catch(notifError => {
+              }).select().catch(notifError => {
                 console.warn('Could not create admin notification (table may not exist):', notifError);
               });
             } catch (notificationError) {
