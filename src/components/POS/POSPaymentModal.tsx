@@ -60,7 +60,6 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
   });
 
-  const [cashReceived, setCashReceived] = useState(order.total || 0);
   const [cashReceived, setCashReceived] = useState(0);
   const [paymentAmount, setPaymentAmount] = useState(0);
 
@@ -133,8 +132,6 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const hasPayments = order.payments && order.payments.length > 0;
 
   const totalPaid = order.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
-
-  const remainingBalance = orderTotal - totalPaid;
 
 
 
@@ -466,7 +463,6 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
             </div>
 
-            <div className="flex justify-between mb-1 sm:mb-2 text-gray-600 text-sm">
             {isAlreadyPaid && (
               <>
                 <div className="flex justify-between mb-1 sm:mb-2 text-gray-600 text-sm">
@@ -480,6 +476,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
               </>
             )}
 
+            <div className="flex justify-between mb-1 sm:mb-2 text-gray-600 text-sm">
 
               <span>{isAlreadyPaid ? 'Saldo Pendiente:' : 'Subtotal:'}</span>
               <span className="font-mono font-semibold">${(isAlreadyPaid ? remainingBalance : order.subtotal).toFixed(2)}</span>
@@ -502,7 +499,6 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
               <div className="flex justify-between items-center">
 
-                <span className="text-orange-600 font-bold text-base sm:text-lg">TOTAL:</span>
                 <span className="text-orange-600 font-bold text-base sm:text-lg">
                   {isAlreadyPaid ? 'POR PAGAR:' : 'TOTAL:'}
                 </span>
@@ -641,16 +637,6 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
                     onChange={(e) => setCashReceived(parseFloat(e.target.value) || 0)}
 
                     className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-              {isAlreadyPaid && (
-                <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <div className="text-sm text-blue-800">
-                    <p className="font-medium">Información del Pedido:</p>
-                    <p>• Total original: ${orderTotal.toFixed(2)}</p>
-                    <p>• Ya pagado: ${amountPaid.toFixed(2)}</p>
-                    <p className="font-bold">• Solo se cobrará: ${amountToPay.toFixed(2)}</p>
-                  </div>
-                </div>
-              )}
 
                     placeholder="0.00"
 
@@ -675,6 +661,17 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
                 </div>
 
               </div>
+
+              {isAlreadyPaid && (
+                <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium">Información del Pedido:</p>
+                    <p>• Total original: ${orderTotal.toFixed(2)}</p>
+                    <p>• Ya pagado: ${amountPaid.toFixed(2)}</p>
+                    <p className="font-bold">• Solo se cobrará: ${amountToPay.toFixed(2)}</p>
+                  </div>
+                </div>
+              )}
 
             </div>
 
@@ -744,9 +741,8 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                   <span className="font-semibold text-gray-800">Diferencia:</span>
 
-                  <span className={`${Math.abs(totalPayment - order.total) < 0.01 ? 'text-green-600' : 'text-red-600'} font-bold`}>
                   <span className={`${Math.abs(totalPayment - amountToPay) < 0.01 ? 'text-green-600' : 'text-red-600'} font-bold`}>
-                    {(totalPayment - amountToPay).toFixed(2)}
+                    ${(totalPayment - amountToPay).toFixed(2)}
 
                   </span>
 
@@ -888,7 +884,6 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                           <span className="font-semibold">Resultado:</span>
 
-                          <span className={`font-bold ${selectedVale.disponible >= order.total ? 'text-green-600' : 'text-red-600'}`}>
                           <span className={`font-bold ${selectedVale.disponible >= amountToPay ? 'text-green-600' : 'text-red-600'}`}>
                             {selectedVale.disponible >= amountToPay ? 'Vale cubre el total' : 'Vale insuficiente'}
 
@@ -1169,8 +1164,8 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
                       <p>Saldo actual: ${client?.balance.toLocaleString('es-MX')}</p>
 
                       <p>Este pedido: ${order.total.toLocaleString('es-MX')}</p>
-                      <p>Este pedido: ${amountToPay.toLocaleString('es-MX')}</p>
-                      <p className="font-bold">Nuevo saldo: ${((client?.balance || 0) + amountToPay).toLocaleString('es-MX')}</p>
+
+                      <p className="font-bold">Nuevo saldo: ${((client?.balance || 0) + order.total).toLocaleString('es-MX')}</p>
 
                     </div>
 
