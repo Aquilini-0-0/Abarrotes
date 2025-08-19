@@ -86,7 +86,11 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const [stockOverride, setStockOverride] = useState(false);
 
   // Calculate remaining balance for paid orders - fetch from database
-  const [orderData, setOrderData] = useState<any>(null);
+  const [orderData, setOrderData] = useState<any>(() => ({
+    total: order.total,
+    amount_paid: order.amount_paid || 0,
+    remaining_balance: order.total - (order.amount_paid || 0)
+  }));
   const [loadingOrderData, setLoadingOrderData] = useState(true);
 
   // Fetch current order data from database to get accurate payment info
