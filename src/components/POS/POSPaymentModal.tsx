@@ -334,7 +334,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       setStockOverride(true);
       // If user confirms to proceed despite stock issues, process the payment
       if (pendingPaymentData) {
-        processPayment();
+        processPayment(true); // Pass true to override stock validation
       }
     } else {
       setStockOverride(false);
@@ -391,6 +391,27 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       stockOverride,
 
       printTicket,
+
+  const processPayment = (overrideStock = false) => {
+    setIsProcessing(true);
+    
+    const paymentData = {
+      method: paymentMethod,
+      breakdown: paymentMethod === 'mixed' ? paymentBreakdown : undefined,
+      cashReceived: paymentMethod === 'cash' ? cashReceived : undefined,
+      change: paymentMethod === 'cash' ? change : 0,
+      selectedVale: paymentMethod === 'vales' ? selectedVale : undefined,
+      stockOverride: overrideStock || stockOverride,
+      printTicket,
+      printA4
+    };
+
+    // Simulate processing delay
+    setTimeout(() => {
+      onConfirm(paymentData);
+      setIsProcessing(false);
+    }, 1000);
+  };
 
       printA4
 
