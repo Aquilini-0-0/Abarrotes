@@ -134,12 +134,12 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
   // Calculate payment amounts based on database data
   const amountPaid = orderData?.amount_paid || 0;
-  const orderTotal = orderData?.total || order.total;
+  const orderTotal = order.total; // Always use current order total from POSOrderPanel
   const remainingBalance = orderData?.remaining_balance || (orderTotal - amountPaid);
   const isAlreadyPaid = amountPaid > 0;
   
   // Use remaining balance as the amount to pay
-  const amountToPay = Math.max(0, remainingBalance);
+  const amountToPay = Math.max(0, orderTotal - amountPaid);
 
   // Fetch client vales when payment method changes to vales
   React.useEffect(() => {

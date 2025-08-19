@@ -50,6 +50,14 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
       
       const total = data?.reduce((sum, sale) => sum + sale.total, 0) || 0;
       setTotalSales(total);
+
+      // Update the cash register with the calculated total_sales
+      if (total !== cashRegister.total_sales) {
+        await supabase
+          .from('cash_registers')
+          .update({ total_sales: total })
+          .eq('id', cashRegister.id);
+      }
     } catch (err) {
       console.error('Error fetching sales for cash register:', err);
       setTotalSales(0);

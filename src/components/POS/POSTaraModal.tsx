@@ -12,14 +12,18 @@ interface POSTaraModalProps {
   product: POSProduct;
   quantity: number;
   priceLevel: 1 | 2 | 3 | 4 | 5;
+  client?: { default_price_level: 1 | 2 | 3 | 4 | 5 } | null;
   onClose: () => void;
   onConfirm: (product: POSProduct, finalQuantity: number, priceLevel: 1 | 2 | 3 | 4 | 5, finalUnitPrice: number) => void;
 }
 
-export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm }: POSTaraModalProps) {
+export function POSTaraModal({ product, quantity, priceLevel, client, onClose, onConfirm }: POSTaraModalProps) {
   const [selectedTara, setSelectedTara] = useState<TaraOption | null>(null);
   const [pesoBruto, setPesoBruto] = useState(0);
   const [cantidadCajas, setCantidadCajas] = useState(1);
+  const [currentPriceLevel, setCurrentPriceLevel] = useState<1 | 2 | 3 | 4 | 5>(
+    client?.default_price_level || priceLevel
+  );
 
   const taraOptions: TaraOption[] = [
     { id: '1', name: 'SIN TARA', weight: 0.0 },
@@ -31,7 +35,7 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
 
   const pesoTaraTotal = selectedTara ? selectedTara.weight * cantidadCajas : 0;
   const pesoNeto = pesoBruto - pesoTaraTotal;
-  const precioKilo = product.prices[`price${priceLevel}`];
+  const precioKilo = product.prices[`price${currentPriceLevel}`];
   const precioFinal = pesoNeto * precioKilo;
 
   const handleConfirm = () => {
@@ -74,7 +78,12 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
       return;
     }
 
-    onConfirm(product, finalQuantity, priceLevel, finalUnitPrice);
+    onConfirm(product, finalQuantity, currentPriceLevel, finalUnitPrice);
+  };
+
+  // Add price level selector
+  const handlePriceLevelChange = (level: 1 | 2 | 3 | 4 | 5) => {
+    setCurrentPriceLevel(level);
   };
 
   return (
@@ -110,8 +119,34 @@ export function POSTaraModal({ product, quantity, priceLevel, onClose, onConfirm
               </div>
               <div>
                 <span className="text-gray-600">Nivel de precio:</span>
-                <span className="ml-2 font-bold text-orange-600">P{priceLevel}</span>
+                <span className="ml-2 font-bold text-orange-600">P{currentPriceLevel}</span>
               </div>
+            </div>
+            
+            {/* Price Level Selector */}
+            <div className="mt-4 pt-4 border-t border-orange-200">
+              <label className="block text-gray-700 font-medium mb-2">Nivel de Precio</label>
+              <div className="grid grid-cols-5 gap-2">
+                {[1, 2, 3, 4, 5].map(level => (
+                  <button
+                    key={level}
+                    onClick={() => handlePriceLevelChange(level as 1 | 2 | 3 | 4 | 5)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      currentPriceLevel === level
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    P{level}
+                    <div className="text-xs">${product.prices[`price${level}`].toFixed(2)}</div>
+                  </button>
+                ))}
+              </div>
+              {client && (
+                <div className="mt-2 text-sm text-gray-600">
+                  Cliente seleccionado usa Precio {client.default_price_level} por defecto
+                </div>
+              )}
             </div>
           </div>
 

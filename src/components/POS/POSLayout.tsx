@@ -173,6 +173,12 @@ export function POSLayout() {
   const handleAddProduct = (product: POSProduct) => {
     try {
       if (quantity > 0) {
+        // Check if client is selected before opening tara modal
+        if (!selectedClient) {
+          alert('Debe seleccionar un cliente antes de agregar productos');
+          return;
+        }
+        
         // Always show tara modal for all products
         setSelectedProduct(product);
         setShowTaraModal(true);
@@ -547,6 +553,7 @@ export function POSLayout() {
           product={selectedProduct}
           quantity={quantity}
           priceLevel={selectedPriceLevel}
+          client={selectedClient}
           onClose={() => {
             setShowTaraModal(false);
             setSelectedProduct(null);

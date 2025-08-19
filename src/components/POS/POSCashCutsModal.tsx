@@ -50,37 +50,16 @@ export function POSCashCutsModal({ onClose }: POSCashCutsModalProps) {
 
       if (error) throw error;
 
-      const formattedCashCuts: CashCut[] = [];
-      
-      for (const register of data) {
-        // Fetch sales for this specific cash register session
-        let salesQuery = supabase
-          .from('sales')
-          .select('id, total, created_at')
-          .eq('created_by', register.user_id)
-          .gte('created_at', register.opened_at);
-
-        // If cash register is closed, filter by closed_at time
-        if (register.closed_at) {
-          salesQuery = salesQuery.lte('created_at', register.closed_at);
-        }
-
-        const { data: salesData, error: salesError } = await salesQuery;
-        
-        if (salesError) {
-          console.error('Error fetching sales for register:', salesError);
-        }
-
-        const actualTotalSales = salesData?.reduce((sum, sale) => sum + sale.total, 0) || 0;
+      const formattedCashCuts: CashCut[] = data.map(register => {
         const openingDate = new Date(register.opened_at).toISOString().split('T')[0];
         const difference = register.closing_amount ? register.closing_amount - (register.opening_amount + register.total_cash) : 0;
         
-        formattedCashCuts.push({
+        return {
           id: register.id,
           date: openingDate,
           opening_amount: register.opening_amount,
           closing_amount: register.closing_amount || 0,
-          total_sales: actualTotalSales, // Use calculated sales total
+          total_sales: register.total_sales || 0, // Use persisted total_sales from database
           total_cash: register.total_cash,
           total_card: register.total_card,
           total_transfer: register.total_transfer,
@@ -88,8 +67,8 @@ export function POSCashCutsModal({ onClose }: POSCashCutsModalProps) {
           difference: difference,
           user_name: register.users?.name || 'Usuario',
           created_at: register.opened_at
-        });
-      }
+        };
+      });
       
       setCashCuts(formattedCashCuts);
     } catch (err) {
