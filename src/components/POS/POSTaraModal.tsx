@@ -137,7 +137,7 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
               </div>
             </div>
             
-            {/* Price Level Selector */}
+            {/* Price Level Selector 
             <div className="mt-4 pt-4 border-t border-orange-200">
               <label className="block text-gray-700 font-medium mb-2">Nivel de Precio</label>
               <div className="grid grid-cols-5 gap-2">
@@ -163,7 +163,8 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
               )}
             </div>
           </div>
-
+          */}
+            
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Tara Selection */}
             <div>
