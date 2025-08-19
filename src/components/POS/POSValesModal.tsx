@@ -346,24 +346,7 @@ export function POSValesModal({ onClose }: POSValesModalProps) {
                       <td className="p-3 text-center text-gray-700">{vale.tipo}</td>
                       <td className="p-3 text-gray-700">{vale.factura}</td>
                       <td className="p-3">
-                        <div className="flex items-center justify-center space-x-2">
-                          <button
-                            className="p-1 text-blue-600 hover:text-blue-800"
-                            title="Ver detalles"
-                          >
-                            <Eye size={16} />
-                          </button>
-                          {vale.estatus === 'HABILITADO' && vale.disponible > 0 && (
-                            <button
-                              onClick={() => handleMarkAsUsed(vale.id)}
-                              className="p-1 text-green-600 hover:text-green-800"
-                              title="Marcar como usado"
-                            >
-                              <Download size={16} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
+
                     </tr>
                   ))
                 )}
