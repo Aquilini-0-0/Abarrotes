@@ -260,15 +260,6 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                   ? 'bg-blue-50 border-blue-300'
                   : 'bg-red-50 border-red-300'
               }`}>
-                <h4 className={`font-bold mb-3 text-center ${
-                  Math.abs(difference) < 0.01
-                    ? 'text-green-900'
-                    : difference > 0
-                    ? 'text-blue-900'
-                    : 'text-red-900'
-                }`}>
-                  Ganancias
-                </h4>
                 <div className="text-center">
                   <div className={`font-mono font-bold text-3xl ${
                     Math.abs(difference) < 0.01
