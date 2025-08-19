@@ -403,35 +403,11 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       setStockOverride(true);
       // If user confirms to proceed despite stock issues, process the payment
       if (pendingPaymentData) {
-        processPayment(true); // Pass true to override stock validation
+        processPayment(true);
       }
     } else {
-      setStockOverride(false);
+      setPendingPaymentData(null);
     }
-    setStockIssues([]);
-    setPendingPaymentData(null);
-  };
-
-  // --- NUEVA FUNCIÓN: Para manejar la autorización del administrador ---
-
-  const handleCreditAuth = () => {
-
-    if (!validateAdminPassword(adminPassword)) {
-
-      alert('Contraseña de administrador incorrecta');
-
-      setAdminPassword('');
-
-      return;
-
-    }
-
-
-
-    // Si la contraseña es correcta, cierra el modal y procede con el pago
-    setShowCreditAuthModal(false);
-    setAdminPassword('');
-    processPayment();
   };
 
   const processPayment = (overrideStock = false) => {
@@ -453,6 +429,16 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       onConfirm(paymentData);
       setIsProcessing(false);
     }, 1000);
+  };
+
+  const handleCreditAuth = () => {
+    if (validateAdminPassword(adminPassword)) {
+      setShowCreditAuthModal(false);
+      setAdminPassword('');
+      processPayment();
+    } else {
+      alert('Contraseña incorrecta');
+    }
   };
 
 
