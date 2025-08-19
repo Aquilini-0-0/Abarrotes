@@ -245,7 +245,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
       ...prev,
 
-      cash: Math.min(amount, amountToPay)
+      cash: Math.min(amount, order.total)
 
     }));
 
