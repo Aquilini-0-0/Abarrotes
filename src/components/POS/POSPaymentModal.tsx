@@ -277,6 +277,15 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       
       if (issues.length > 0) {
         setStockIssues(issues);
+        setPendingPaymentData({
+          method: paymentMethod,
+          breakdown: paymentMethod === 'mixed' ? paymentBreakdown : undefined,
+          cashReceived: paymentMethod === 'cash' ? cashReceived : undefined,
+          change: paymentMethod === 'cash' ? change : 0,
+          selectedVale: paymentMethod === 'vales' ? selectedVale : undefined,
+          printTicket,
+          printA4
+        });
         setShowStockValidation(true);
         return;
       }
@@ -321,9 +330,13 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const handleStockValidationConfirm = (proceed: boolean) => {
     setShowStockValidation(false);
     if (proceed) {
-      proceedWithPayment();
+      // If user confirms to proceed despite stock issues, process the payment
+      if (pendingPaymentData) {
+        processPayment();
+      }
     }
     setStockIssues([]);
+    setPendingPaymentData(null);
   };
 
   // --- NUEVA FUNCIÓN: Para manejar la autorización del administrador ---
