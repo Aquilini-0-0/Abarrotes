@@ -260,7 +260,8 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                   ? 'bg-blue-50 border-blue-300'
                   : 'bg-red-50 border-red-300'
               }`}>
-               
+                <div className="text-center">
+                 
                   <div className={`text-sm mt-1 font-medium ${
                     Math.abs(difference) < 0.01
                       ? 'text-green-600'
