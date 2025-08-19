@@ -109,7 +109,13 @@ export function usePOSTabs() {
     
     // Release lock if order exists in database
     if (tab && tab.order.id && !tab.order.id.startsWith('temp-')) {
-      await releaseLock(tab.order.id);
+      // Release lock immediately and wait for completion
+      try {
+        await releaseLock(tab.order.id);
+        console.log(`Lock released immediately for order ${tab.order.id}`);
+      } catch (err) {
+        console.error('Error releasing lock:', err);
+      }
     }
 
     setTabs(prev => {

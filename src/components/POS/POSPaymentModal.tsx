@@ -87,24 +87,80 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
 
 
-  // Calculate remaining balance for paid orders
-  const amountPaid = order.amount_paid || 0;
-  const orderTotal = order.total || 0;
-  const remainingBalance = orderTotal - amountPaid;
+  // Calculate remaining balance for paid orders - fetch from database
+  const [orderData, setOrderData] = useState<any>(null);
+  const [loadingOrderData, setLoadingOrderData] = useState(true);
+
+  // Fetch current order data from database to get accurate payment info
+  React.useEffect(() => {
+    const fetchOrderData = async () => {
+      if (order.id.startsWith('temp-')) {
+        // New order - use order data directly
+        setOrderData({
+          total: order.total,
+          amount_paid: 0,
+          remaining_balance: order.total
+        });
+        setLoadingOrderData(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('sales')
+          .select('total, amount_paid, remaining_balance')
+          .eq('id', order.id)
+          .single();
+
+        if (error) throw error;
+        setOrderData(data);
+      } catch (err) {
+        console.error('Error fetching order data:', err);
+        // Fallback to order data
+        setOrderData({
+          total: order.total,
+          amount_paid: order.amount_paid || 0,
+          remaining_balance: order.total - (order.amount_paid || 0)
+        });
+      } finally {
+        setLoadingOrderData(false);
+      }
+    };
+
+    fetchOrderData();
+  }, [order.id, order.total]);
+
+  if (loadingOrderData) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando información del pedido...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate payment amounts based on database data
+  const amountPaid = orderData?.amount_paid || 0;
+  const orderTotal = orderData?.total || order.total;
+  const remainingBalance = orderData?.remaining_balance || (orderTotal - amountPaid);
   const isAlreadyPaid = amountPaid > 0;
   
   // Use remaining balance as the amount to pay
-  const amountToPay = remainingBalance > 0 ? remainingBalance : orderTotal;
+  const amountToPay = Math.max(0, remainingBalance);
 
   // Initialize payment amounts with remaining balance
   React.useEffect(() => {
-    setCashReceived(amountToPay);
-    setPaymentAmount(amountToPay);
-    setPaymentBreakdown(prev => ({
-      ...prev,
-      cash: amountToPay
-    }));
-  }, [amountToPay]);
+    if (!loadingOrderData && amountToPay > 0) {
+      setCashReceived(amountToPay);
+      setPaymentAmount(amountToPay);
+      setPaymentBreakdown(prev => ({
+        ...prev,
+        cash: amountToPay
+      }));
+    }
+  }, [amountToPay, loadingOrderData]);
 
 
   const change = cashReceived - paymentAmount;

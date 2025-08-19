@@ -131,7 +131,16 @@ export function useOrderLocks() {
         .eq('user_id', user?.id);
 
       if (error) throw error;
-      await fetchLocks();
+      
+      // Update local state immediately for instant UI feedback
+      setLocks(prev => prev.filter(lock => 
+        !(lock.order_id === orderId && lock.user_id === user?.id)
+      ));
+      
+      // Then fetch fresh data from database
+      fetchLocks();
+      
+      console.log(`Lock released immediately for order ${orderId}`);
     } catch (err) {
       console.error('Error releasing lock:', err);
     }

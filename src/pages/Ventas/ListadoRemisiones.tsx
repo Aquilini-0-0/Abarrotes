@@ -18,7 +18,9 @@ interface Remision {
 }
 
 export function ListadoRemisiones() {
-  const { sales, loading, error } = useSales();
+  const [remisiones, setRemisiones] = useState<Remision[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const [filtros, setFiltros] = useState({
     sucursal: 'BODEGA',
@@ -33,19 +35,41 @@ export function ListadoRemisiones() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedRemision, setSelectedRemision] = useState<Remision | null>(null);
 
-  // Convertir ventas a remisiones
-  const remisiones: Remision[] = sales.map((sale, index) => ({
-    id: sale.id,
-    folio: `REM-${(index + 1).toString().padStart(6, '0')}`,
-    sucursal: 'BODEGA',
-    cliente: sale.client_name,
-    fecha_emision: sale.date,
-    total: sale.total,
-    factura: sale.status === 'paid' ? `FAC-${sale.id.slice(-6)}` : 'Pendiente',
-    tipo: sale.status === 'paid' ? 'Contado' : 'Crédito',
-    capturista: 'Usuario Sistema',
-    estatus: 'Cerrada'
-  }));
+  // Fetch remisiones from database
+  const fetchRemisiones = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('remisiones')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedRemisiones: Remision[] = data.map(remision => ({
+        id: remision.id,
+        folio: remision.folio,
+        sucursal: 'BODEGA', // Default value
+        cliente: remision.cliente,
+        fecha_emision: remision.fecha,
+        total: remision.importe,
+        factura: remision.factura,
+        tipo: remision.tipo_pago,
+        capturista: remision.cajero,
+        estatus: remision.estatus
+      }));
+      
+      setRemisiones(formattedRemisiones);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error fetching remisiones');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRemisiones();
+  }, []);
 
   const remisionesFiltradas = remisiones.filter(remision => {
     if (filtros.sucursal && remision.sucursal !== filtros.sucursal) return false;
