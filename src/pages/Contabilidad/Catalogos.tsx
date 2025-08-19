@@ -270,12 +270,7 @@ export function Catalogos() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card title="Conceptos de Gastos">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600">{conceptos.length}</div>
-            <div className="text-sm text-gray-500">Conceptos registrados</div>
-          </div>
-        </Card>
+   
 
         <Card title="Cuentas Bancarias">
           <div className="text-center">
@@ -284,15 +279,7 @@ export function Catalogos() {
           </div>
         </Card>
 
-        <Card title="Saldo Total">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              ${totalSaldos.toLocaleString('es-MX')}
-            </div>
-            <div className="text-sm text-gray-500">En todas las cuentas</div>
-          </div>
-        </Card>
-      </div>
+  
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="border-b border-gray-200">
@@ -305,19 +292,8 @@ export function Catalogos() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              <div className="flex items-center space-x-2">
-                <Settings size={16} />
-                <span>Conceptos de Gastos</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('cuentas')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'cuentas'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
+            
+               
               <div className="flex items-center space-x-2">
                 <CreditCard size={16} />
                 <span>Cuentas Bancarias</span>
@@ -331,13 +307,7 @@ export function Catalogos() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              <div className="flex items-center space-x-2">
-                <Settings size={16} />
-                <span>Precios de Productos</span>
-              </div>
-            </button>
-          </nav>
-        </div>
+           
 
         <div className="p-6">
           {activeTab === 'conceptos' ? (
