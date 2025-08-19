@@ -361,37 +361,6 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
     // Si la contraseña es correcta, cierra el modal y procede con el pago
 
-    setShowCreditAuthModal(false);
-
-    setAdminPassword('');
-
-    processPayment();
-
-  };
-
-  
-
-  const processPayment = () => {
-
-    setIsProcessing(true);
-
-    
-
-    const paymentData = {
-
-      method: paymentMethod,
-
-      breakdown: paymentMethod === 'mixed' ? paymentBreakdown : undefined,
-
-      cashReceived: paymentMethod === 'cash' ? cashReceived : undefined,
-
-      change: paymentMethod === 'cash' ? change : 0,
-
-      selectedVale: paymentMethod === 'vales' ? selectedVale : undefined,
-      stockOverride,
-
-      printTicket,
-
   const processPayment = (overrideStock = false) => {
     setIsProcessing(true);
     
