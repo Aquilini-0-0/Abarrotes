@@ -302,7 +302,6 @@ export function POSValesModal({ onClose }: POSValesModalProps) {
                   <th className="text-center p-3 text-gray-700 font-semibold">Estatus</th>
                   <th className="text-center p-3 text-gray-700 font-semibold">Tipo</th>
                   <th className="text-left p-3 text-gray-700 font-semibold">Factura</th>
-                  <th className="text-center p-3 text-gray-700 font-semibold">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -345,8 +344,6 @@ export function POSValesModal({ onClose }: POSValesModalProps) {
                       </td>
                       <td className="p-3 text-center text-gray-700">{vale.tipo}</td>
                       <td className="p-3 text-gray-700">{vale.factura}</td>
-                      <td className="p-3">
-
                     </tr>
                   ))
                 )}
