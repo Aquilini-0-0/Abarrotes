@@ -84,6 +84,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const [showStockValidation, setShowStockValidation] = useState(false);
   const [stockIssues, setStockIssues] = useState<Array<{product_name: string, required: number, available: number}>>([]);
   const [pendingPaymentData, setPendingPaymentData] = useState<any>(null);
+  const [stockOverride, setStockOverride] = useState(false);
 
 
 
@@ -330,10 +331,13 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const handleStockValidationConfirm = (proceed: boolean) => {
     setShowStockValidation(false);
     if (proceed) {
+      setStockOverride(true);
       // If user confirms to proceed despite stock issues, process the payment
       if (pendingPaymentData) {
         processPayment();
       }
+    } else {
+      setStockOverride(false);
     }
     setStockIssues([]);
     setPendingPaymentData(null);
@@ -384,6 +388,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       change: paymentMethod === 'cash' ? change : 0,
 
       selectedVale: paymentMethod === 'vales' ? selectedVale : undefined,
+      stockOverride,
 
       printTicket,
 

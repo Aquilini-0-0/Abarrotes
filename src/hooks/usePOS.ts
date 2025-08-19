@@ -275,13 +275,15 @@ export function usePOS() {
   };
 
   // Save order to database
-  const saveOrder = async (order: POSOrder) => {
+  const saveOrder = async (order: POSOrder, stockOverride: boolean = false) => {
     try {
-      // Validate stock before saving
-      for (const item of order.items) {
-        const product = products.find(p => p.id === item.product_id);
-        if (product && item.quantity > product.stock) {
-          throw new Error(`No se puede guardar el pedido porque no hay stock suficiente para ${item.product_name}. Disponible: ${product.stock} unidades, Solicitado: ${item.quantity} unidades`);
+      // Validate stock before saving (unless overridden)
+      if (!stockOverride) {
+        for (const item of order.items) {
+          const product = products.find(p => p.id === item.product_id);
+          if (product && item.quantity > product.stock) {
+            throw new Error(`No se puede guardar el pedido porque no hay stock suficiente para ${item.product_name}. Disponible: ${product.stock} unidades, Solicitado: ${item.quantity} unidades`);
+          }
         }
       }
 
@@ -388,6 +390,7 @@ export function usePOS() {
     method: 'cash' | 'card' | 'transfer' | 'credit' | 'vales';
     reference?: string;
     selectedVale?: any;
+    stockOverride?: boolean;
   }) => {
     try {
       // Get current order data
@@ -493,8 +496,8 @@ export function usePOS() {
             }
           }
 
-          // If there are stock issues, create notification for admin
-          if (stockIssues.length > 0) {
+          // If there are stock issues and stockOverride was used, create notification for admin
+          if (stockIssues.length > 0 && paymentData.stockOverride) {
             try {
               console.warn('ADMIN NOTIFICATION: Venta con stock negativo procesada', {
                 orderId: orderId,

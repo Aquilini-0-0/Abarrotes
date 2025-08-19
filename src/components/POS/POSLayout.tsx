@@ -246,7 +246,8 @@ export function POSLayout() {
         const result = await processPayment(currentOrder.id, {
           amount: paymentAmount,
           method: paymentData.method,
-          reference: paymentData.reference
+          reference: paymentData.reference,
+          stockOverride: paymentData.stockOverride
         });
         
         setLastOrder({
@@ -269,7 +270,7 @@ export function POSLayout() {
         }
       } else {
         // For new orders, save first then process payment
-        const savedOrder = await saveOrder(currentOrder);
+        const savedOrder = await saveOrder(currentOrder, paymentData.stockOverride);
         
         // Process the payment using the hook
         const paymentAmount = paymentData.method === 'mixed' 
@@ -280,7 +281,8 @@ export function POSLayout() {
           amount: paymentAmount,
           method: paymentData.method,
           reference: paymentData.reference,
-          selectedVale: paymentData.selectedVale
+          selectedVale: paymentData.selectedVale,
+          stockOverride: paymentData.stockOverride
         });
         
         setLastOrder({
@@ -328,7 +330,7 @@ export function POSLayout() {
   const handleSaveOrder = async () => {
     if (currentOrder) {
       try {
-        const savedOrder = await saveOrder({ ...currentOrder, status: 'pending' });
+        const savedOrder = await saveOrder({ ...currentOrder, status: 'pending' }, false);
         markTabAsSaved(activeTabId);
         closeTab(activeTabId); // Close the tab after saving
         alert('Pedido guardado');
@@ -362,7 +364,7 @@ export function POSLayout() {
     // Execute the pending action
     if (pendingAction === 'save') {
       try {
-        const savedOrder = await saveOrder({ ...currentOrder!, status: 'pending' });
+        const savedOrder = await saveOrder({ ...currentOrder!, status: 'pending' }, false);
         markTabAsSaved(activeTabId);
         alert('Pedido guardado con autorización de administrador');
       } catch (err) {
@@ -378,7 +380,7 @@ export function POSLayout() {
           status: pendingPaymentData.method === 'credit' ? 'pending' : 'paid'
         } as any;
 
-        const savedOrder = await saveOrder(orderToSave);
+        const savedOrder = await saveOrder(orderToSave, false);
         
         setLastOrder({
           id: savedOrder.id,
