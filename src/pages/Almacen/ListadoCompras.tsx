@@ -243,37 +243,94 @@ export function ListadoCompras() {
         return;
       }
 
-      // Crear el producto primero
-      const { data: newProduct, error: productError } = await supabase
+      // Check if product with this code already exists
+      const productCode = newDetalle.codigo_barras || `PROD-${Date.now()}`;
+      const { data: existingProduct, error: checkError } = await supabase
         .from('products')
-        .insert({
-          name: newDetalle.producto,
-          code: newDetalle.codigo_barras || `PROD-${Date.now()}`,
-          line: newDetalle.marca,
-          subline: '',
-          unit: newDetalle.unidad_medida,
-          stock: newDetalle.cantidad,
-          cost: newDetalle.costo_unitario,
-          price1: newDetalle.precio1,
-          price2: newDetalle.precio2,
-          price3: newDetalle.precio3,
-          price4: newDetalle.precio4,
-          price5: newDetalle.precio5,
-          status: 'active'
-        })
         .select()
-        .single();
+        .eq('code', productCode)
+        .maybeSingle();
 
-      if (productError) throw productError;
+      if (checkError) throw checkError;
 
-      // Crear stock en Almacén Principal
-      await supabase
+      let productId;
+      
+      if (existingProduct) {
+        // Update existing product
+        const { data: updatedProduct, error: updateError } = await supabase
+          .from('products')
+          .update({
+            name: newDetalle.producto,
+            line: newDetalle.marca,
+            unit: newDetalle.unidad_medida,
+            stock: existingProduct.stock + newDetalle.cantidad,
+            cost: newDetalle.costo_unitario,
+            price1: newDetalle.precio1,
+            price2: newDetalle.precio2,
+            price3: newDetalle.precio3,
+            price4: newDetalle.precio4,
+            price5: newDetalle.precio5
+          })
+          .eq('id', existingProduct.id)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+        productId = existingProduct.id;
+      } else {
+        // Create new product
+        const { data: newProduct, error: productError } = await supabase
+          .from('products')
+          .insert({
+            name: newDetalle.producto,
+            code: productCode,
+            line: newDetalle.marca,
+            subline: '',
+            unit: newDetalle.unidad_medida,
+            stock: newDetalle.cantidad,
+            cost: newDetalle.costo_unitario,
+            price1: newDetalle.precio1,
+            price2: newDetalle.precio2,
+            price3: newDetalle.precio3,
+            price4: newDetalle.precio4,
+            price5: newDetalle.precio5,
+            status: 'active'
+          })
+          .select()
+          .single();
+
+        if (productError) throw productError;
+        productId = newProduct.id;
+      }
+
+      // Update or create stock in Almacén Principal
+      const { data: existingStock, error: stockCheckError } = await supabase
         .from('stock_almacenes')
-        .insert({
-          almacen_id: almacenPrincipal.id,
-          product_id: newProduct.id,
-          stock: newDetalle.cantidad
-        });
+        .select()
+        .eq('almacen_id', almacenPrincipal.id)
+        .eq('product_id', productId)
+        .maybeSingle();
+
+      if (stockCheckError) throw stockCheckError;
+
+      if (existingStock) {
+        // Update existing stock
+        await supabase
+          .from('stock_almacenes')
+          .update({
+            stock: existingStock.stock + newDetalle.cantidad
+          })
+          .eq('id', existingStock.id);
+      } else {
+        // Create new stock entry
+        await supabase
+          .from('stock_almacenes')
+          .insert({
+            almacen_id: almacenPrincipal.id,
+            product_id: productId,
+            stock: newDetalle.cantidad
+          });
+      }
 
       // Crear la compra
       const orderData = {
@@ -283,7 +340,7 @@ export function ListadoCompras() {
         total: newDetalle.importe,
         status: 'received' as const,
         items: [{
-          product_id: newProduct.id,
+          product_id: productId,
           product_name: newDetalle.producto,
           quantity: newDetalle.cantidad,
           cost: newDetalle.costo_unitario,
@@ -297,7 +354,7 @@ export function ListadoCompras() {
       await supabase
         .from('inventory_movements')
         .insert({
-          product_id: newProduct.id,
+          product_id: productId,
           product_name: newDetalle.producto,
           type: 'entrada',
           quantity: newDetalle.cantidad,
@@ -330,7 +387,7 @@ export function ListadoCompras() {
       setShowForm(false);
       setPendingSubmit(false);
       setShowCostWarning(false);
-      alert('Compra registrada exitosamente en Almacén Principal');
+      alert(existingProduct ? 'Producto actualizado y compra registrada exitosamente' : 'Compra registrada exitosamente en Almacén Principal');
     } catch (err) {
       console.error('Error creating purchase:', err);
       setValidationErrors({ general: 'Error al registrar la compra: ' + (err instanceof Error ? err.message : 'Error desconocido') });
