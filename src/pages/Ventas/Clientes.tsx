@@ -18,7 +18,8 @@ export function Clientes() {
     email: '',
     zone: '',
     credit_limit: 0,
-    balance: 0
+    balance: 0,
+    default_price_level: 1
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,7 +55,8 @@ export function Clientes() {
         email: '',
         zone: '',
         credit_limit: 0,
-        balance: 0
+        balance: 0,
+        default_price_level: 1
       });
       setShowForm(false);
     } catch (err) {
@@ -74,7 +76,7 @@ export function Clientes() {
       zone: client.zone,
       credit_limit: client.credit_limit,
       balance: client.balance,
-      default_price_level: client.default_price_level
+      default_price_level: client.default_price_level || 1
     });
     setShowForm(true);
   };
@@ -283,7 +285,8 @@ export function Clientes() {
                           email: '',
                           zone: '',
                           credit_limit: 0,
-                          balance: 0
+                          balance: 0,
+                          default_price_level: 1
                         });
                       }}
                       className="text-gray-500 hover:text-gray-700"
@@ -406,7 +409,7 @@ export function Clientes() {
                     Precio por Defecto *
                   </label>
                   <select
-                    value={newClient.default_price_level || 1}
+                    value={newClient.default_price_level}
                     onChange={(e) => setNewClient(prev => ({ ...prev, default_price_level: parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5 }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
@@ -438,7 +441,8 @@ export function Clientes() {
                         email: '',
                         zone: '',
                         credit_limit: 0,
-                        balance: 0
+                        balance: 0,
+                        default_price_level: 1
                       });
                     }}
                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
