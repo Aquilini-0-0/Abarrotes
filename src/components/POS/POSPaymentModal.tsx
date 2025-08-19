@@ -245,7 +245,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
       ...prev,
 
-      cash: Math.min(amount, amountToPay)
+      cash: Math.min(amount, order.total)
 
     }));
 
@@ -319,7 +319,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
     // NUEVA LÓGICA: Si excede el límite de crédito, muestra el modal de autorización
 
-    const creditAmount = paymentMethod === 'credit' ? amountToPay : paymentMethod === 'mixed' ? paymentBreakdown.credit : 0;
+    const creditAmount = paymentMethod === 'credit' ? order.total : paymentMethod === 'mixed' ? paymentBreakdown.credit : 0;
 
     const creditExceededCondition = client && creditAmount > 0 && (client.balance + creditAmount) > client.credit_limit;
 
@@ -642,6 +642,17 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                   />
 
+              {isAlreadyPaid && (
+                <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium">Información del Pedido:</p>
+                    <p>• Total original: ${orderTotal.toFixed(2)}</p>
+                    <p>• Ya pagado: ${amountPaid.toFixed(2)}</p>
+                    <p className="font-bold">• Solo se cobrará: ${amountToPay.toFixed(2)}</p>
+                  </div>
+                </div>
+              )}
+
                 </div>
 
                 <div>
@@ -661,17 +672,6 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
                 </div>
 
               </div>
-
-              {isAlreadyPaid && (
-                <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <div className="text-sm text-blue-800">
-                    <p className="font-medium">Información del Pedido:</p>
-                    <p>• Total original: ${orderTotal.toFixed(2)}</p>
-                    <p>• Ya pagado: ${amountPaid.toFixed(2)}</p>
-                    <p className="font-bold">• Solo se cobrará: ${amountToPay.toFixed(2)}</p>
-                  </div>
-                </div>
-              )}
 
             </div>
 
@@ -822,7 +822,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                         if (vale) {
 
-                          setPaymentAmount(Math.min(vale.disponible, amountToPay));
+                          setPaymentAmount(Math.min(vale.disponible, order.total));
 
                         }
 
@@ -876,7 +876,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                           <span className="text-gray-600">Total Pedido:</span>
 
-                          <span className="font-mono text-gray-900">${amountToPay.toFixed(2)}</span>
+                          <span className="font-mono text-gray-900">${order.total.toFixed(2)}</span>
 
                         </div>
 
@@ -884,14 +884,15 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                           <span className="font-semibold">Resultado:</span>
 
-                          <span className={`font-bold ${selectedVale.disponible >= amountToPay ? 'text-green-600' : 'text-red-600'}`}>
-                            {selectedVale.disponible >= amountToPay ? 'Vale cubre el total' : 'Vale insuficiente'}
+                          <span className={`font-bold ${selectedVale.disponible >= order.total ? 'text-green-600' : 'text-red-600'}`}>
+
+                            {selectedVale.disponible >= order.total ? 'Vale cubre el total' : 'Vale insuficiente'}
 
                           </span>
 
                         </div>
 
-                        {selectedVale.disponible < amountToPay && (
+                        {selectedVale.disponible < order.total && (
 
                           <div className="bg-red-50 border border-red-200 rounded-lg p-2 mt-2">
 
@@ -901,7 +902,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                               <span className="text-red-800 text-sm font-medium">
 
-                                El vale no cubre el total del pedido. Faltan ${(amountToPay - selectedVale.disponible).toFixed(2)}
+                                El vale no cubre el total del pedido. Faltan ${(order.total - selectedVale.disponible).toFixed(2)}
 
                               </span>
 
@@ -989,7 +990,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
                 (paymentMethod === 'credit' && !client) || // El botón solo se deshabilita si no hay cliente para crédito
 
-                (paymentMethod === 'vales' && (!selectedVale || selectedVale.disponible < amountToPay))
+                (paymentMethod === 'vales' && (!selectedVale || selectedVale.disponible < order.total))
 
               }
 
