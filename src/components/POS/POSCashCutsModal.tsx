@@ -384,15 +384,12 @@ Generado el ${new Date().toLocaleString('es-MX')}
                   <div className="p-2 sm:p-4">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
                       <div className="text-center p-2 sm:p-3 bg-green-50 rounded-lg">
-                        <div className="text-lg sm:text-2xl font-bold text-green-600">
                         </div>
                       </div>
                       <div className="text-center p-2 sm:p-3 bg-blue-50 rounded-lg">
-                        <div className="text-lg sm:text-2xl font-bold text-blue-600">
                         </div>
                       </div>
                       <div className="text-center p-2 sm:p-3 bg-purple-50 rounded-lg">
-                        <div className="text-lg sm:text-2xl font-bold text-purple-600">
                         </div>
                       </div>
                     </div>
