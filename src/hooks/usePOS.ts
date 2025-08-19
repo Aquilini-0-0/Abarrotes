@@ -75,7 +75,7 @@ export function usePOS() {
         line: product.line,
         subline: product.subline,
         unit: product.unit,
-        stock: product.stock,
+        stock: Number(product.stock) || 0,
         prices: {
           price1: product.price1 || 0,
           price2: product.price2 || (product.price1 || 0) * 1.1,
