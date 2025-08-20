@@ -173,40 +173,13 @@ export function POSOrderPanel({
   };
 
   const handleSelectClient = (client: POSClient) => {
-    // Update the price level to match client's default
-    setSelectedPriceLevel(client.default_price_level);
+    onSelectClient(client);
+    setShowClientModal(false);
+    setSearchClient('');
     
-    if (currentOrder) {
-      // Update order with new client info
-      let updatedOrder = { ...currentOrder, client_id: client.id, client_name: client.name };
-      
-      // Recalculate prices for all existing items based on new client's price level
-      if (updatedOrder.items.length > 0) {
-        const updatedItems = updatedOrder.items.map(item => {
-          const product = products?.find(p => p.id === item.product_id);
-          if (product) {
-            const newUnitPrice = product.prices[`price${client.default_price_level}`];
-            return {
-              ...item,
-              price_level: client.default_price_level,
-              unit_price: newUnitPrice,
-              total: item.quantity * newUnitPrice
-            };
-          }
-          return item;
-        });
-        
-        // Recalculate order totals
-        const newSubtotal = updatedItems.reduce((sum, item) => sum + item.total, 0);
-        updatedOrder = {
-          ...updatedOrder,
-          items: updatedItems,
-          subtotal: newSubtotal,
-          total: newSubtotal - updatedOrder.discount_total
-        };
-      }
-      
-      updateActiveOrder(updatedOrder);
+    // Trigger refresh to update last order info
+    if (onRefreshData) {
+      onRefreshData();
     }
   };
 

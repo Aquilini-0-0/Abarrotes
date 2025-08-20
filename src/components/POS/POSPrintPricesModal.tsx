@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Search, Printer, Package } from 'lucide-react';
+import { X, Search, Printer, Package, DollarSign } from 'lucide-react';
 import { useProducts } from '../../hooks/useProducts';
 
 interface POSPrintPricesModalProps {
@@ -9,6 +9,7 @@ interface POSPrintPricesModalProps {
 export function POSPrintPricesModal({ onClose }: POSPrintPricesModalProps) {
   const { products } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPriceLevel, setSelectedPriceLevel] = useState<1 | 2 | 3 | 4 | 5>(1);
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -16,12 +17,13 @@ export function POSPrintPricesModal({ onClose }: POSPrintPricesModalProps) {
   );
 
   const handlePrintPrices = () => {
+    const selectedPrice = `price${selectedPriceLevel}` as keyof typeof product.prices;
     const priceList = filteredProducts.map(product => 
-      `$${(product.price1 || 0).toFixed(2)} - ${product.name.toUpperCase()}`
+      `$${(product.prices[selectedPrice] || 0).toFixed(2)} - ${product.name.toUpperCase()}`
     ).join('\n');
 
     const ticketContent = `
-LISTA DE PRECIOS
+PRECIO PRODUCTO
 ================
 ${priceList}
 ================
@@ -44,7 +46,7 @@ Generado: ${new Date().toLocaleString('es-MX')}
       printWindow.document.write(`
         <html>
         <head>
-          <title>Lista de Precios</title>
+          <title>Precio Producto</title>
           <style>
             body { font-family: 'Courier New', monospace; font-size: 12px; margin: 20px; }
             .header { text-align: center; font-weight: bold; margin-bottom: 20px; }
@@ -53,10 +55,10 @@ Generado: ${new Date().toLocaleString('es-MX')}
           </style>
         </head>
         <body>
-          <div class="header">LISTA DE PRECIOS</div>
+          <div class="header">PRECIO PRODUCTO</div>
           <div class="header">================</div>
           ${filteredProducts.map(product => 
-            `<div class="price-line">$${(product.price1 || 0).toFixed(2)} - ${product.name.toUpperCase()}</div>`
+            `<div class="price-line">$${(product.prices[selectedPrice] || 0).toFixed(2)} - ${product.name.toUpperCase()}</div>`
           ).join('')}
           <div class="footer">================</div>
           <div class="footer">Total productos: ${filteredProducts.length}</div>
@@ -71,7 +73,7 @@ Generado: ${new Date().toLocaleString('es-MX')}
       }, 250);
     }
 
-    alert('Lista de precios enviada a impresión');
+    alert(`Precios de nivel ${selectedPriceLevel} enviados a impresión`);
   };
 
   return (
@@ -93,7 +95,7 @@ Generado: ${new Date().toLocaleString('es-MX')}
 
         <div className="p-6 overflow-y-auto max-h-[calc(95vh-120px)]">
           {/* Search */}
-          <div className="mb-6">
+          <div className="mb-6 space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               <input
@@ -103,6 +105,35 @@ Generado: ${new Date().toLocaleString('es-MX')}
                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 placeholder="Buscar producto por nombre o código..."
               />
+            </div>
+            
+            {/* Price Level Selector */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nivel de Precio a Imprimir
+              </label>
+              <div className="flex items-center space-x-4">
+                <select
+                  value={selectedPriceLevel}
+                  onChange={(e) => setSelectedPriceLevel(parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                >
+                  <option value={1}>Precio 1 - General</option>
+                  <option value={2}>Precio 2 - Mayoreo</option>
+                  <option value={3}>Precio 3 - Distribuidor</option>
+                  <option value={4}>Precio 4 - VIP</option>
+                  <option value={5}>Precio 5 - Especial</option>
+                </select>
+                <div className="flex items-center space-x-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
+                  <DollarSign className="h-4 w-4 text-orange-600" />
+                  <span className="text-orange-700 font-medium text-sm">
+                    Precio seleccionado: Nivel {selectedPriceLevel}
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-600 mt-2">
+                Solo se imprimirá el precio del nivel seleccionado para mantener la confidencialidad
+              </p>
             </div>
           </div>
 
@@ -142,19 +173,29 @@ Generado: ${new Date().toLocaleString('es-MX')}
                         <div className="font-medium text-gray-900">{product.name}</div>
                         <div className="text-xs text-gray-500">{product.code}</div>
                       </td>
-                      <td className="p-3 text-right font-mono text-green-600 font-bold">
+                      <td className={`p-3 text-right font-mono font-bold ${
+                        selectedPriceLevel === 1 ? 'text-green-600 bg-green-50' : 'text-gray-400'
+                      }`}>
                         ${(product.price1 || 0).toFixed(2)}
                       </td>
-                      <td className="p-3 text-right font-mono text-blue-600 font-bold">
+                      <td className={`p-3 text-right font-mono font-bold ${
+                        selectedPriceLevel === 2 ? 'text-blue-600 bg-blue-50' : 'text-gray-400'
+                      }`}>
                         ${(product.price2 || 0).toFixed(2)}
                       </td>
-                      <td className="p-3 text-right font-mono text-purple-600 font-bold">
+                      <td className={`p-3 text-right font-mono font-bold ${
+                        selectedPriceLevel === 3 ? 'text-purple-600 bg-purple-50' : 'text-gray-400'
+                      }`}>
                         ${(product.price3 || 0).toFixed(2)}
                       </td>
-                      <td className="p-3 text-right font-mono text-yellow-600 font-bold">
+                      <td className={`p-3 text-right font-mono font-bold ${
+                        selectedPriceLevel === 4 ? 'text-yellow-600 bg-yellow-50' : 'text-gray-400'
+                      }`}>
                         ${(product.price4 || 0).toFixed(2)}
                       </td>
-                      <td className="p-3 text-right font-mono text-red-600 font-bold">
+                      <td className={`p-3 text-right font-mono font-bold ${
+                        selectedPriceLevel === 5 ? 'text-red-600 bg-red-50' : 'text-gray-400'
+                      }`}>
                         ${(product.price5 || 0).toFixed(2)}
                       </td>
                       <td className="p-3 text-center">
@@ -178,10 +219,10 @@ Generado: ${new Date().toLocaleString('es-MX')}
             <button
               onClick={handlePrintPrices}
               disabled={filteredProducts.length === 0}
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed font-bold"
+              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed font-bold shadow-lg"
             >
               <Printer size={20} />
-              <span>Imprimir Lista de Precios ({filteredProducts.length} productos)</span>
+              <span>Imprimir Precio Nivel {selectedPriceLevel} ({filteredProducts.length} productos)</span>
             </button>
           </div>
         </div>
