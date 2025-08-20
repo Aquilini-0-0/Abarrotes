@@ -50,7 +50,7 @@ CÓDIGO DE BARRAS: ${selectedOrder.id}
       printWindow.document.write(`
         <html>
         <head>
-          <title>Pedido ${selectedOrder.id.slice(-6).toUpperCase()}</title>
+          <title>Pedido_${selectedOrder.id.slice(-6).toUpperCase()}_ffd.txt</title>
           <style>
             body { 
               font-family: 'Courier New', monospace; 
@@ -58,7 +58,9 @@ CÓDIGO DE BARRAS: ${selectedOrder.id}
               margin: 20px;
               max-width: 300px;
             }
-            .header { text-align: center; font-weight: bold; margin-bottom: 10px; }
+            .logo { text-align: left; margin-bottom: 10px; }
+            .logo img { max-width: 80px; height: auto; }
+            .header { text-align: left; font-weight: bold; margin-bottom: 10px; }
             .separator { text-align: center; margin: 10px 0; }
             .total { font-weight: bold; font-size: 14px; }
             .footer { text-align: center; margin-top: 15px; font-size: 10px; }
@@ -66,6 +68,9 @@ CÓDIGO DE BARRAS: ${selectedOrder.id}
           </style>
         </head>
         <body>
+          <div class="logo">
+            <img src="/logoduran2.png" alt="DURAN" />
+          </div>
           <div class="header">PEDIDO: ${selectedOrder.id.slice(-6).toUpperCase()}</div>
           <div class="header">FECHA: ${new Date(selectedOrder.date).toLocaleDateString('es-MX')}</div>
           <br>

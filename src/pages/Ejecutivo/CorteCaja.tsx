@@ -133,7 +133,7 @@ Generado el ${new Date().toLocaleString('es-MX')}
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `corte_caja_${corte.fecha}.txt`;
+    a.download = `corte_caja_${corte.fecha}_ffd.txt`;
     a.click();
     window.URL.revokeObjectURL(url);
   };

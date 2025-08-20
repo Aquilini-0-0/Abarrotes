@@ -236,7 +236,7 @@ Generado el ${new Date().toLocaleString('es-MX')}
       printWindow.document.write(`
         <html>
         <head>
-          <title>Reporte ${reporte.caja}</title>
+          <title>Reporte_${reporte.caja}_ffd.txt</title>
           <style>
             body { 
               font-family: 'Courier New', monospace; 
@@ -244,13 +244,18 @@ Generado el ${new Date().toLocaleString('es-MX')}
               margin: 20px;
               max-width: 300px;
             }
-            .header { text-align: center; font-weight: bold; margin-bottom: 10px; }
+            .logo { text-align: left; margin-bottom: 10px; }
+            .logo img { max-width: 80px; height: auto; }
+            .header { text-align: left; font-weight: bold; margin-bottom: 10px; }
             .separator { text-align: center; margin: 10px 0; }
             .total { font-weight: bold; font-size: 14px; }
             .footer { text-align: center; margin-top: 15px; font-size: 10px; }
           </style>
         </head>
         <body>
+          <div class="logo">
+            <img src="/logoduran2.png" alt="DURAN" />
+          </div>
           <div class="header">REPORTE DE CAJA: ${reporte.caja}</div>
           <div class="header">FECHA: ${new Date(reporte.fecha).toLocaleDateString('es-MX')}</div>
           <div class="header">USUARIO: ${reporte.usuario}</div>

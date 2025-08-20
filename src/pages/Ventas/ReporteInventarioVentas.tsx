@@ -114,7 +114,7 @@ export function ReporteInventarioVentas() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `reporte_inventario_ventas_${new Date().toISOString().split('T')[0]}.html`;
+    a.download = `reporte_inventario_ventas_${new Date().toISOString().split('T')[0]}_ffd.html`;
     a.click();
     window.URL.revokeObjectURL(url);
     

@@ -553,7 +553,7 @@ export function Clientes() {
                   const url = window.URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = `estado_cuenta_clientes_${new Date().toISOString().split('T')[0]}.html`;
+                  a.download = `estado_cuenta_clientes_${new Date().toISOString().split('T')[0]}_ffd.html`;
                   a.click();
                   window.URL.revokeObjectURL(url);
                   
@@ -648,7 +648,7 @@ export function Clientes() {
                   const url = window.URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = `reporte_ventas_clientes_${new Date().toISOString().split('T')[0]}.html`;
+                  a.download = `reporte_ventas_clientes_${new Date().toISOString().split('T')[0]}_ffd.html`;
                   a.click();
                   window.URL.revokeObjectURL(url);
                   

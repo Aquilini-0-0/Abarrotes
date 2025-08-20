@@ -73,7 +73,7 @@ export function DataTable({
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${title.toLowerCase().replace(/\s+/g, '_')}.csv`;
+    a.download = `${title.toLowerCase().replace(/\s+/g, '_')}_ffd.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -148,7 +148,7 @@ export function DataTable({
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${title.toLowerCase().replace(/\s+/g, '_')}.html`;
+    a.download = `${title.toLowerCase().replace(/\s+/g, '_')}_ffd.html`;
     a.click();
     window.URL.revokeObjectURL(url);
     
