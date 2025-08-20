@@ -95,9 +95,6 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
   };
 
   const handlePrintTicket = (remision: Remision) => {
-  };
-
-  const handlePrintTicket = (remision: Remision) => {
     // Generate ticket content for thermal printer
     const ticketContent = `
 DURAN ERP
