@@ -7,7 +7,6 @@ import { POSOrder, POSClient, PaymentBreakdown, Payment } from '../../types/pos'
 import { supabase } from '../../lib/supabase';
 import { useProducts } from '../../hooks/useProducts';
 import { useAuth } from '../../context/AuthContext';
-import { printTicketFile, showPrinterSetup } from '../../utils/printerUtils';
 
 
 
@@ -508,9 +507,16 @@ SISTEMA ERP DURAN
 ${new Date().toLocaleString('es-MX')}
     `;
 
-    // Use the new printer utility function
-    const filename = `Ticket_Pago_${order.id.slice(-6).toUpperCase()}_ffd.txt`;
-    printTicketFile(ticketContent, filename);
+    // Create and download .txt file automatically
+    const blob = new Blob([ticketContent], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Ticket_Pago_${order.id.slice(-6).toUpperCase()}_ffd.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   };
 
   const handleCreditAuth = () => {
@@ -1109,12 +1115,6 @@ ${new Date().toLocaleString('es-MX')}
           {/* Botones */}
 
           <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-3 sm:pt-4 border-t border-gray-200">
-            <button
-              onClick={showPrinterSetup}
-              className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 rounded-lg font-medium text-xs sm:text-sm"
-            >
-              Configurar Impresora
-            </button>
 
             <button
 

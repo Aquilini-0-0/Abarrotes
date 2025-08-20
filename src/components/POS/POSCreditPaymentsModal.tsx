@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { X, Search, CreditCard, DollarSign, Calendar, User, AlertCircle, Eye, CheckCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
-import { printTicketFile } from '../../utils/printerUtils';
 
 interface CreditSale {
   id: string;
@@ -207,9 +206,7 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
       }
 
       // Print payment ticket automatically
-      const ticketContent = generatePaymentTicketContent(selectedSale, newPayment.amount, newRemainingBalance, newPayment.payment_method);
-      const filename = `Comprobante_Abono_${selectedSale.id.slice(-6).toUpperCase()}_ffd.txt`;
-      printTicketFile(ticketContent, filename);
+      printPaymentTicket(selectedSale, newPayment.amount, newRemainingBalance, newPayment.payment_method);
 
       setNewPayment({
         amount: 0,
@@ -240,9 +237,9 @@ export function POSCreditPaymentsModal({ onClose, onPaymentProcessed }: POSCredi
     }
   };
 
-  const generatePaymentTicketContent = (sale: CreditSale, paymentAmount: number, remainingBalance: number, paymentMethod: string) => {
+  const printPaymentTicket = (sale: CreditSale, paymentAmount: number, remainingBalance: number, paymentMethod: string) => {
     const client = clients.find(c => c.id === sale.client_id);
-    return `
+    const ticketContent = `
 COMPROBANTE DE ABONO
 ====================
 
@@ -273,6 +270,78 @@ ATENDIÓ: ${user?.name || 'Usuario POS'}
 SISTEMA ERP DURAN
 ${new Date().toLocaleString('es-MX')}
     `;
+
+    // Create print window with ticket format
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>Comprobante_Abono_${sale.id.slice(-6).toUpperCase()}_ffd.txt</title>
+          <style>
+            body { 
+              font-family: 'Courier New', monospace; 
+              font-size: 12px; 
+              margin: 20px;
+              max-width: 300px;
+              line-height: 1.3;
+            }
+            .logo { text-align: left; margin-bottom: 10px; }
+            .logo img { max-width: 80px; height: auto; }
+            .header { text-align: left; font-weight: bold; margin-bottom: 10px; }
+            .separator { text-align: center; margin: 10px 0; }
+            .field { margin: 3px 0; }
+            .total { font-weight: bold; font-size: 14px; }
+            .footer { text-align: center; margin-top: 15px; font-size: 10px; }
+            .highlight { background-color: #f0f0f0; padding: 5px; margin: 5px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="logo">
+            <img src="${window.location.origin}/logoduran2.png" alt="DURAN" />
+          </div>
+          <div class="header">COMPROBANTE DE ABONO</div>
+          <div class="separator">====================</div>
+          <br>
+          <div class="field">FOLIO: ${sale.id.slice(-6).toUpperCase()}</div>
+          <div class="field">FECHA: ${new Date().toLocaleDateString('es-MX')}</div>
+          <div class="field">HORA: ${new Date().toLocaleTimeString('es-MX')}</div>
+          <br>
+          <div class="field">CLIENTE: ${sale.client_name}</div>
+          <div class="field">RFC: ${client?.rfc || 'N/A'}</div>
+          <br>
+          <div class="field">INFORMACIÓN DE LA VENTA:</div>
+          <div class="field">- Total de la venta: $${sale.original_total.toFixed(2)}</div>
+          <div class="field">- Pagado anteriormente: $${sale.amount_paid.toFixed(2)}</div>
+          <div class="field">- Saldo antes del abono: $${sale.balance.toFixed(2)}</div>
+          <br>
+          <div class="highlight">
+            <div class="field">ABONO REALIZADO:</div>
+            <div class="field total">- Monto abonado: $${paymentAmount.toFixed(2)}</div>
+            <div class="field">- Método de pago: ${paymentMethod === 'cash' ? 'Efectivo' : paymentMethod === 'card' ? 'Tarjeta' : 'Transferencia'}</div>
+            <div class="field">- Referencia: ${newPayment.reference || 'N/A'}</div>
+          </div>
+          <br>
+          <div class="field total">SALDO RESTANTE: $${remainingBalance.toFixed(2)}</div>
+          <br>
+          <div class="highlight">
+            <div class="field total">${remainingBalance <= 0.01 ? '*** VENTA PAGADA COMPLETAMENTE ***' : '*** SALDO PENDIENTE ***'}</div>
+          </div>
+          <br>
+          <div class="field">ATENDIÓ: ${user?.name || 'Usuario POS'}</div>
+          <br>
+          <div class="separator">====================</div>
+          <div class="footer">SISTEMA ERP DURAN</div>
+          <div class="footer">${new Date().toLocaleString('es-MX')}</div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
   };
 
   const handleQuickPayment = (percentage: number) => {

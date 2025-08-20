@@ -4,7 +4,6 @@ import { X, DollarSign, Calculator, TrendingUp, Clock } from 'lucide-react';
 import { CashRegister } from '../../types/pos';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
-import { printTicketFile } from '../../utils/printerUtils';
 
 interface POSCashModalProps {
   cashRegister: CashRegister | null;
@@ -84,12 +83,6 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
     setIsClosing(true);
     try {
       await onCloseRegister(closingAmount);
-      
-      // Generate and print cash register close ticket
-      if (cashRegister) {
-        const ticketContent = `
-        `;
-      }
       onClose();
     } catch (err) {
       console.error('Error closing register:', err);
@@ -109,7 +102,6 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
       if (!isNaN(amount)) {
         setOpeningAmount(amount.toFixed(2));
       }
-      
     } else {
       setOpeningAmount((prev) => (prev + input).replace(/^0+(?!\.)/, ''));
     }

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, FileText, User, DollarSign, Calendar, Printer } from 'lucide-react';
 import { useSales } from '../../hooks/useSales';
-import { printTicketFile } from '../../utils/printerUtils';
 
 interface POSCollectOrderModalProps {
   onClose: () => void;
@@ -22,9 +21,6 @@ export function POSCollectOrderModal({ onClose }: POSCollectOrderModalProps) {
     if (!selectedOrder) return;
 
     const ticketContent = `
-DURAN ERP - PUNTO DE VENTA
-==========================
-
 PEDIDO: ${selectedOrder.id.slice(-6).toUpperCase()}
 FECHA: ${new Date(selectedOrder.date).toLocaleDateString('es-MX')}
 
@@ -48,9 +44,64 @@ NO REPRESENTA UN COMPROBANTE DE PAGO
 CÓDIGO DE BARRAS: ${selectedOrder.id}
     `;
 
-    const filename = `Pedido_${selectedOrder.id.slice(-6).toUpperCase()}_ffd.txt`;
-    printTicketFile(ticketContent, filename);
-    alert('Pedido enviado a impresión automática');
+    // Create print window
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>Pedido_${selectedOrder.id.slice(-6).toUpperCase()}_ffd.txt</title>
+          <style>
+            body { 
+              font-family: 'Courier New', monospace; 
+              font-size: 12px; 
+              margin: 20px;
+              max-width: 300px;
+            }
+            .logo { text-align: left; margin-bottom: 10px; }
+            .logo img { max-width: 80px; height: auto; }
+            .header { text-align: left; font-weight: bold; margin-bottom: 10px; }
+            .separator { text-align: center; margin: 10px 0; }
+            .total { font-weight: bold; font-size: 14px; }
+            .footer { text-align: center; margin-top: 15px; font-size: 10px; }
+            .barcode { text-align: center; font-family: 'Libre Barcode 39', monospace; font-size: 24px; }
+          </style>
+        </head>
+        <body>
+          <div class="logo">
+            <img src="${window.location.origin}/logoduran2.png" alt="DURAN" />
+          </div>
+          <div class="header">PEDIDO: ${selectedOrder.id.slice(-6).toUpperCase()}</div>
+          <div class="header">FECHA: ${new Date(selectedOrder.date).toLocaleDateString('es-MX')}</div>
+          <br>
+          <div>CLIENTE: ${selectedOrder.client_name}</div>
+          <div class="separator">=====================================</div>
+          <div>UM   ARTÍCULO           PRECIO   IMPORTE</div>
+          <div class="separator">-------------------------------------</div>
+          ${selectedOrder.items.map((item: any) => 
+            `<div>${item.quantity.toString().padStart(3)} ${item.product_name.length > 20 ? item.product_name.substring(0, 20) : item.product_name.padEnd(20)} $${item.price.toFixed(2).padStart(8)} $${item.total.toFixed(2).padStart(10)}</div>`
+          ).join('')}
+          <div class="separator">=====================================</div>
+          <div class="total">TOTAL: $${selectedOrder.total.toFixed(2)}</div>
+          <br>
+          <div class="total">POR PAGAR: $${selectedOrder.total.toFixed(2)}</div>
+          <br>
+          <div>LE ATENDIÓ: Usuario Sistema</div>
+          <br>
+          <div class="footer">DOCUMENTO SIN VALOR LEGAL NI FISCAL</div>
+          <div class="footer">NO REPRESENTA UN COMPROBANTE DE PAGO</div>
+          <br>
+          <div class="barcode">*${selectedOrder.id}*</div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+
+    alert('Pedido enviado a impresión');
   };
 
   return (

@@ -3,7 +3,6 @@ import { X, FileText, Search, DollarSign, Plus, Truck, Printer } from 'lucide-re
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useSales } from '../../hooks/useSales';
-import { printTicketFile } from '../../utils/printerUtils';
 
 interface Remision {
   id: string;
@@ -95,38 +94,271 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
   };
 
   const handlePrintTicket = (remision: Remision) => {
-    // Generate ticket content for thermal printer
-    const ticketContent = `
-DURAN ERP
-==========================
+    // Create print window with full page format (A4/Letter size)
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>Remision_${remision.folio}_ffd.txt</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              font-size: 14px; 
+              margin: 40px;
+              line-height: 1.6;
+              color: #333;
+              max-width: 210mm;
+              min-height: 297mm;
+              padding: 20mm;
+            }
+            .logo { text-align: left; margin-bottom: 20px; }
+            .logo img { max-width: 120px; height: auto; }
+            .header { 
+              text-align: left; 
+              margin-bottom: 40px; 
+              border-bottom: 3px solid #3B82F6; 
+              padding-bottom: 20px; 
+            }
+            .company-name { 
+              font-size: 32px; 
+              font-weight: bold; 
+              color: #1F2937; 
+              margin-bottom: 10px; 
+            }
+            .document-title { 
+              font-size: 24px; 
+              font-weight: bold; 
+              color: #3B82F6; 
+              margin-bottom: 15px; 
+            }
+            .document-info { 
+              display: flex; 
+              justify-content: space-between; 
+              margin-bottom: 30px; 
+              background-color: #F3F4F6; 
+              padding: 20px; 
+              border-radius: 8px; 
+            }
+            .info-section { 
+              flex: 1; 
+              margin-right: 20px; 
+            }
+            .info-section:last-child { 
+              margin-right: 0; 
+            }
+            .info-title { 
+              font-weight: bold; 
+              color: #374151; 
+              margin-bottom: 10px; 
+              font-size: 16px; 
+            }
+            .info-item { 
+              margin: 8px 0; 
+              display: flex; 
+              justify-content: space-between; 
+            }
+            .info-label { 
+              color: #6B7280; 
+              font-weight: 500; 
+            }
+            .info-value { 
+              font-weight: bold; 
+              color: #1F2937; 
+            }
+            .financial-section { 
+              background-color: #EFF6FF; 
+              padding: 25px; 
+              border-radius: 8px; 
+              margin: 30px 0; 
+              border-left: 5px solid #3B82F6; 
+            }
+            .total-amount { 
+              font-size: 28px; 
+              font-weight: bold; 
+              color: #059669; 
+              text-align: center; 
+              margin: 20px 0; 
+            }
+            .status-section { 
+              background-color: #F0FDF4; 
+              padding: 20px; 
+              border-radius: 8px; 
+              margin: 30px 0; 
+              border-left: 5px solid #10B981; 
+              text-align: center; 
+            }
+            .status-badge { 
+              display: inline-block; 
+              background-color: #10B981; 
+              color: white; 
+              padding: 10px 20px; 
+              border-radius: 20px; 
+              font-weight: bold; 
+              font-size: 16px; 
+            }
+            .observations-section { 
+              background-color: #FFFBEB; 
+              padding: 20px; 
+              border-radius: 8px; 
+              margin: 30px 0; 
+              border-left: 5px solid #F59E0B; 
+            }
+            .footer { 
+              text-align: center; 
+              margin-top: 50px; 
+              padding-top: 20px; 
+              border-top: 2px solid #E5E7EB; 
+              color: #6B7280; 
+              font-size: 12px; 
+            }
+            .signature-section { 
+              display: flex; 
+              justify-content: space-between; 
+              margin-top: 60px; 
+              padding-top: 40px; 
+            }
+            .signature-box { 
+              text-align: center; 
+              width: 200px; 
+            }
+            .signature-line { 
+              border-top: 2px solid #374151; 
+              margin-bottom: 10px; 
+            }
+            @media print {
+              body { margin: 20px; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="logo">
+            <img src="${window.location.origin}/logoduran2.png" alt="DURAN" />
+          </div>
+          <div class="header">
+            <div class="company-name">DURAN ERP</div>
+            <div class="document-title">REMISIÓN DE ENTREGA</div>
+            <div style="font-size: 14px; color: #6B7280;">
+              Fecha de impresión: ${new Date().toLocaleString('es-MX')}
+            </div>
+          </div>
 
-REMISION DE ENTREGA
+          <div class="document-info">
+            <div class="info-section">
+              <div class="info-title">Información del Documento</div>
+              <div class="info-item">
+                <span class="info-label">Folio:</span>
+                <span class="info-value">${remision.folio}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Folio Remisión:</span>
+                <span class="info-value">${remision.folio_remision}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Fecha de Emisión:</span>
+                <span class="info-value">${new Date(remision.fecha).toLocaleDateString('es-MX')}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Caja:</span>
+                <span class="info-value">${remision.caja}</span>
+              </div>
+            </div>
 
-FOLIO: ${remision.folio}
-FOLIO REMISION: ${remision.folio_remision}
-FECHA: ${new Date(remision.fecha).toLocaleDateString('es-MX')}
-CLIENTE: ${remision.cliente}
-IMPORTE: $${remision.importe.toFixed(2)}
-ESTATUS: ${remision.estatus}
-TIPO PAGO: ${remision.tipo_pago}
-FORMA PAGO: ${remision.forma_pago}
-CAJA: ${remision.caja}
-FACTURA: ${remision.factura}
-VENDEDOR: ${remision.vendedor}
-CAJERO: ${remision.cajero}
+            <div class="info-section">
+              <div class="info-title">Información del Cliente</div>
+              <div class="info-item">
+                <span class="info-label">Cliente:</span>
+                <span class="info-value">${remision.cliente}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Factura:</span>
+                <span class="info-value">${remision.factura}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Tipo de Pago:</span>
+                <span class="info-value">${remision.tipo_pago}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Forma de Pago:</span>
+                <span class="info-value">${remision.forma_pago}</span>
+              </div>
+            </div>
 
-${remision.observaciones ? `OBSERVACIONES:\n${remision.observaciones}\n` : ''}
-ENTREGO: ${remision.vendedor}
-RECIBIO: ________________
+            <div class="info-section">
+              <div class="info-title">Personal</div>
+              <div class="info-item">
+                <span class="info-label">Vendedor:</span>
+                <span class="info-value">${remision.vendedor}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Cajero:</span>
+                <span class="info-value">${remision.cajero}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">DEV:</span>
+                <span class="info-value">${remision.dev}</span>
+              </div>
+            </div>
+          </div>
 
-==========================
-SISTEMA ERP DURAN
-${new Date().toLocaleString('es-MX')}
-    `;
+          <div class="financial-section">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h3 style="color: #374151; margin-bottom: 15px; font-size: 20px;">INFORMACIÓN FINANCIERA</h3>
+            </div>
+            <div class="total-amount">
+              IMPORTE TOTAL: $${remision.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+            </div>
+          </div>
 
-    const filename = `Remision_${remision.folio}_ffd.txt`;
-    printTicketFile(ticketContent, filename);
-    alert('Remisión enviada a impresión automática');
+          <div class="status-section">
+            <div style="margin-bottom: 15px; color: #374151; font-size: 18px; font-weight: bold;">
+              ESTATUS DEL DOCUMENTO
+            </div>
+            <div class="status-badge">
+              ${remision.estatus}
+            </div>
+          </div>
+
+          ${remision.observaciones ? `
+          <div class="observations-section">
+            <div style="font-weight: bold; color: #92400E; margin-bottom: 15px; font-size: 16px;">
+              OBSERVACIONES
+            </div>
+            <div style="color: #78350F; font-size: 14px; line-height: 1.6;">
+              ${remision.observaciones}
+            </div>
+          </div>
+          ` : ''}
+
+          <div class="signature-section">
+            <div class="signature-box">
+              <div class="signature-line"></div>
+              <div style="font-weight: bold; color: #374151;">ENTREGÓ</div>
+              <div style="color: #6B7280; font-size: 12px;">${remision.vendedor}</div>
+            </div>
+            <div class="signature-box">
+              <div class="signature-line"></div>
+              <div style="font-weight: bold; color: #374151;">RECIBIÓ</div>
+              <div style="color: #6B7280; font-size: 12px;">Nombre y Firma</div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <div style="font-weight: bold; margin-bottom: 5px;">SISTEMA ERP DURAN</div>
+            <div>Remisión de Entrega - Documento Oficial</div>
+            <div>Generado automáticamente el ${new Date().toLocaleString('es-MX')}</div>
+          </div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+
+    alert('Remisión enviada a impresión en formato carta');
   };
 
   const handleCreateRemision = async () => {
