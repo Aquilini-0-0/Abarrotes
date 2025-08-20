@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, FileText, Search, Eye, Download, Plus, DollarSign } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { printTicketFile } from '../../utils/printerUtils';
 
 interface Vale {
   id: string;
@@ -145,6 +146,32 @@ export function POSValesModal({ onClose }: POSValesModalProps) {
         factura: ''
       });
       setShowForm(false);
+      
+      // Generate and print vale ticket
+      const ticketContent = `
+DURAN ERP - PUNTO DE VENTA
+==========================
+
+VALE POR DEVOLUCION
+
+FOLIO VALE: ${formattedVale.folio_vale}
+FOLIO REMISION: ${formattedVale.folio_remision}
+FECHA: ${new Date(formattedVale.fecha_expedicion).toLocaleDateString('es-MX')}
+CLIENTE: ${formattedVale.cliente}
+IMPORTE: $${formattedVale.importe.toFixed(2)}
+DISPONIBLE: $${formattedVale.disponible.toFixed(2)}
+ESTATUS: ${formattedVale.estatus}
+TIPO: ${formattedVale.tipo}
+FACTURA: ${formattedVale.factura}
+
+==========================
+SISTEMA ERP DURAN
+${new Date().toLocaleString('es-MX')}
+      `;
+      
+      const filename = `Vale_${formattedVale.folio_vale}_ffd.txt`;
+      printTicketFile(ticketContent, filename);
+      
       alert('Vale registrado exitosamente');
     } catch (err) {
       console.error('Error creating vale:', err);
