@@ -100,7 +100,7 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
       printWindow.document.write(`
         <html>
         <head>
-          <title>Remisión ${remision.folio}</title>
+          <title>Remision_${remision.folio}_ffd.txt</title>
           <style>
             body { 
               font-family: Arial, sans-serif; 
@@ -108,9 +108,14 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
               margin: 40px;
               line-height: 1.6;
               color: #333;
+              max-width: 210mm;
+              min-height: 297mm;
+              padding: 20mm;
             }
+            .logo { text-align: left; margin-bottom: 20px; }
+            .logo img { max-width: 120px; height: auto; }
             .header { 
-              text-align: center; 
+              text-align: left; 
               margin-bottom: 40px; 
               border-bottom: 3px solid #3B82F6; 
               padding-bottom: 20px; 
@@ -228,6 +233,9 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
           </style>
         </head>
         <body>
+          <div class="logo">
+            <img src="/logoduran2.png" alt="DURAN" />
+          </div>
           <div class="header">
             <div class="company-name">DURAN ERP</div>
             <div class="document-title">REMISIÓN DE ENTREGA</div>

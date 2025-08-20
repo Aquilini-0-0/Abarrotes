@@ -416,6 +416,9 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const processPayment = (overrideStock = false) => {
     setIsProcessing(true);
     
+    // Print ticket automatically before processing payment
+    printPaymentTicket();
+    
     const paymentData = {
       method: paymentMethod,
       breakdown: paymentMethod === 'mixed' ? paymentBreakdown : undefined,
@@ -432,6 +435,144 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       onConfirm(paymentData);
       setIsProcessing(false);
     }, 1000);
+  };
+
+  const printPaymentTicket = () => {
+    if (!order) return;
+
+    const getPaymentMethodText = () => {
+      switch (paymentMethod) {
+        case 'cash': return 'EFECTIVO';
+        case 'card': return 'TARJETA';
+        case 'transfer': return 'TRANSFERENCIA';
+        case 'credit': return 'CREDITO';
+        case 'mixed': return 'MIXTO';
+        case 'vales': return 'VALES';
+        default: return 'EFECTIVO';
+      }
+    };
+
+    const getPaymentDetails = () => {
+      if (paymentMethod === 'mixed') {
+        let details = '';
+        if (paymentBreakdown.cash > 0) details += `EFECTIVO: $${paymentBreakdown.cash.toFixed(2)}\n`;
+        if (paymentBreakdown.card > 0) details += `TARJETA: $${paymentBreakdown.card.toFixed(2)}\n`;
+        if (paymentBreakdown.transfer > 0) details += `TRANSFERENCIA: $${paymentBreakdown.transfer.toFixed(2)}\n`;
+        if (paymentBreakdown.credit > 0) details += `CREDITO: $${paymentBreakdown.credit.toFixed(2)}\n`;
+        return details;
+      } else if (paymentMethod === 'cash') {
+        return `EFECTIVO RECIBIDO: $${cashReceived.toFixed(2)}\nCAMBIO: $${change.toFixed(2)}\n`;
+      } else if (paymentMethod === 'vales' && selectedVale) {
+        let details = `VALE: ${selectedVale.folio_vale}\nIMPORTE VALE: $${selectedVale.disponible.toFixed(2)}\n`;
+        if (selectedVale.disponible < amountToPay) {
+          details += `EFECTIVO: $${(amountToPay - selectedVale.disponible).toFixed(2)}\n`;
+        }
+        return details;
+      }
+      return '';
+    };
+
+    const ticketContent = `
+DURAN ERP - PUNTO DE VENTA
+==========================
+
+TICKET DE PAGO
+
+FOLIO: ${order.id.slice(-6).toUpperCase()}
+FECHA: ${new Date().toLocaleDateString('es-MX')}
+HORA: ${new Date().toLocaleTimeString('es-MX')}
+
+CLIENTE: ${order.client_name}
+
+PRODUCTOS:
+--------------------------
+${order.items.map(item => 
+  `${item.quantity.toString().padEnd(4)} ${item.product_name.length > 20 ? item.product_name.substring(0, 20) : item.product_name.padEnd(20)} $${item.total.toFixed(2).padStart(8)}`
+).join('\n')}
+--------------------------
+
+SUBTOTAL: $${order.subtotal.toFixed(2)}
+${order.discount_total > 0 ? `DESCUENTO: -$${order.discount_total.toFixed(2)}\n` : ''}TOTAL: $${amountToPay.toFixed(2)}
+
+METODO DE PAGO: ${getPaymentMethodText()}
+${getPaymentDetails()}
+${isAlreadyPaid ? `SALDO ANTERIOR: $${amountPaid.toFixed(2)}\nPAGO ACTUAL: $${amountToPay.toFixed(2)}\n` : ''}
+LE ATENDIO: ${user?.name || 'Usuario'}
+
+GRACIAS POR SU COMPRA
+==========================
+SISTEMA ERP DURAN
+${new Date().toLocaleString('es-MX')}
+    `;
+
+    // Create print window
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>Ticket_Pago_${order.id.slice(-6).toUpperCase()}_ffd.txt</title>
+          <style>
+            body { 
+              font-family: 'Courier New', monospace; 
+              font-size: 12px; 
+              margin: 20px;
+              max-width: 300px;
+              line-height: 1.2;
+            }
+            .logo { text-align: center; margin-bottom: 10px; }
+            .logo img { max-width: 80px; height: auto; }
+            .header { text-align: left; font-weight: bold; margin-bottom: 10px; }
+            .separator { margin: 5px 0; }
+            .field { margin: 2px 0; }
+            .total { font-weight: bold; font-size: 14px; }
+            .footer { text-align: left; margin-top: 15px; font-size: 10px; }
+          </style>
+        </head>
+        <body>
+          <div class="logo">
+            <img src="/logoduran2.png" alt="DURAN" />
+          </div>
+          <div class="header">DURAN ERP - PUNTO DE VENTA</div>
+          <div class="separator">==========================</div>
+          <br>
+          <div class="field">TICKET DE PAGO</div>
+          <br>
+          <div class="field">FOLIO: ${order.id.slice(-6).toUpperCase()}</div>
+          <div class="field">FECHA: ${new Date().toLocaleDateString('es-MX')}</div>
+          <div class="field">HORA: ${new Date().toLocaleTimeString('es-MX')}</div>
+          <br>
+          <div class="field">CLIENTE: ${order.client_name}</div>
+          <br>
+          <div class="field">PRODUCTOS:</div>
+          <div class="separator">--------------------------</div>
+          ${order.items.map(item => 
+            `<div class="field">${item.quantity.toString().padEnd(4)} ${item.product_name.length > 20 ? item.product_name.substring(0, 20) : item.product_name.padEnd(20)} $${item.total.toFixed(2).padStart(8)}</div>`
+          ).join('')}
+          <div class="separator">--------------------------</div>
+          <br>
+          <div class="field">SUBTOTAL: $${order.subtotal.toFixed(2)}</div>
+          ${order.discount_total > 0 ? `<div class="field">DESCUENTO: -$${order.discount_total.toFixed(2)}</div>` : ''}
+          <div class="field total">TOTAL: $${amountToPay.toFixed(2)}</div>
+          <br>
+          <div class="field">METODO DE PAGO: ${getPaymentMethodText()}</div>
+          ${getPaymentDetails().split('\n').filter(line => line.trim()).map(line => `<div class="field">${line}</div>`).join('')}
+          ${isAlreadyPaid ? `<div class="field">SALDO ANTERIOR: $${amountPaid.toFixed(2)}</div><div class="field">PAGO ACTUAL: $${amountToPay.toFixed(2)}</div>` : ''}
+          <div class="field">LE ATENDIO: ${user?.name || 'Usuario'}</div>
+          <br>
+          <div class="field">GRACIAS POR SU COMPRA</div>
+          <div class="separator">==========================</div>
+          <div class="footer">SISTEMA ERP DURAN</div>
+          <div class="footer">${new Date().toLocaleString('es-MX')}</div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
   };
 
   const handleCreditAuth = () => {

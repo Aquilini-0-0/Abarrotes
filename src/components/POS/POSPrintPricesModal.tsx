@@ -17,9 +17,10 @@ export function POSPrintPricesModal({ onClose }: POSPrintPricesModalProps) {
   );
 
   const handlePrintPrices = () => {
-    const selectedPriceKey = `price${selectedPriceLevel}` as keyof typeof filteredProducts[0];
-    const priceList = filteredProducts.map(product => 
-      `$${(product[selectedPriceKey] || 0).toFixed(2)} - ${product.name.toUpperCase()}`
+    const priceList = filteredProducts.map(product => {
+      const price = product[`price${selectedPriceLevel}` as keyof typeof product] || 0;
+      return `$${(price as number).toFixed(2)} - ${product.name.toUpperCase()}`;
+    }
     ).join('\n');
 
     const ticketContent = `
@@ -36,7 +37,7 @@ Generado: ${new Date().toLocaleString('es-MX')}
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `lista_precios_${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `lista_precios_${new Date().toISOString().split('T')[0]}_ffd.txt`;
     a.click();
     window.URL.revokeObjectURL(url);
 
@@ -46,19 +47,24 @@ Generado: ${new Date().toLocaleString('es-MX')}
       printWindow.document.write(`
         <html>
         <head>
-          <title>Precio Producto</title>
+          <title>Precio_Producto_ffd.txt</title>
           <style>
             body { font-family: 'Courier New', monospace; font-size: 12px; margin: 20px; }
-            .header { text-align: center; font-weight: bold; margin-bottom: 20px; }
+            .logo { text-align: left; margin-bottom: 10px; }
+            .logo img { max-width: 80px; height: auto; }
+            .header { text-align: left; font-weight: bold; margin-bottom: 20px; }
             .price-line { margin: 2px 0; }
             .footer { text-align: center; margin-top: 20px; font-size: 10px; }
           </style>
         </head>
         <body>
+          <div class="logo">
+            <img src="/logoduran2.png" alt="DURAN" />
+          </div>
           <div class="header">PRECIO PRODUCTO</div>
           <div class="header">================</div>
           ${filteredProducts.map(product => 
-            `<div class="price-line">$${(product[selectedPriceKey] || 0).toFixed(2)} - ${product.name.toUpperCase()}</div>`
+            `<div class="price-line">$${((product[`price${selectedPriceLevel}` as keyof typeof product] as number) || 0).toFixed(2)} - ${product.name.toUpperCase()}</div>`
           ).join('')}
           <div class="footer">================</div>
           <div class="footer">Total productos: ${filteredProducts.length}</div>

@@ -277,7 +277,7 @@ ${new Date().toLocaleString('es-MX')}
       printWindow.document.write(`
         <html>
         <head>
-          <title>Comprobante de Abono ${sale.id.slice(-6).toUpperCase()}</title>
+          <title>Comprobante_Abono_${sale.id.slice(-6).toUpperCase()}_ffd.txt</title>
           <style>
             body { 
               font-family: 'Courier New', monospace; 
@@ -286,7 +286,9 @@ ${new Date().toLocaleString('es-MX')}
               max-width: 300px;
               line-height: 1.3;
             }
-            .header { text-align: center; font-weight: bold; margin-bottom: 10px; }
+            .logo { text-align: left; margin-bottom: 10px; }
+            .logo img { max-width: 80px; height: auto; }
+            .header { text-align: left; font-weight: bold; margin-bottom: 10px; }
             .separator { text-align: center; margin: 10px 0; }
             .field { margin: 3px 0; }
             .total { font-weight: bold; font-size: 14px; }
@@ -295,6 +297,9 @@ ${new Date().toLocaleString('es-MX')}
           </style>
         </head>
         <body>
+          <div class="logo">
+            <img src="/logoduran2.png" alt="DURAN" />
+          </div>
           <div class="header">COMPROBANTE DE ABONO</div>
           <div class="separator">====================</div>
           <br>
