@@ -510,7 +510,10 @@ export function POSLayout() {
             onApplyDiscount={handleApplyDiscount}
             onSelectClient={handleSelectClient}
             onPay={() => setShowPaymentModal(true)}
-            onSave={handleSaveOrder}
+            saveOrder={saveOrder}
+            markTabAsSaved={markTabAsSaved}
+            closeTab={closeTab}
+            activeTabId={activeTabId}
             onCancel={handleCancelOrder}
             clients={clients}
             onRefreshData={refetch}

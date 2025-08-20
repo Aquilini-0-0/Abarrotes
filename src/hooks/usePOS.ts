@@ -340,7 +340,7 @@ export function usePOS() {
             client_name: order.client_name,
             date: order.date,
             total: order.total,
-            status: order.status === 'draft' ? 'pending' : (order.status || 'pending'),
+            status: order.status || 'pending',
             amount_paid: 0,
             remaining_balance: order.total,
             created_by: order.created_by

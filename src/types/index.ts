@@ -53,7 +53,7 @@ export interface Sale {
   client_name: string;
   date: string;
   total: number;
-  status: 'pending' | 'paid' | 'overdue';
+  status: 'pending' | 'paid' | 'overdue' | 'saved';
   items: SaleItem[];
 }
 

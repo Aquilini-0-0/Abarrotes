@@ -42,8 +42,7 @@ export function HeaderOnly() {
             amount
           )
         `)
-        .in('status', ['pending', 'draft'])
-        .gt('remaining_balance', 0) // Only show orders with remaining balance
+        .eq('status', 'saved') // Only show saved orders
         .order('created_at', { ascending: false })
         .limit(15); // Show up to 15 pending orders
 
@@ -59,7 +58,7 @@ export function HeaderOnly() {
       const formattedOrders = (data || []).map((order: any) => ({
         id: order.id,
         client_name: order.client_name,
-        total: order.remaining_balance || order.total,
+        total: order.total,
         original_total: order.total,
         amount_paid: order.amount_paid || 0,
         items_count: order.sale_items?.length || 0,
@@ -114,10 +113,10 @@ export function HeaderOnly() {
         <div className="text-center bg-white rounded-3xl shadow-2xl p-16 border border-gray-200">
           <Package size={120} className="mx-auto text-gray-300 mb-8" />
           <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            No hay pedidos pendientes
+            No hay pedidos guardados
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Todos los pedidos han sido completados
+            Todos los pedidos han sido procesados
           </p>
           <div className="text-lg text-gray-500">
             {currentTime.toLocaleString('es-MX', {
@@ -141,7 +140,7 @@ export function HeaderOnly() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-6xl font-bold text-gray-800 mb-4">
-            DURAN - PEDIDOS PENDIENTES {lastUpdate && `(${lastUpdate})`}
+            DURAN - PEDIDOS GUARDADOS {lastUpdate && `(${lastUpdate})`}
           </h1>
           <div className="text-2xl text-gray-600 font-medium">
             {currentTime.toLocaleString('es-MX', {
@@ -162,7 +161,7 @@ export function HeaderOnly() {
           <div className="bg-gradient-to-r from-orange-400 via-red-500 to-red-400 p-8">
             <div className="flex items-center justify-center space-x-4">
               <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
-              <h2 className="text-white font-bold text-4xl">PEDIDOS PENDIENTES DE PAGO</h2>
+              <h2 className="text-white font-bold text-4xl">PEDIDOS GUARDADOS</h2>
               <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
             </div>
           </div>
@@ -222,10 +221,10 @@ export function HeaderOnly() {
                       </td>
                       <td className="p-6 text-center">
                         <div className={`inline-flex items-center px-6 py-3 rounded-2xl text-lg font-bold ${
-                          order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
+                          order.status === 'saved' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
                         }`}>
                           <div className="w-3 h-3 rounded-full bg-current mr-3 animate-pulse"></div>
-                          {order.status === 'pending' ? 'PENDIENTE' : 'GUARDADO'}
+                          {order.status === 'saved' ? 'GUARDADO' : order.status.toUpperCase()}
                         </div>
                       </td>
                     </tr>
@@ -237,10 +236,10 @@ export function HeaderOnly() {
                 <div className="p-12 text-center">
                   <Package size={80} className="mx-auto text-gray-300 mb-6" />
                   <h3 className="text-2xl font-bold text-gray-600 mb-2">
-                    No hay pedidos pendientes
+                    No hay pedidos guardados
                   </h3>
                   <p className="text-gray-500">
-                    Todos los pedidos han sido completados
+                    Todos los pedidos han sido procesados
                   </p>
                 </div>
               )}
@@ -251,7 +250,7 @@ export function HeaderOnly() {
         {/* Footer */}
         <div className="text-center mt-8">
           <div className="text-gray-500 text-lg">
-            Actualización automática cada 2 segundos • {pendingOrders.length} pedidos pendientes
+            Actualización automática cada 2 segundos • {pendingOrders.length} pedidos guardados
             {lastUpdate && ` • Última actualización: ${lastUpdate}`}
           </div>
         </div>

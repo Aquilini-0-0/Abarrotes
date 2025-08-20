@@ -177,7 +177,7 @@ export interface Database {
           total: number;
           amount_paid: number | null;
           remaining_balance: number | null;
-          status: 'pending' | 'paid' | 'overdue';
+          status: 'pending' | 'paid' | 'overdue' | 'saved';
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -190,7 +190,7 @@ export interface Database {
           total?: number;
           amount_paid?: number | null;
           remaining_balance?: number | null;
-          status?: 'pending' | 'paid' | 'overdue';
+          status?: 'pending' | 'paid' | 'overdue' | 'saved';
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -203,7 +203,7 @@ export interface Database {
           total?: number;
           amount_paid?: number | null;
           remaining_balance?: number | null;
-          status?: 'pending' | 'paid' | 'overdue';
+          status?: 'pending' | 'paid' | 'overdue' | 'saved';
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;

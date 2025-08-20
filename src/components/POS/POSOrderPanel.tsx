@@ -12,7 +12,10 @@ interface POSOrderPanelProps {
   onApplyDiscount: (discountAmount: number) => void;
   onSelectClient: (client: POSClient) => void;
   onPay: () => void;
-  onSave: () => void;
+  saveOrder: (order: POSOrder, stockOverride?: boolean) => Promise<any>;
+  markTabAsSaved: (tabId: string) => void;
+  closeTab: (tabId: string) => void;
+  activeTabId: string;
   onCancel: () => void;
   clients: POSClient[];
   onRefreshData?: () => void;
@@ -28,7 +31,10 @@ export function POSOrderPanel({
   onApplyDiscount,
   onSelectClient,
   onPay,
-  onSave,
+  saveOrder,
+  markTabAsSaved,
+  closeTab,
+  activeTabId,
   onCancel,
   clients,
   onRefreshData,
@@ -123,7 +129,13 @@ export function POSOrderPanel({
     
     setIsSaving(true);
     try {
-      await onSave();
+      // Save with status 'saved' instead of 'pending'
+      if (order) {
+        const savedOrder = await saveOrder({ ...order, status: 'saved' }, false);
+        markTabAsSaved(activeTabId);
+        closeTab(activeTabId); // Close the tab after saving
+        alert('Pedido guardado');
+      }
     } catch (err) {
       console.error('Error saving order:', err);
       if (err instanceof Error && err.message.includes('stock')) {

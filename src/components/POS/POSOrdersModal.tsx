@@ -160,12 +160,18 @@ return (
                 </td>
                 <td className="p-1 sm:p-2 lg:p-3 text-center">
                   <span className={`px-1 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${getStatusColor(order.status)}`}>
-                    {getStatusText(order.status)}
+                    {order.status === 'saved' ? 'Guardado' : getStatusText(order.status)}
                   </span>
                   {order.is_credit && order.status === 'pending' && (
                     <div className="text-[10px] sm:text-xs text-red-500 mt-0.5 sm:mt-1 flex items-center justify-center">
                       <CreditCard size={8} className="sm:w-2.5 sm:h-2.5 mr-0.5" />
                       Sin Pagar
+                    </div>
+                  )}
+                  {order.status === 'saved' && (
+                    <div className="text-[10px] sm:text-xs text-blue-500 mt-0.5 sm:mt-1 flex items-center justify-center">
+                      <FileText size={8} className="sm:w-2.5 sm:h-2.5 mr-0.5" />
+                      Guardado
                     </div>
                   )}
                 </td>

@@ -48,7 +48,7 @@ export interface POSOrder {
   subtotal: number;
   discount_total: number;
   total: number;
-  status: 'draft' | 'pending' | 'paid' | 'cancelled';
+  status: 'draft' | 'pending' | 'paid' | 'cancelled' | 'saved';
   payment_method?: 'cash' | 'card' | 'transfer' | 'credit' | 'mixed';
   is_credit: boolean;
   is_invoice: boolean;
