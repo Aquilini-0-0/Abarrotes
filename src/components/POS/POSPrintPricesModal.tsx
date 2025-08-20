@@ -17,9 +17,9 @@ export function POSPrintPricesModal({ onClose }: POSPrintPricesModalProps) {
   );
 
   const handlePrintPrices = () => {
-    const selectedPrice = `price${selectedPriceLevel}` as keyof typeof product.prices;
+    const selectedPriceKey = `price${selectedPriceLevel}` as keyof typeof filteredProducts[0];
     const priceList = filteredProducts.map(product => 
-      `$${(product.prices[selectedPrice] || 0).toFixed(2)} - ${product.name.toUpperCase()}`
+      `$${(product[selectedPriceKey] || 0).toFixed(2)} - ${product.name.toUpperCase()}`
     ).join('\n');
 
     const ticketContent = `
@@ -58,7 +58,7 @@ Generado: ${new Date().toLocaleString('es-MX')}
           <div class="header">PRECIO PRODUCTO</div>
           <div class="header">================</div>
           ${filteredProducts.map(product => 
-            `<div class="price-line">$${(product.prices[selectedPrice] || 0).toFixed(2)} - ${product.name.toUpperCase()}</div>`
+            `<div class="price-line">$${(product[selectedPriceKey] || 0).toFixed(2)} - ${product.name.toUpperCase()}</div>`
           ).join('')}
           <div class="footer">================</div>
           <div class="footer">Total productos: ${filteredProducts.length}</div>
