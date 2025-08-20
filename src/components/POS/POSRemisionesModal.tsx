@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileText, Search, Eye, Download, DollarSign, Plus, Truck } from 'lucide-react';
+import { X, FileText, Search, DollarSign, Plus, Truck, Printer } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useSales } from '../../hooks/useSales';
@@ -91,6 +91,100 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePrintTicket = (remision: Remision) => {
+    const ticketContent = `
+REMISIÓN DE ENTREGA
+==================
+
+FOLIO: ${remision.folio}
+FOLIO REMISIÓN: ${remision.folio_remision}
+FECHA: ${new Date(remision.fecha).toLocaleDateString('es-MX')}
+
+CLIENTE: ${remision.cliente}
+IMPORTE: $${remision.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+
+TIPO PAGO: ${remision.tipo_pago}
+FORMA PAGO: ${remision.forma_pago}
+CAJA: ${remision.caja}
+DEV: ${remision.dev}
+FACTURA: ${remision.factura}
+
+VENDEDOR: ${remision.vendedor}
+CAJERO: ${remision.cajero}
+
+OBSERVACIONES:
+${remision.observaciones || 'Sin observaciones'}
+
+==================
+ESTATUS: ${remision.estatus}
+
+SISTEMA ERP DURAN
+${new Date().toLocaleString('es-MX')}
+    `;
+
+    // Create print window with ticket format
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>Remisión ${remision.folio}</title>
+          <style>
+            body { 
+              font-family: 'Courier New', monospace; 
+              font-size: 12px; 
+              margin: 20px;
+              max-width: 300px;
+              line-height: 1.2;
+            }
+            .header { text-align: center; font-weight: bold; margin-bottom: 10px; }
+            .separator { text-align: center; margin: 10px 0; }
+            .field { margin: 3px 0; }
+            .total { font-weight: bold; font-size: 14px; }
+            .footer { text-align: center; margin-top: 15px; font-size: 10px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">REMISIÓN DE ENTREGA</div>
+          <div class="separator">==================</div>
+          <br>
+          <div class="field">FOLIO: ${remision.folio}</div>
+          <div class="field">FOLIO REMISIÓN: ${remision.folio_remision}</div>
+          <div class="field">FECHA: ${new Date(remision.fecha).toLocaleDateString('es-MX')}</div>
+          <br>
+          <div class="field">CLIENTE: ${remision.cliente}</div>
+          <div class="field total">IMPORTE: $${remision.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</div>
+          <br>
+          <div class="field">TIPO PAGO: ${remision.tipo_pago}</div>
+          <div class="field">FORMA PAGO: ${remision.forma_pago}</div>
+          <div class="field">CAJA: ${remision.caja}</div>
+          <div class="field">DEV: ${remision.dev}</div>
+          <div class="field">FACTURA: ${remision.factura}</div>
+          <br>
+          <div class="field">VENDEDOR: ${remision.vendedor}</div>
+          <div class="field">CAJERO: ${remision.cajero}</div>
+          <br>
+          <div class="field">OBSERVACIONES:</div>
+          <div class="field">${remision.observaciones || 'Sin observaciones'}</div>
+          <br>
+          <div class="separator">==================</div>
+          <div class="field total">ESTATUS: ${remision.estatus}</div>
+          <br>
+          <div class="footer">SISTEMA ERP DURAN</div>
+          <div class="footer">${new Date().toLocaleString('es-MX')}</div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
+
+    alert('Ticket de remisión enviado a impresión');
   };
 
   const handleCreateRemision = async () => {
@@ -407,7 +501,7 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
                   <th className="text-left p-3 text-gray-700 font-semibold">Vendedor</th>
                   <th className="text-left p-3 text-gray-700 font-semibold">Cajero</th>
                   <th className="text-left p-3 text-gray-700 font-semibold">Observaciones</th>
-                  <th className="text-center p-3 text-gray-700 font-semibold">Acciones</th>
+                  <th className="text-center p-1 sm:p-2 lg:p-3 text-gray-700 font-semibold">Imprimir</th>
                 </tr>
               </thead>
               <tbody>
@@ -460,18 +554,13 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
                       <td className="p-3 text-gray-700">{remision.cajero}</td>
                       <td className="p-3 text-gray-600 text-xs">{remision.observaciones}</td>
                       <td className="p-3">
-                        <div className="flex items-center justify-center space-x-2">
+                        <div className="flex items-center justify-center">
                           <button
-                            className="p-1 text-blue-600 hover:text-blue-800"
-                            title="Ver detalles"
+                            onClick={() => handlePrintTicket(remision)}
+                            className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors"
+                            title="Imprimir ticket"
                           >
-                            <Eye size={16} />
-                          </button>
-                          <button
-                            className="p-1 text-green-600 hover:text-green-800"
-                            title="Descargar"
-                          >
-                            <Download size={16} />
+                            <Printer size={16} />
                           </button>
                         </div>
                       </td>
