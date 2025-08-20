@@ -88,6 +88,8 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
       // Generate and print cash register close ticket
       if (cashRegister) {
         const ticketContent = `
+        `;
+      }
       onClose();
     } catch (err) {
       console.error('Error closing register:', err);
@@ -157,7 +159,7 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                     <button
                       key={key}
                       onClick={() => handleKeypadInput(key)}
-                      className={`py-3 rounded-lg text-lg font-semibold shadow-sm transition-colors ${
+                      className={\`py-3 rounded-lg text-lg font-semibold shadow-sm transition-colors ${
                         key === '←' || key === 'C'
                           ? 'bg-red-100 text-red-600 hover:bg-red-200'
                           : key === 'Add'
