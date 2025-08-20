@@ -70,13 +70,25 @@ const printViaSerial = async (content: string) => {
   try {
     // Request access to a serial port. This opens a browser dialog for the user to select the device.
     const port = await (navigator as any).serial.requestPort({
-      // Filters to only show common thermal printer vendors.
-      // You can find your printer's vendor ID in your system's device manager.
-      filters: [
-        { usbVendorId: 0x04b8 }, // Epson
-        { usbVendorId: 0x0519 }, // Star Micronics
-        { usbVendorId: 0x154f }, // Bixolon
-      ]
+      // ===================================================================
+      // PASO DE DEPURACIÓN: Se han comentado los filtros.
+      // Si tu impresora no aparecía en la lista, esta modificación hará
+      // que el navegador muestre TODOS los dispositivos serie disponibles.
+      //
+      // QUÉ HACER:
+      // 1. Ejecuta este código.
+      // 2. Intenta imprimir. Deberías ver un pop-up con más dispositivos.
+      // 3. Selecciona tu impresora. Si la impresión funciona, ¡genial!
+      //
+      // Si AÚN ASÍ no aparece ningún dispositivo, el problema probablemente
+      // está en la conexión física del cable USB o en los drivers de
+      // la impresora en tu sistema operativo.
+      // ===================================================================
+      // filters: [
+      //   { usbVendorId: 0x04b8 }, // Epson
+      //   { usbVendorId: 0x0519 }, // Star Micronics
+      //   { usbVendorId: 0x154f }, // Bixolon
+      // ]
     });
 
     // Open the selected port.
