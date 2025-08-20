@@ -71,24 +71,18 @@ const printViaSerial = async (content: string) => {
     // Request access to a serial port. This opens a browser dialog for the user to select the device.
     const port = await (navigator as any).serial.requestPort({
       // ===================================================================
-      // PASO DE DEPURACIÓN: Se han comentado los filtros.
-      // Si tu impresora no aparecía en la lista, esta modificación hará
-      // que el navegador muestre TODOS los dispositivos serie disponibles.
+      // ¡ACTUALIZADO! Se agregó el Vendor ID de tu impresora (0x0471).
       //
-      // QUÉ HACER:
-      // 1. Ejecuta este código.
-      // 2. Intenta imprimir. Deberías ver un pop-up con más dispositivos.
-      // 3. Selecciona tu impresora. Si la impresión funciona, ¡genial!
-      //
-      // Si AÚN ASÍ no aparece ningún dispositivo, el problema probablemente
-      // está en la conexión física del cable USB o en los drivers de
-      // la impresora en tu sistema operativo.
+      // NOTA IMPORTANTE: Para que esto funcione, necesitas instalar el
+      // driver "Virtual COM Port" (VCP) del fabricante de tu impresora.
+      // Busca en Google "[Tu modelo de impresora] virtual COM port driver".
       // ===================================================================
-      // filters: [
-      //   { usbVendorId: 0x04b8 }, // Epson
-      //   { usbVendorId: 0x0519 }, // Star Micronics
-      //   { usbVendorId: 0x154f }, // Bixolon
-      // ]
+      filters: [
+        { usbVendorId: 0x0471 }, // ID de tu impresora detectada
+        { usbVendorId: 0x04b8 }, // Epson
+        { usbVendorId: 0x0519 }, // Star Micronics
+        { usbVendorId: 0x154f }, // Bixolon
+      ]
     });
 
     // Open the selected port.
