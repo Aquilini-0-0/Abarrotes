@@ -69,7 +69,7 @@ CÓDIGO DE BARRAS: ${selectedOrder.id}
         </head>
         <body>
           <div class="logo">
-            <img src="/logoduran2.png" alt="DURAN" />
+            <img src="${window.location.origin}/logoduran2.png" alt="DURAN" />
           </div>
           <div class="header">PEDIDO: ${selectedOrder.id.slice(-6).toUpperCase()}</div>
           <div class="header">FECHA: ${new Date(selectedOrder.date).toLocaleDateString('es-MX')}</div>

@@ -254,7 +254,7 @@ Generado el ${new Date().toLocaleString('es-MX')}
         </head>
         <body>
           <div class="logo">
-            <img src="/logoduran2.png" alt="DURAN" />
+            <img src="${window.location.origin}/logoduran2.png" alt="DURAN" />
           </div>
           <div class="header">REPORTE DE CAJA: ${reporte.caja}</div>
           <div class="header">FECHA: ${new Date(reporte.fecha).toLocaleDateString('es-MX')}</div>
