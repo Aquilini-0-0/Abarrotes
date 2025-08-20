@@ -394,7 +394,7 @@ export function POSOrderPanel({
     </div>
   )}
 
-  {/* Opciones de Venta - Siempre visibles */}
+  {/* Opciones de Venta - Siempre visibles 
   <div className="px-2 sm:px-3 py-1 sm:py-2 border-t border-orange-200">
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
     {[
@@ -414,6 +414,7 @@ export function POSOrderPanel({
       </label>
     ))}
     </div>
+    */}
 
     {/* Descuento */}
     <div className="flex items-center space-x-1 sm:space-x-2">
