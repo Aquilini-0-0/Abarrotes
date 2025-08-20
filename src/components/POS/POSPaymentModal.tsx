@@ -6,6 +6,7 @@ import { POSOrder, POSClient, PaymentBreakdown, Payment } from '../../types/pos'
 
 import { supabase } from '../../lib/supabase';
 import { useProducts } from '../../hooks/useProducts';
+import { useAuth } from '../../context/AuthContext';
 
 
 
@@ -45,6 +46,7 @@ interface POSPaymentModalProps {
 
 export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPayment }: POSPaymentModalProps) {
   const { products } = useProducts();
+  const { user } = useAuth();
 
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer' | 'credit' | 'mixed' | 'vales'>('cash');
 
