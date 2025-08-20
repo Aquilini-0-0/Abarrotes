@@ -287,6 +287,24 @@ export function usePOS() {
         }
       }
 
+      // Map POS order status to valid database status
+      const mapStatusToDatabase = (posStatus: string): 'pending' | 'paid' | 'overdue' | 'saved' => {
+        switch (posStatus) {
+          case 'draft':
+            return 'pending';
+          case 'cancelled':
+            return 'overdue';
+          case 'saved':
+            return 'saved';
+          case 'paid':
+            return 'paid';
+          case 'pending':
+            return 'pending';
+          default:
+            return 'pending';
+        }
+      };
+
       let saleData;
       let isNewOrder = order.id.startsWith('temp-');
       
@@ -340,7 +358,7 @@ export function usePOS() {
             client_name: order.client_name,
             date: order.date,
             total: order.total,
-            status: order.status || 'pending',
+            status: mapStatusToDatabase(order.status || 'pending'),
             amount_paid: 0,
             remaining_balance: order.total,
             created_by: order.created_by
