@@ -418,8 +418,8 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const processPayment = (overrideStock = false) => {
     setIsProcessing(true);
     
-    // Print ticket automatically before processing payment
-    printPaymentTicket();
+    // Generate and download .txt ticket automatically before processing payment
+    generateAndDownloadTicket();
     
     const paymentData = {
       method: paymentMethod,
@@ -439,7 +439,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
     }, 1000);
   };
 
-  const printPaymentTicket = () => {
+  const generateAndDownloadTicket = () => {
     if (!order) return;
 
     const getPaymentMethodText = () => {
@@ -507,74 +507,16 @@ SISTEMA ERP DURAN
 ${new Date().toLocaleString('es-MX')}
     `;
 
-    // Create print window
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-        <head>
-          <title>Ticket_Pago_${order.id.slice(-6).toUpperCase()}_ffd.txt</title>
-          <style>
-            body { 
-              font-family: 'Courier New', monospace; 
-              font-size: 12px; 
-              margin: 20px;
-              max-width: 300px;
-              line-height: 1.2;
-            }
-            .logo { text-align: center; margin-bottom: 10px; }
-            .logo img { max-width: 80px; height: auto; }
-            .header { text-align: left; font-weight: bold; margin-bottom: 10px; }
-            .separator { margin: 5px 0; }
-            .field { margin: 2px 0; }
-            .total { font-weight: bold; font-size: 14px; }
-            .footer { text-align: left; margin-top: 15px; font-size: 10px; }
-          </style>
-        </head>
-        <body>
-          <div class="logo">
-            <img src="${window.location.origin}/logoduran2.png" alt="DURAN" />
-          </div>
-          <div class="header">DURAN ERP - PUNTO DE VENTA</div>
-          <div class="separator">==========================</div>
-          <br>
-          <div class="field">TICKET DE PAGO</div>
-          <br>
-          <div class="field">FOLIO: ${order.id.slice(-6).toUpperCase()}</div>
-          <div class="field">FECHA: ${new Date().toLocaleDateString('es-MX')}</div>
-          <div class="field">HORA: ${new Date().toLocaleTimeString('es-MX')}</div>
-          <br>
-          <div class="field">CLIENTE: ${order.client_name}</div>
-          <br>
-          <div class="field">PRODUCTOS:</div>
-          <div class="separator">--------------------------</div>
-          ${order.items.map(item => 
-            `<div class="field">${item.quantity.toString().padEnd(4)} ${item.product_name.length > 20 ? item.product_name.substring(0, 20) : item.product_name.padEnd(20)} $${item.total.toFixed(2).padStart(8)}</div>`
-          ).join('')}
-          <div class="separator">--------------------------</div>
-          <br>
-          <div class="field">SUBTOTAL: $${order.subtotal.toFixed(2)}</div>
-          ${order.discount_total > 0 ? `<div class="field">DESCUENTO: -$${order.discount_total.toFixed(2)}</div>` : ''}
-          <div class="field total">TOTAL: $${amountToPay.toFixed(2)}</div>
-          <br>
-          <div class="field">METODO DE PAGO: ${getPaymentMethodText()}</div>
-          ${getPaymentDetails().split('\n').filter(line => line.trim()).map(line => `<div class="field">${line}</div>`).join('')}
-          ${isAlreadyPaid ? `<div class="field">SALDO ANTERIOR: $${amountPaid.toFixed(2)}</div><div class="field">PAGO ACTUAL: $${amountToPay.toFixed(2)}</div>` : ''}
-          <div class="field">LE ATENDIO: ${user?.name || 'Usuario'}</div>
-          <br>
-          <div class="field">GRACIAS POR SU COMPRA</div>
-          <div class="separator">==========================</div>
-          <div class="footer">SISTEMA ERP DURAN</div>
-          <div class="footer">${new Date().toLocaleString('es-MX')}</div>
-        </body>
-        </html>
-      `);
-      printWindow.document.close();
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 250);
-    }
+    // Create and download .txt file automatically
+    const blob = new Blob([ticketContent], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Ticket_Pago_${order.id.slice(-6).toUpperCase()}_ffd.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   };
 
   const handleCreditAuth = () => {
