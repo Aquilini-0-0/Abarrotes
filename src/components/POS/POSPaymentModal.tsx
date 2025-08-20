@@ -533,7 +533,7 @@ ${new Date().toLocaleString('es-MX')}
         </head>
         <body>
           <div class="logo">
-            <img src="/logoduran2.png" alt="DURAN" />
+            <img src="${window.location.origin}/logoduran2.png" alt="DURAN" />
           </div>
           <div class="header">DURAN ERP - PUNTO DE VENTA</div>
           <div class="separator">==========================</div>

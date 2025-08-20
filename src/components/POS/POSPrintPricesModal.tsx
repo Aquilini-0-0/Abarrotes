@@ -59,7 +59,7 @@ Generado: ${new Date().toLocaleString('es-MX')}
         </head>
         <body>
           <div class="logo">
-            <img src="/logoduran2.png" alt="DURAN" />
+            <img src="${window.location.origin}/logoduran2.png" alt="DURAN" />
           </div>
           <div class="header">PRECIO PRODUCTO</div>
           <div class="header">================</div>
