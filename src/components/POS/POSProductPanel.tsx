@@ -182,7 +182,7 @@ export function POSProductPanel({
                 <th className="text-left p-1 sm:p-2 lg:p-3 text-gray-700 w-12 sm:w-16 lg:w-20 font-semibold bg-gradient-to-r from-orange-50 to-red-50">Código</th>
                 <th className="text-left p-1 sm:p-2 lg:p-3 text-gray-700 w-14 sm:w-16 lg:w-24 font-semibold bg-gradient-to-r from-orange-50 to-red-50 hidden md:table-cell">Pres.</th>
                 <th className="text-left p-1 sm:p-2 lg:p-3 text-gray-700 font-semibold bg-gradient-to-r from-orange-50 to-red-50">Artículo</th>
-                <th className="text-right p-1 sm:p-2 lg:p-3 text-gray-700 w-12 sm:w-16 lg:w-20 font-semibold bg-gradient-to-r from-orange-50 to-red-50">Stock(Kg.)</th>
+                <th className="text-right p-1 sm:p-2 lg:p-3 text-gray-700 w-12 sm:w-16 lg:w-20 font-semibold bg-gradient-to-r from-orange-50 to-red-50">Stock</th>
                 <th className="text-right p-1 sm:p-2 lg:p-3 text-gray-700 w-16 sm:w-20 lg:w-24 font-semibold bg-gradient-to-r from-orange-50 to-red-50">Precio</th>
               </tr>
             </thead>
