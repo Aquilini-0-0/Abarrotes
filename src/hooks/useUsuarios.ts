@@ -7,6 +7,7 @@ export interface UsuarioSistema {
   almacen: string;
   nombre_completo: string;
   nombre_usuario: string;
+  password?: string;
   correo: string;
   monto_autorizacion: number;
   puesto: 'Admin' | 'Vendedor' | 'Chofer';
@@ -76,9 +77,36 @@ export function useUsuarios() {
 
   const createUsuario = async (usuarioData: Omit<UsuarioSistema, 'id' | 'created_at' | 'updated_at' | 'fecha_registro'>) => {
     try {
+      // Create auth user first if password is provided
+      let auth_id = null;
+      if (usuarioData.password) {
+        try {
+          const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+            email: usuarioData.correo,
+            password: usuarioData.password,
+            email_confirm: true
+          });
+
+          if (authError) {
+            console.warn('Could not create auth user:', authError);
+            // Continue without auth_id - user can be created manually later
+          } else {
+            auth_id = authUser.user.id;
+          }
+        } catch (authErr) {
+          console.warn('Auth creation failed, continuing without auth:', authErr);
+        }
+      }
+
+      // Remove password from data before inserting into usuarios_sistema table
+      const { password, ...dataWithoutPassword } = usuarioData;
+      
       const { data, error } = await supabase
         .from('usuarios_sistema')
-        .insert([usuarioData])
+        .insert([{
+          ...dataWithoutPassword,
+          auth_id
+        }])
         .select()
         .single();
 
@@ -118,9 +146,27 @@ export function useUsuarios() {
 
   const updateUsuario = async (id: string, usuarioData: Partial<UsuarioSistema>) => {
     try {
+      // Handle password update if provided
+      if (usuarioData.password) {
+        try {
+          // Get current user data to find auth_id
+          const currentUser = usuarios.find(u => u.id === id);
+          if (currentUser?.auth_id) {
+            await supabase.auth.admin.updateUserById(currentUser.auth_id, {
+              password: usuarioData.password
+            });
+          }
+        } catch (authErr) {
+          console.warn('Could not update auth password:', authErr);
+        }
+      }
+
+      // Remove password from data before updating usuarios_sistema table
+      const { password, ...dataWithoutPassword } = usuarioData;
+      
       const { data, error } = await supabase
         .from('usuarios_sistema')
-        .update(usuarioData)
+        .update(dataWithoutPassword)
         .eq('id', id)
         .select()
         .single();

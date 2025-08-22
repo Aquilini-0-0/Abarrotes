@@ -4,6 +4,7 @@ import { DataTable } from '../../components/Common/DataTable';
 import { usePurchaseOrders } from '../../hooks/usePurchaseOrders';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { useProducts } from '../../hooks/useProducts';
+import { useWarehouseTransfers } from '../../hooks/useWarehouseTransfers';
 import { AutocompleteInput } from '../../components/Common/AutocompleteInput';
 import { supabase } from '../../lib/supabase';
 import { Plus, Edit, FileText, Trash2, ChevronLeft, ChevronRight, SkipForward, X } from 'lucide-react';
@@ -52,13 +53,14 @@ export function ListadoCompras() {
   const { orders, loading, error, createOrder } = usePurchaseOrders();
   const { suppliers } = useSuppliers();
   const { products } = useProducts();
+  const { warehouses, loading: warehousesLoading } = useWarehouseTransfers();
   
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [loadingProveedores, setLoadingProveedores] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   
   const [filtros, setFiltros] = useState({
-    almacen_entrada: 'BODEGA',
+    almacen_entrada: '',
     proveedor: '',
     folio: '',
     fecha_ini: '',
@@ -124,7 +126,7 @@ export function ListadoCompras() {
     id_factura: `FAC-${order.id.slice(-6)}`,
     folio_factura: `${index + 1}`.padStart(6, '0'),
     fecha: order.date,
-    almacen_entrada: warehouses.length > 0 ? warehouses[0].name : 'ALMACEN-PRINCIPAL',
+    almacen_entrada: warehouses.length > 0 ? warehouses[0].name : 'Sin almacén',
     proveedor: order.supplier_name,
     monto_total: order.total,
     estatus: 'Activo',
@@ -133,7 +135,7 @@ export function ListadoCompras() {
   }));
 
   const comprasFiltradas = comprasDetalladas.filter(compra => {
-    if (filtros.almacen_entrada && !compra.almacen_entrada.includes(filtros.almacen_entrada)) return false;
+    if (filtros.almacen_entrada && compra.almacen_entrada !== filtros.almacen_entrada) return false;
     if (filtros.proveedor && !compra.proveedor.toLowerCase().includes(filtros.proveedor.toLowerCase())) return false;
     if (filtros.folio && !compra.folio_factura.includes(filtros.folio)) return false;
     if (filtros.fecha_ini && compra.fecha < filtros.fecha_ini) return false;
@@ -542,11 +544,16 @@ export function ListadoCompras() {
               value={filtros.almacen_entrada}
               onChange={(e) => setFiltros(prev => ({ ...prev, almacen_entrada: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={warehousesLoading}
             >
-              <option value="BODEGA">BODEGA</option>
-              <option value="ALMACEN-A">ALMACEN-A</option>
-              <option value="ALMACEN-B">ALMACEN-B</option>
-              <option value="SUCURSAL-1">SUCURSAL-1</option>
+              <option value="">
+                {warehousesLoading ? 'Cargando almacenes...' : 'Todos los almacenes'}
+              </option>
+              {warehouses.map(warehouse => (
+                <option key={warehouse.id} value={warehouse.name}>
+                  {warehouse.name}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -923,13 +930,16 @@ export function ListadoCompras() {
                       value={newDetalle.ubicacion_fisica}
                       onChange={(e) => handleInputChange('ubicacion_fisica', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={warehousesLoading}
                     >
-                      <option value="">Seleccionar ubicación</option>
-                      <option value="BODEGA-A1">BODEGA-A1</option>
-                      <option value="BODEGA-A2">BODEGA-A2</option>
-                      <option value="BODEGA-B1">BODEGA-B1</option>
-                      <option value="ALMACEN-PRINCIPAL">ALMACEN-PRINCIPAL</option>
-                      <option value="AREA-FRIO">AREA-FRIO</option>
+                      <option value="">
+                        {warehousesLoading ? 'Cargando almacenes...' : 'Seleccionar almacén'}
+                      </option>
+                      {warehouses.map(warehouse => (
+                        <option key={warehouse.id} value={warehouse.name}>
+                          {warehouse.name} - {warehouse.location}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
