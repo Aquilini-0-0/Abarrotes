@@ -113,7 +113,7 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
               padding: 20mm;
             }
             .logo { text-align: left; margin-bottom: 20px; }
-            .logo img { max-width: 120px; height: auto; }
+            .logo img { transform: scale(1.5); }
             .header { 
               text-align: left; 
               margin-bottom: 40px; 
@@ -235,9 +235,9 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
         <body>
           <div class="logo">
            <img 
-  src="https://raw.githubusercontent.com/Aquilini-0-0/Abarrotes/main/public/logoduran2.png" 
-  alt="DURAN" 
-/>
+              src="https://raw.githubusercontent.com/Aquilini-0-0/Abarrotes/main/public/logoduran2.png" 
+              alt="DURAN" 
+            />
 
           </div>
           <div class="header">
