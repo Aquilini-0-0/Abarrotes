@@ -549,7 +549,7 @@ export function ListadoCompras() {
               <option value="">
                 {warehousesLoading ? 'Cargando almacenes...' : 'Todos los almacenes'}
               </option>
-              {warehouses.map(warehouse => (
+              {warehouses.filter(w => w.active).map(warehouse => (
                 <option key={warehouse.id} value={warehouse.name}>
                   {warehouse.name}
                 </option>
