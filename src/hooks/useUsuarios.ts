@@ -53,21 +53,21 @@ export function useUsuarios() {
       const formattedUsuarios: UsuarioSistema[] = data.map(item => ({
         id: item.id,
         auth_id: item.auth_id,
-        almacen: item.almacen || '',
+        almacen: '', // Default empty since column doesn't exist yet
         name: item.name,
-        nombre_completo: item.nombre_completo || item.name,
-        nombre_usuario: item.nombre_usuario || '',
+        nombre_completo: item.name,
+        nombre_usuario: '', // Default empty since column doesn't exist yet
         email: item.email,
         correo: item.email, // Map email to correo for compatibility
-        monto_autorizacion: Number(item.monto_autorizacion) || 0,
+        monto_autorizacion: 0, // Default 0 since column doesn't exist yet
         role: item.role,
-        puesto: item.puesto || item.role,
-        rfc: item.rfc || '',
-        curp: item.curp || '',
-        telefono: item.telefono || '',
-        estatus: item.estatus !== false, // Default to true if null
-        permisos: item.permisos || {},
-        fecha_registro: item.fecha_registro || item.created_at,
+        puesto: item.role, // Map role to puesto for compatibility
+        rfc: '', // Default empty since column doesn't exist yet
+        curp: '', // Default empty since column doesn't exist yet
+        telefono: '', // Default empty since column doesn't exist yet
+        estatus: true, // Default to true
+        permisos: {}, // Default empty permissions
+        fecha_registro: item.created_at,
         created_at: item.created_at,
         updated_at: item.updated_at
       }));
@@ -86,20 +86,9 @@ export function useUsuarios() {
         .from('users')
         .insert([{
           auth_id: null, // Will be set when user first logs in
-          almacen: usuarioData.almacen,
           name: usuarioData.nombre_completo,
-          nombre_completo: usuarioData.nombre_completo,
-          nombre_usuario: usuarioData.nombre_usuario,
           email: usuarioData.correo,
-          monto_autorizacion: usuarioData.monto_autorizacion,
           role: usuarioData.puesto === 'Admin' ? 'Admin' : usuarioData.puesto === 'Vendedor' ? 'Empleado' : 'Empleado',
-          puesto: usuarioData.puesto,
-          rfc: usuarioData.rfc,
-          curp: usuarioData.curp,
-          telefono: usuarioData.telefono,
-          estatus: usuarioData.estatus,
-          permisos: usuarioData.permisos,
-          fecha_registro: new Date().toISOString()
         }])
         .select()
         .single();
@@ -109,21 +98,21 @@ export function useUsuarios() {
       const newUsuario: UsuarioSistema = {
         id: data.id,
         auth_id: data.auth_id,
-        almacen: data.almacen || '',
+        almacen: usuarioData.almacen,
         name: data.name,
-        nombre_completo: data.nombre_completo || data.name,
-        nombre_usuario: data.nombre_usuario || '',
+        nombre_completo: data.name,
+        nombre_usuario: usuarioData.nombre_usuario,
         email: data.email,
         correo: data.email,
-        monto_autorizacion: Number(data.monto_autorizacion) || 0,
+        monto_autorizacion: usuarioData.monto_autorizacion,
         role: data.role,
-        puesto: data.puesto || data.role,
-        rfc: data.rfc || '',
-        curp: data.curp || '',
-        telefono: data.telefono || '',
-        estatus: data.estatus !== false,
-        permisos: data.permisos || {},
-        fecha_registro: data.fecha_registro || data.created_at,
+        puesto: usuarioData.puesto,
+        rfc: usuarioData.rfc,
+        curp: usuarioData.curp,
+        telefono: usuarioData.telefono,
+        estatus: usuarioData.estatus,
+        permisos: usuarioData.permisos,
+        fecha_registro: data.created_at,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -146,24 +135,12 @@ export function useUsuarios() {
       // Prepare update data, mapping fields correctly
       const updateData: any = {};
       
-      if (usuarioData.almacen !== undefined) updateData.almacen = usuarioData.almacen;
-      if (usuarioData.nombre_completo !== undefined) {
-        updateData.name = usuarioData.nombre_completo;
-        updateData.nombre_completo = usuarioData.nombre_completo;
-      }
-      if (usuarioData.nombre_usuario !== undefined) updateData.nombre_usuario = usuarioData.nombre_usuario;
+      if (usuarioData.nombre_completo !== undefined) updateData.name = usuarioData.nombre_completo;
       if (usuarioData.correo !== undefined) updateData.email = usuarioData.correo;
-      if (usuarioData.monto_autorizacion !== undefined) updateData.monto_autorizacion = usuarioData.monto_autorizacion;
       if (usuarioData.puesto !== undefined) {
-        updateData.puesto = usuarioData.puesto;
         // Map puesto to role for compatibility
         updateData.role = usuarioData.puesto === 'Admin' ? 'Admin' : usuarioData.puesto === 'Vendedor' ? 'Empleado' : 'Empleado';
       }
-      if (usuarioData.rfc !== undefined) updateData.rfc = usuarioData.rfc;
-      if (usuarioData.curp !== undefined) updateData.curp = usuarioData.curp;
-      if (usuarioData.telefono !== undefined) updateData.telefono = usuarioData.telefono;
-      if (usuarioData.estatus !== undefined) updateData.estatus = usuarioData.estatus;
-      if (usuarioData.permisos !== undefined) updateData.permisos = usuarioData.permisos;
       
       const { data, error } = await supabase
         .from('users')
@@ -177,21 +154,21 @@ export function useUsuarios() {
       const updatedUsuario: UsuarioSistema = {
         id: data.id,
         auth_id: data.auth_id,
-        almacen: data.almacen || '',
+        almacen: usuarioData.almacen || '',
         name: data.name,
-        nombre_completo: data.nombre_completo || data.name,
-        nombre_usuario: data.nombre_usuario || '',
+        nombre_completo: data.name,
+        nombre_usuario: usuarioData.nombre_usuario || '',
         email: data.email,
         correo: data.email,
-        monto_autorizacion: Number(data.monto_autorizacion) || 0,
+        monto_autorizacion: usuarioData.monto_autorizacion || 0,
         role: data.role,
-        puesto: data.puesto || data.role,
-        rfc: data.rfc || '',
-        curp: data.curp || '',
-        telefono: data.telefono || '',
-        estatus: data.estatus !== false,
-        permisos: data.permisos || {},
-        fecha_registro: data.fecha_registro || data.created_at,
+        puesto: usuarioData.puesto || data.role,
+        rfc: usuarioData.rfc || '',
+        curp: usuarioData.curp || '',
+        telefono: usuarioData.telefono || '',
+        estatus: usuarioData.estatus !== false,
+        permisos: usuarioData.permisos || {},
+        fecha_registro: data.created_at,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
