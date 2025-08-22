@@ -5,11 +5,13 @@ export interface UsuarioSistema {
   id: string;
   auth_id?: string;
   almacen: string;
+  name: string; // Keep original name field
   nombre_completo: string;
   nombre_usuario: string;
-  password?: string;
+  email: string; // Keep original email field
   correo: string;
   monto_autorizacion: number;
+  role: 'Admin' | 'Gerente' | 'Empleado'; // Keep original role
   puesto: 'Admin' | 'Vendedor' | 'Chofer';
   rfc: string;
   curp: string;
@@ -42,7 +44,7 @@ export function useUsuarios() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('usuarios_sistema')
+        .from('users')
         .select('*')
         .order('nombre_completo', { ascending: true });
 
@@ -51,18 +53,21 @@ export function useUsuarios() {
       const formattedUsuarios: UsuarioSistema[] = data.map(item => ({
         id: item.id,
         auth_id: item.auth_id,
-        almacen: item.almacen,
-        nombre_completo: item.nombre_completo,
-        nombre_usuario: item.nombre_usuario,
-        correo: item.correo,
+        almacen: item.almacen || '',
+        name: item.name,
+        nombre_completo: item.nombre_completo || item.name,
+        nombre_usuario: item.nombre_usuario || '',
+        email: item.email,
+        correo: item.email, // Map email to correo for compatibility
         monto_autorizacion: Number(item.monto_autorizacion) || 0,
-        puesto: item.puesto,
-        rfc: item.rfc,
-        curp: item.curp,
-        telefono: item.telefono,
-        estatus: item.estatus,
+        role: item.role,
+        puesto: item.puesto || item.role,
+        rfc: item.rfc || '',
+        curp: item.curp || '',
+        telefono: item.telefono || '',
+        estatus: item.estatus !== false, // Default to true if null
         permisos: item.permisos || {},
-        fecha_registro: item.fecha_registro,
+        fecha_registro: item.fecha_registro || item.created_at,
         created_at: item.created_at,
         updated_at: item.updated_at
       }));
@@ -98,14 +103,24 @@ export function useUsuarios() {
         }
       }
 
-      // Remove password from data before inserting into usuarios_sistema table
-      const { password, ...dataWithoutPassword } = usuarioData;
-      
       const { data, error } = await supabase
-        .from('usuarios_sistema')
+        .from('users')
         .insert([{
-          ...dataWithoutPassword,
-          auth_id
+          auth_id,
+          almacen: usuarioData.almacen,
+          name: usuarioData.nombre_completo,
+          nombre_completo: usuarioData.nombre_completo,
+          nombre_usuario: usuarioData.nombre_usuario,
+          email: usuarioData.correo,
+          monto_autorizacion: usuarioData.monto_autorizacion,
+          role: usuarioData.puesto === 'Admin' ? 'Admin' : usuarioData.puesto === 'Vendedor' ? 'Empleado' : 'Empleado',
+          puesto: usuarioData.puesto,
+          rfc: usuarioData.rfc,
+          curp: usuarioData.curp,
+          telefono: usuarioData.telefono,
+          estatus: usuarioData.estatus,
+          permisos: usuarioData.permisos,
+          fecha_registro: new Date().toISOString()
         }])
         .select()
         .single();
@@ -115,18 +130,21 @@ export function useUsuarios() {
       const newUsuario: UsuarioSistema = {
         id: data.id,
         auth_id: data.auth_id,
-        almacen: data.almacen,
-        nombre_completo: data.nombre_completo,
-        nombre_usuario: data.nombre_usuario,
-        correo: data.correo,
+        almacen: data.almacen || '',
+        name: data.name,
+        nombre_completo: data.nombre_completo || data.name,
+        nombre_usuario: data.nombre_usuario || '',
+        email: data.email,
+        correo: data.email,
         monto_autorizacion: Number(data.monto_autorizacion) || 0,
-        puesto: data.puesto,
-        rfc: data.rfc,
-        curp: data.curp,
-        telefono: data.telefono,
-        estatus: data.estatus,
+        role: data.role,
+        puesto: data.puesto || data.role,
+        rfc: data.rfc || '',
+        curp: data.curp || '',
+        telefono: data.telefono || '',
+        estatus: data.estatus !== false,
         permisos: data.permisos || {},
-        fecha_registro: data.fecha_registro,
+        fecha_registro: data.fecha_registro || data.created_at,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -161,12 +179,31 @@ export function useUsuarios() {
         }
       }
 
-      // Remove password from data before updating usuarios_sistema table
-      const { password, ...dataWithoutPassword } = usuarioData;
+      // Prepare update data, mapping fields correctly
+      const updateData: any = {};
+      
+      if (usuarioData.almacen !== undefined) updateData.almacen = usuarioData.almacen;
+      if (usuarioData.nombre_completo !== undefined) {
+        updateData.name = usuarioData.nombre_completo;
+        updateData.nombre_completo = usuarioData.nombre_completo;
+      }
+      if (usuarioData.nombre_usuario !== undefined) updateData.nombre_usuario = usuarioData.nombre_usuario;
+      if (usuarioData.correo !== undefined) updateData.email = usuarioData.correo;
+      if (usuarioData.monto_autorizacion !== undefined) updateData.monto_autorizacion = usuarioData.monto_autorizacion;
+      if (usuarioData.puesto !== undefined) {
+        updateData.puesto = usuarioData.puesto;
+        // Map puesto to role for compatibility
+        updateData.role = usuarioData.puesto === 'Admin' ? 'Admin' : usuarioData.puesto === 'Vendedor' ? 'Empleado' : 'Empleado';
+      }
+      if (usuarioData.rfc !== undefined) updateData.rfc = usuarioData.rfc;
+      if (usuarioData.curp !== undefined) updateData.curp = usuarioData.curp;
+      if (usuarioData.telefono !== undefined) updateData.telefono = usuarioData.telefono;
+      if (usuarioData.estatus !== undefined) updateData.estatus = usuarioData.estatus;
+      if (usuarioData.permisos !== undefined) updateData.permisos = usuarioData.permisos;
       
       const { data, error } = await supabase
-        .from('usuarios_sistema')
-        .update(dataWithoutPassword)
+        .from('users')
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
@@ -176,18 +213,21 @@ export function useUsuarios() {
       const updatedUsuario: UsuarioSistema = {
         id: data.id,
         auth_id: data.auth_id,
-        almacen: data.almacen,
-        nombre_completo: data.nombre_completo,
-        nombre_usuario: data.nombre_usuario,
-        correo: data.correo,
+        almacen: data.almacen || '',
+        name: data.name,
+        nombre_completo: data.nombre_completo || data.name,
+        nombre_usuario: data.nombre_usuario || '',
+        email: data.email,
+        correo: data.email,
         monto_autorizacion: Number(data.monto_autorizacion) || 0,
-        puesto: data.puesto,
-        rfc: data.rfc,
-        curp: data.curp,
-        telefono: data.telefono,
-        estatus: data.estatus,
+        role: data.role,
+        puesto: data.puesto || data.role,
+        rfc: data.rfc || '',
+        curp: data.curp || '',
+        telefono: data.telefono || '',
+        estatus: data.estatus !== false,
         permisos: data.permisos || {},
-        fecha_registro: data.fecha_registro,
+        fecha_registro: data.fecha_registro || data.created_at,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -208,7 +248,7 @@ export function useUsuarios() {
   const deleteUsuario = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('usuarios_sistema')
+        .from('users')
         .delete()
         .eq('id', id);
 
