@@ -3,11 +3,13 @@ import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { ProductForm } from '../../components/Almacen/ProductosForm';
 import { useProducts } from '../../hooks/useProducts';
+import { useSublineas } from '../../hooks/useSublineas';
 import { Product } from '../../types';
 import { Plus, Edit, Trash2, Eye, X } from 'lucide-react';
 
 export function Inventario() {
   const { products, loading, error, createProduct, updateProduct, deleteProduct } = useProducts();
+  const { sublineas } = useSublineas();
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
@@ -218,7 +220,14 @@ export function Inventario() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Sublínea</label>
-                      <p className="text-gray-900">{viewingProduct.subline || 'No especificada'}</p>
+                      <p className="text-gray-900">
+                        {viewingProduct.subline || 'No especificada'}
+                        {viewingProduct.subline && (
+                          <span className="ml-2 text-xs text-gray-500">
+                            ({sublineas.find(s => s.nombre === viewingProduct.subline)?.clave || 'N/A'})
+                          </span>
+                        )}
+                      </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Unidad</label>

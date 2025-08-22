@@ -124,7 +124,7 @@ export function ListadoCompras() {
     id_factura: `FAC-${order.id.slice(-6)}`,
     folio_factura: `${index + 1}`.padStart(6, '0'),
     fecha: order.date,
-    almacen_entrada: 'BODEGA',
+    almacen_entrada: warehouses.length > 0 ? warehouses[0].name : 'ALMACEN-PRINCIPAL',
     proveedor: order.supplier_name,
     monto_total: order.total,
     estatus: 'Activo',
@@ -133,7 +133,7 @@ export function ListadoCompras() {
   }));
 
   const comprasFiltradas = comprasDetalladas.filter(compra => {
-    if (filtros.almacen_entrada && compra.almacen_entrada !== filtros.almacen_entrada) return false;
+    if (filtros.almacen_entrada && !compra.almacen_entrada.includes(filtros.almacen_entrada)) return false;
     if (filtros.proveedor && !compra.proveedor.toLowerCase().includes(filtros.proveedor.toLowerCase())) return false;
     if (filtros.folio && !compra.folio_factura.includes(filtros.folio)) return false;
     if (filtros.fecha_ini && compra.fecha < filtros.fecha_ini) return false;
@@ -225,21 +225,22 @@ export function ListadoCompras() {
       }
 
       // Get Almacen Principal ID
-      const { data: almacenPrincipal, error: almacenError } = await supabase
+      const selectedWarehouseName = newDetalle.ubicacion_fisica || 'ALMACEN-PRINCIPAL';
+      const { data: selectedWarehouse, error: almacenError } = await supabase
         .from('almacenes')
         .select('id')
-        .eq('nombre', 'ALMACEN-PRINCIPAL')
+        .eq('nombre', selectedWarehouseName)
         .maybeSingle();
 
       if (almacenError) {
-        console.error('Error finding Almacen Principal:', almacenError);
-        setValidationErrors({ general: 'No se encontró el Almacén Principal en la base de datos' });
+        console.error('Error finding warehouse:', almacenError);
+        setValidationErrors({ general: `No se encontró el almacén ${selectedWarehouseName} en la base de datos` });
         return;
       }
 
-      if (!almacenPrincipal) {
-        console.error('Almacen Principal not found');
-        setValidationErrors({ general: 'No se encontró el Almacén Principal (ALMACEN-PRINCIPAL) en la base de datos. Por favor, créelo primero.' });
+      if (!selectedWarehouse) {
+        console.error('Warehouse not found');
+        setValidationErrors({ general: `No se encontró el almacén ${selectedWarehouseName} en la base de datos. Por favor, créelo primero.` });
         return;
       }
 
@@ -307,7 +308,7 @@ export function ListadoCompras() {
       const { data: existingStock, error: stockCheckError } = await supabase
         .from('stock_almacenes')
         .select()
-        .eq('almacen_id', almacenPrincipal.id)
+        .eq('almacen_id', selectedWarehouse.id)
         .eq('product_id', productId)
         .maybeSingle();
 
@@ -326,7 +327,7 @@ export function ListadoCompras() {
         await supabase
           .from('stock_almacenes')
           .insert({
-            almacen_id: almacenPrincipal.id,
+            almacen_id: selectedWarehouse.id,
             product_id: productId,
             stock: newDetalle.cantidad
           });
@@ -387,7 +388,7 @@ export function ListadoCompras() {
       setShowForm(false);
       setPendingSubmit(false);
       setShowCostWarning(false);
-      alert(existingProduct ? 'Producto actualizado y compra registrada exitosamente' : 'Compra registrada exitosamente en Almacén Principal');
+      alert(existingProduct ? 'Producto actualizado y compra registrada exitosamente' : `Compra registrada exitosamente en ${selectedWarehouseName}`);
     } catch (err) {
       console.error('Error creating purchase:', err);
       setValidationErrors({ general: 'Error al registrar la compra: ' + (err instanceof Error ? err.message : 'Error desconocido') });

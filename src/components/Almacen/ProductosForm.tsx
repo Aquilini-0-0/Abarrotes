@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Product } from '../../types';
+import { useSublineas } from '../../hooks/useSublineas';
 import { Save, X } from 'lucide-react';
 
 interface ProductFormProps {
@@ -9,6 +10,7 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
+  const { sublineas } = useSublineas();
   const [formData, setFormData] = useState({
     name: product?.name || '',
     code: product?.code || '',
@@ -174,13 +176,18 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Sublínea
               </label>
-              <input
-                type="text"
+              <select
                 value={formData.subline}
                 onChange={(e) => handleChange('subline', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ej: Comestibles"
-              />
+              >
+                <option value="">Seleccionar sublínea</option>
+                {sublineas.map(sublinea => (
+                  <option key={sublinea.id} value={sublinea.nombre}>
+                    {sublinea.nombre}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
