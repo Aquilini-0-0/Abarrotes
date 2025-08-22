@@ -1,3 +1,11 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
 export interface Database {
   public: {
     Tables: {
@@ -9,6 +17,17 @@ export interface Database {
           email: string;
           role: 'Admin' | 'Gerente' | 'Empleado';
           avatar: string | null;
+          almacen: string | null;
+          nombre_completo: string | null;
+          nombre_usuario: string | null;
+          monto_autorizacion: number | null;
+          puesto: 'Admin' | 'Vendedor' | 'Chofer' | null;
+          rfc: string | null;
+          curp: string | null;
+          telefono: string | null;
+          estatus: boolean | null;
+          permisos: Json | null;
+          fecha_registro: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -19,6 +38,17 @@ export interface Database {
           email: string;
           role: 'Admin' | 'Gerente' | 'Empleado';
           avatar?: string | null;
+          almacen?: string | null;
+          nombre_completo?: string | null;
+          nombre_usuario?: string | null;
+          monto_autorizacion?: number | null;
+          puesto?: 'Admin' | 'Vendedor' | 'Chofer' | null;
+          rfc?: string | null;
+          curp?: string | null;
+          telefono?: string | null;
+          estatus?: boolean | null;
+          permisos?: Json | null;
+          fecha_registro?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -29,6 +59,17 @@ export interface Database {
           email?: string;
           role?: 'Admin' | 'Gerente' | 'Empleado';
           avatar?: string | null;
+          almacen?: string | null;
+          nombre_completo?: string | null;
+          nombre_usuario?: string | null;
+          monto_autorizacion?: number | null;
+          puesto?: 'Admin' | 'Vendedor' | 'Chofer' | null;
+          rfc?: string | null;
+          curp?: string | null;
+          telefono?: string | null;
+          estatus?: boolean | null;
+          permisos?: Json | null;
+          fecha_registro?: string | null;
           created_at?: string;
           updated_at?: string;
         };
