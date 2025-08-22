@@ -82,10 +82,31 @@ export function useUsuarios() {
 
   const createUsuario = async (usuarioData: Omit<UsuarioSistema, 'id' | 'created_at' | 'updated_at' | 'fecha_registro'>) => {
     try {
+      // First create the authentication user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: usuarioData.correo,
+        password: usuarioData.password,
+        options: {
+          data: {
+            name: usuarioData.nombre_completo,
+            role: usuarioData.puesto
+          }
+        }
+      });
+
+      if (authError) {
+        throw new Error('Error creating authentication: ' + authError.message);
+      }
+
+      if (!authData.user?.id) {
+        throw new Error('No authentication user ID returned');
+      }
+
+      // Then create the user profile in users table with auth_id
       const { data, error } = await supabase
         .from('users')
         .insert([{
-          auth_id: null, // Will be set when user first logs in
+          auth_id: authData.user.id, // Link to the authentication user
           name: usuarioData.nombre_completo,
           email: usuarioData.correo,
           role: usuarioData.puesto === 'Admin' ? 'Admin' : usuarioData.puesto === 'Vendedor' ? 'Empleado' : 'Empleado',
@@ -97,7 +118,7 @@ export function useUsuarios() {
 
       const newUsuario: UsuarioSistema = {
         id: data.id,
-        auth_id: data.auth_id,
+        auth_id: authData.user.id,
         almacen: usuarioData.almacen,
         name: data.name,
         nombre_completo: data.name,
