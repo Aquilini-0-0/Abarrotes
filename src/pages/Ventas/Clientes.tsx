@@ -2,13 +2,17 @@ import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useClients } from '../../hooks/useClients';
+import { useSales } from '../../hooks/useSales';
 import { Client } from '../../types';
 import { AutocompleteInput } from '../../components/Common/AutocompleteInput';
-import { Plus, MapPin, Phone, Mail, CreditCard, Edit, Trash2 } from 'lucide-react';
+import { Plus, MapPin, Phone, Mail, CreditCard, Edit, Trash2, Eye, X } from 'lucide-react';
 
 export function Clientes() {
   const { clients, loading, error, createClient, updateClient, deleteClient } = useClients();
+  const { sales } = useSales();
   const [showForm, setShowForm] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [newClient, setNewClient] = useState({
     name: '',
@@ -81,6 +85,11 @@ export function Clientes() {
     setShowForm(true);
   };
 
+  const handleViewHistory = (client: Client) => {
+    setSelectedClient(client);
+    setShowHistoryModal(true);
+  };
+
   const handleDelete = async (clientId: string) => {
     if (confirm('¿Está seguro de eliminar este cliente?')) {
       try {
@@ -92,6 +101,16 @@ export function Clientes() {
       }
     }
   };
+
+  // Calculate total purchases for each client
+  const clientsWithTotals = clients.map(client => {
+    const clientSales = sales.filter(sale => sale.client_id === client.id);
+    const totalCompras = clientSales.reduce((sum, sale) => sum + sale.total, 0);
+    return {
+      ...client,
+      total_compras: totalCompras
+    };
+  });
 
   if (loading) {
     return (
@@ -155,11 +174,27 @@ export function Clientes() {
         </span>
       )
     },
+    { 
+      key: 'total_compras', 
+      label: 'Total Compras',
+      render: (value: number) => (
+        <span className="font-semibold text-blue-600">
+          ${(value || 0).toLocaleString('es-MX')}
+        </span>
+      )
+    },
     {
       key: 'actions',
       label: 'Acciones',
-      render: (_, client: any) => (
+      render: (_, client: Client & { total_compras: number }) => (
         <div className="flex space-x-2">
+          <button
+            onClick={() => handleViewHistory(client)}
+            className="p-1 text-green-600 hover:text-green-800 hover:bg-green-100 rounded"
+            title="Ver historial de compras"
+          >
+            <Eye size={16} />
+          </button>
           <button
             onClick={() => handleEdit(client)}
             className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded"
@@ -256,7 +291,7 @@ export function Clientes() {
         <div className="lg:col-span-2">
           <Card title="Lista de Clientes">
             <DataTable
-              data={clients}
+              data={clientsWithTotals}
               columns={columns}
               title="Clientes Registrados"
             />
@@ -676,6 +711,125 @@ export function Clientes() {
           </Card>
         </div>
       </div>
+
+      {/* History Modal */}
+      {showHistoryModal && selectedClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 bg-green-600 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-white">
+                  Historial de Compras - {selectedClient.name}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowHistoryModal(false);
+                    setSelectedClient(null);
+                  }}
+                  className="text-white hover:text-gray-200"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Client Summary */}
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">Cliente:</span>
+                    <p className="text-gray-900 font-medium">{selectedClient.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">RFC:</span>
+                    <p className="text-gray-900 font-mono">{selectedClient.rfc}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">Total Compras:</span>
+                    <p className="text-green-600 font-bold text-lg">
+                      ${sales.filter(s => s.client_id === selectedClient.id).reduce((sum, s) => sum + s.total, 0).toLocaleString('es-MX')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sales History */}
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                  <h3 className="font-semibold text-gray-900">Historial de Ventas</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left p-3 text-gray-700 font-semibold">Fecha</th>
+                        <th className="text-left p-3 text-gray-700 font-semibold">Folio</th>
+                        <th className="text-center p-3 text-gray-700 font-semibold">Productos</th>
+                        <th className="text-right p-3 text-gray-700 font-semibold">Total</th>
+                        <th className="text-center p-3 text-gray-700 font-semibold">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sales
+                        .filter(sale => sale.client_id === selectedClient.id)
+                        .map((sale, index) => (
+                          <tr key={sale.id} className={`border-b border-gray-200 ${
+                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                          }`}>
+                            <td className="p-3 text-gray-900">
+                              {new Date(sale.date).toLocaleDateString('es-MX')}
+                            </td>
+                            <td className="p-3 font-mono text-blue-600">
+                              #{sale.id.slice(-6).toUpperCase()}
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                                {sale.items.length} productos
+                              </span>
+                            </td>
+                            <td className="p-3 text-right font-mono font-bold text-green-600">
+                              ${sale.total.toLocaleString('es-MX')}
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                sale.status === 'paid' ? 'bg-green-100 text-green-800' :
+                                sale.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {sale.status === 'paid' ? 'Pagado' : 
+                                 sale.status === 'pending' ? 'Pendiente' : 'Guardado'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      {sales.filter(s => s.client_id === selectedClient.id).length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="p-8 text-center text-gray-500">
+                            No hay compras registradas para este cliente
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-4 mt-6 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowHistoryModal(false);
+                    setSelectedClient(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
