@@ -94,7 +94,16 @@ export function ReportesVentas() {
     { key: 'cliente', label: 'Cliente', sortable: true },
     { key: 'razon_social', label: 'Razón Social', sortable: true },
     { key: 'producto', label: 'Producto', sortable: true },
-    { key: 'um', label: 'UM', sortable: true },
+    { 
+      key: 'um', 
+      label: 'UM', 
+      sortable: true,
+      render: (_, row: any) => {
+        // Get the product unit from the products array
+        const product = products?.find(p => p.name === row.producto);
+        return product?.unit || 'PZA';
+      }
+    },
     { key: 'num_precio', label: 'Núm. Precio', sortable: true },
     { 
       key: 'cantidad', 

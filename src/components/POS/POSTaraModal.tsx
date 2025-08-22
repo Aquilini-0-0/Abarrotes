@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
 import { X, Package, Scale, Calculator } from 'lucide-react';
 import { POSProduct } from '../../types/pos';
-
-interface TaraOption {
-  id: string;
-  name: string;
-  weight: number; // Peso en KG
-}
+import { useTaras } from '../../hooks/useTaras';
 
 interface POSTaraModalProps {
   product: POSProduct;
@@ -18,7 +13,8 @@ interface POSTaraModalProps {
 }
 
 export function POSTaraModal({ product, quantity, priceLevel, client, onClose, onConfirm }: POSTaraModalProps) {
-  const [selectedTara, setSelectedTara] = useState<TaraOption | null>(null);
+  const { taras, loading: tarasLoading } = useTaras();
+  const [selectedTara, setSelectedTara] = useState<any>(null);
   const [pesoBruto, setPesoBruto] = useState(0);
   const [cantidadCajas, setCantidadCajas] = useState(1);
   const [currentPriceLevel, setCurrentPriceLevel] = useState<1 | 2 | 3 | 4 | 5>(1);
@@ -34,15 +30,7 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
     setCurrentPriceLevel(client.default_price_level);
   }, [client, onClose]);
 
-  const taraOptions: TaraOption[] = [
-    { id: '1', name: 'SIN TARA/VENTA POR PIEZA', weight: 0.0 },
-    { id: '2', name: 'MADERA', weight: 2.5 },
-    { id: '3', name: 'PLÁSTICO GRANDE', weight: 2.0 },
-    { id: '4', name: 'PLÁSTICO CHICO', weight: 1.5 },
-    { id: '5', name: 'PLÁSTICO CHICO', weight: 1.6 }
-  ];
-
-  const pesoTaraTotal = selectedTara ? selectedTara.weight * cantidadCajas : 0;
+  const pesoTaraTotal = selectedTara ? selectedTara.peso * cantidadCajas : 0;
   const pesoNeto = pesoBruto - pesoTaraTotal;
   const precioKilo = product.prices[`price${currentPriceLevel}`] || 0;
   const precioFinal = pesoNeto * precioKilo;
@@ -58,7 +46,7 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
       return;
     }
 
-    if (pesoBruto <= 0 && selectedTara.id !== '1') {
+    if (pesoBruto <= 0 && selectedTara.nombre !== 'SIN TARA/VENTA POR PIEZA') {
       alert('El peso bruto debe ser mayor a 0');
       return;
     }
@@ -67,7 +55,7 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
     let finalQuantity: number;
     let finalUnitPrice: number;
     
-    if (selectedTara.id === '1') {
+    if (selectedTara.nombre === 'SIN TARA/VENTA POR PIEZA') {
       // SIN TARA: Use manual kilos input and calculate final price
       if (pesoBruto <= 0) {
         alert('Debe ingresar los kilos para venta sin tara');
@@ -173,6 +161,13 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
             <div>
               <h3 className="font-semibold text-gray-900 mb-4 text-lg">Selección de Tara</h3>
               <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                {tarasLoading ? (
+                  <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-500">Cargando taras...</p>
+                  </div>
+                ) : (
+                  <>
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
@@ -182,7 +177,7 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
                     </tr>
                   </thead>
                   <tbody>
-                    {taraOptions.map(tara => (
+                    {taras.map(tara => (
                       <tr
                         key={tara.id}
                         className={`border-b border-gray-200 cursor-pointer transition-colors ${
@@ -192,8 +187,8 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
                         }`}
                         onClick={() => setSelectedTara(tara)}
                       >
-                        <td className="p-3 font-medium text-gray-900">{tara.name}</td>
-                        <td className="p-3 text-right font-mono text-gray-700">{tara.weight.toFixed(1)}</td>
+                        <td className="p-3 font-medium text-gray-900">{tara.nombre}</td>
+                        <td className="p-3 text-right font-mono text-gray-700">{tara.peso.toFixed(3)}</td>
                         <td className="p-3 text-center">
                           <input
                             type="radio"
@@ -207,6 +202,8 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
                     ))}
                   </tbody>
                 </table>
+                  </>
+                )}
               </div>
             </div>
 
@@ -216,7 +213,7 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {selectedTara?.id === '1' ? 'Kilos a Vender *' : 'Peso Bruto (KG) *'}
+                    {selectedTara?.nombre === 'SIN TARA/VENTA POR PIEZA' ? 'Kilos a Vender *' : 'Peso Bruto (KG) *'}
                   </label>
                   <input
                     type="number"
@@ -224,7 +221,7 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
                     value={pesoBruto}
                     onChange={(e) => setPesoBruto(parseFloat(e.target.value) || 0)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-lg font-mono text-center"
-                    placeholder={selectedTara?.id === '1' ? 'Kilos a vender' : 'Peso bruto'}
+                    placeholder={selectedTara?.nombre === 'SIN TARA/VENTA POR PIEZA' ? 'Kilos a vender' : 'Peso bruto'}
                     min="0"
                   />
                 </div>
@@ -253,7 +250,7 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
                       <span className="text-gray-600">Peso Bruto:</span>
                       <span className="font-mono font-bold text-gray-900">{pesoBruto.toFixed(2)} kg</span>
                     </div>
-                    {selectedTara?.id !== '1' && (
+                    {selectedTara?.nombre !== 'SIN TARA/VENTA POR PIEZA' && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Peso Tara Total:</span>
                       <span className="font-mono font-bold text-red-600">-{pesoTaraTotal.toFixed(2)} kg</span>
@@ -261,12 +258,12 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
                     )}
                     <div className="border-t border-gray-300 pt-2 flex justify-between">
                       <span className="font-semibold text-gray-900">
-                        {selectedTara?.id === '1' ? 'Kilos a Vender:' : 'Peso Neto:'}
+                        {selectedTara?.nombre === 'SIN TARA/VENTA POR PIEZA' ? 'Kilos a Vender:' : 'Peso Neto:'}
                       </span>
                       <span className={`font-mono font-bold text-lg ${
-                        (selectedTara?.id === '1' ? pesoBruto : pesoNeto) > 0 ? 'text-green-600' : 'text-red-600'
+                        (selectedTara?.nombre === 'SIN TARA/VENTA POR PIEZA' ? pesoBruto : pesoNeto) > 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {(selectedTara?.id === '1' ? pesoBruto : pesoNeto).toFixed(2)} kg
+                        {(selectedTara?.nombre === 'SIN TARA/VENTA POR PIEZA' ? pesoBruto : pesoNeto).toFixed(2)} kg
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -276,14 +273,14 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
                     <div className="border-t border-gray-300 pt-2 flex justify-between">
                       <span className="font-bold text-gray-900 text-lg">Precio Final:</span>
                       <span className="font-mono font-bold text-orange-600 text-xl">
-                        ${(selectedTara?.id === '1' ? pesoBruto * precioKilo : precioFinal).toFixed(2)}
+                        ${(selectedTara?.nombre === 'SIN TARA/VENTA POR PIEZA' ? pesoBruto * precioKilo : precioFinal).toFixed(2)}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Validation Messages */}
-                {selectedTara?.id !== '1' && pesoNeto <= 0 && pesoBruto > 0 && (
+                {selectedTara?.nombre !== 'SIN TARA/VENTA POR PIEZA' && pesoNeto <= 0 && pesoBruto > 0 && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                     <div className="flex items-center">
                       <X className="w-4 h-4 text-red-600 mr-2" />
@@ -294,7 +291,7 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
                   </div>
                 )}
 
-                {(selectedTara?.id === '1' ? pesoBruto : pesoNeto) > product.stock && (
+                {(selectedTara?.nombre === 'SIN TARA/VENTA POR PIEZA' ? pesoBruto : pesoNeto) > product.stock && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                     <div className="flex items-center">
                       <Package className="w-4 h-4 text-yellow-600 mr-2" />
@@ -318,7 +315,7 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!selectedTara || (selectedTara.id !== '1' && pesoNeto <= 0) || (selectedTara.id === '1' && pesoBruto <= 0)}
+              disabled={!selectedTara || (selectedTara.nombre !== 'SIN TARA/VENTA POR PIEZA' && pesoNeto <= 0) || (selectedTara.nombre === 'SIN TARA/VENTA POR PIEZA' && pesoBruto <= 0)}
               className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-colors shadow-lg"
             >
               Agregar al Pedido

@@ -50,12 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (userProfile) {
           // Check if user has Admin role for ERS access
-          if (userProfile.role !== 'Admin') {
-            console.log('User does not have Admin role, denying ERS access');
-            await signOut(); // Sign out the user
-            setLoading(false);
-            return false;
-          }
+          // Allow all users to access ERS but with limited permissions
+          // Only Admin role has full access
 
           const userData: User = {
             id: userProfile.id,

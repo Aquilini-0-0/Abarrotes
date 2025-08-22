@@ -34,6 +34,9 @@ const menuItems = [
     title: 'Almacén Reportes',
     items: [
       { name: 'Kárdex de Movimientos', path: '/almacen/kardex', icon: FileText },
+      { name: 'Listado de Taras', path: '/almacen/listado-taras', icon: Package },
+      { name: 'Usuarios', path: '/almacen/usuarios', icon: Users },
+      { name: 'Listado de Sublíneas', path: '/almacen/listado-sublineas', icon: Package },
       { name: 'Reporte de Ajustes', path: '/almacen/reporte-ajustes', icon: FileText },
       { name: 'Reporte de Inventario', path: '/almacen/reporte-inventario', icon: Warehouse },
       { name: 'Reporte con Costos', path: '/almacen/reporte-costos', icon: Calculator },

@@ -31,6 +31,9 @@ import { HeaderOnly } from './components/POS/HeaderOnly';
 // New imports for modified pages
 import { ListadoCompras } from './pages/Almacen/ListadoCompras';
 import { EstadoTraspaso } from './pages/Almacen/EstadoTraspaso';
+import { ListadoTaras } from './pages/Almacen/ListadoTaras';
+import { Usuarios } from './pages/Almacen/Usuarios';
+import { ListadoSublineas } from './pages/Almacen/ListadoSublineas';
 import { ListadoRemisiones } from './pages/Ventas/ListadoRemisiones';
 import { ReporteInventarioVentas } from './pages/Ventas/ReporteInventarioVentas';
 import { ReporteVentasCaja } from './pages/Ventas/ReporteVentasCaja';
@@ -164,6 +167,21 @@ function AppRoutes() {
       <Route path="/almacen/kardex" element={
         <ProtectedERPRoute>
           <Kardex />
+        </ProtectedERPRoute>
+      } />
+      <Route path="/almacen/listado-taras" element={
+        <ProtectedERPRoute>
+          <ListadoTaras />
+        </ProtectedERPRoute>
+      } />
+      <Route path="/almacen/usuarios" element={
+        <ProtectedERPRoute>
+          <Usuarios />
+        </ProtectedERPRoute>
+      } />
+      <Route path="/almacen/listado-sublineas" element={
+        <ProtectedERPRoute>
+          <ListadoSublineas />
         </ProtectedERPRoute>
       } />
       
