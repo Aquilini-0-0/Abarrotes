@@ -46,7 +46,7 @@ export function useUsuarios() {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .order('nombre_completo', { ascending: true });
+        .order('name', { ascending: true });
 
       if (error) throw error;
 
