@@ -113,7 +113,7 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
               padding: 20mm;
             }
             .logo { text-align: left; margin-bottom: 20px; }
-            .logo img { transform: scale(1.5); }
+            .logo img { max-width: 250px; height: auto; }
             .header { 
               text-align: left; 
               margin-bottom: 40px; 
