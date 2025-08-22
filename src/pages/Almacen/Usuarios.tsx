@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useUsuarios, UsuarioSistema } from '../../hooks/useUsuarios';
+import { useWarehouseTransfers } from '../../hooks/useWarehouseTransfers';
 import { Plus, Edit, Trash2, Eye, Search, User, Shield, Settings, X } from 'lucide-react';
 
 export function Usuarios() {
   const { usuarios, loading, error, createUsuario, updateUsuario, deleteUsuario } = useUsuarios();
+  const { warehouses, loading: warehousesLoading } = useWarehouseTransfers();
   const [showForm, setShowForm] = useState(false);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -16,6 +18,7 @@ export function Usuarios() {
     almacen: '',
     nombre_completo: '',
     nombre_usuario: '',
+    password: '',
     correo: '',
     monto_autorizacion: 0,
     puesto: 'Vendedor' as 'Admin' | 'Vendedor' | 'Chofer',
@@ -56,9 +59,19 @@ export function Usuarios() {
       return;
     }
 
+    if (!editingUsuario && !newUsuario.password.trim()) {
+      alert('La contraseña es requerida');
+      return;
+    }
+
     try {
       if (editingUsuario) {
-        await updateUsuario(editingUsuario.id, newUsuario);
+        // For updates, only include password if it's provided
+        const updateData = { ...newUsuario };
+        if (!newUsuario.password.trim()) {
+          delete updateData.password;
+        }
+        await updateUsuario(editingUsuario.id, updateData);
         alert('Usuario actualizado exitosamente');
         setEditingUsuario(null);
       } else {
@@ -70,6 +83,7 @@ export function Usuarios() {
         almacen: '',
         nombre_completo: '',
         nombre_usuario: '',
+        password: '',
         correo: '',
         monto_autorizacion: 0,
         puesto: 'Vendedor',
@@ -104,6 +118,7 @@ export function Usuarios() {
       almacen: usuario.almacen,
       nombre_completo: usuario.nombre_completo,
       nombre_usuario: usuario.nombre_usuario,
+      password: '', // Don't pre-fill password for security
       correo: usuario.correo,
       monto_autorizacion: usuario.monto_autorizacion,
       puesto: usuario.puesto,
@@ -127,6 +142,7 @@ export function Usuarios() {
       almacen: usuario.almacen,
       nombre_completo: usuario.nombre_completo,
       nombre_usuario: usuario.nombre_usuario,
+      password: '',
       correo: usuario.correo,
       monto_autorizacion: usuario.monto_autorizacion,
       puesto: usuario.puesto,
@@ -318,6 +334,7 @@ export function Usuarios() {
                       almacen: '',
                       nombre_completo: '',
                       nombre_usuario: '',
+                      password: '',
                       correo: '',
                       monto_autorizacion: 0,
                       puesto: 'Vendedor',
@@ -353,13 +370,21 @@ export function Usuarios() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Almacén
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={newUsuario.almacen}
                     onChange={(e) => setNewUsuario(prev => ({ ...prev, almacen: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ej: ALMACEN-PRINCIPAL"
-                  />
+                    disabled={warehousesLoading}
+                  >
+                    <option value="">
+                      {warehousesLoading ? 'Cargando almacenes...' : 'Seleccionar almacén'}
+                    </option>
+                    {warehouses.map(warehouse => (
+                      <option key={warehouse.id} value={warehouse.name}>
+                        {warehouse.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -387,6 +412,20 @@ export function Usuarios() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Ej: jperez"
                     required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Contraseña {editingUsuario ? '(dejar vacío para mantener actual)' : '*'}
+                  </label>
+                  <input
+                    type="password"
+                    value={newUsuario.password}
+                    onChange={(e) => setNewUsuario(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder={editingUsuario ? "Nueva contraseña..." : "Contraseña..."}
+                    required={!editingUsuario}
                   />
                 </div>
 
