@@ -12,12 +12,15 @@ export function POSPrintPricesModal({ onClose }: POSPrintPricesModalProps) {
   const [selectedPriceLevel, setSelectedPriceLevel] = useState<1 | 2 | 3 | 4 | 5>(1);
 
   const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.code.toLowerCase().includes(searchTerm.toLowerCase())
+    product.status === 'active' && (
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.code.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   const handlePrintPrices = () => {
-    const priceList = filteredProducts.map(product => {
+    const activeProducts = filteredProducts.filter(product => product.status === 'active');
+    const priceList = activeProducts.map(product => {
       const price = product[`price${selectedPriceLevel}` as keyof typeof product] || 0;
       return `$${(price as number).toFixed(2)} - ${product.name.toUpperCase()}`;
     }
@@ -28,7 +31,7 @@ PRECIO PRODUCTO
 ================
 ${priceList}
 ================
-Total productos: ${filteredProducts.length}
+Total productos: ${activeProducts.length}
 Generado: ${new Date().toLocaleString('es-MX')}
     `;
 
@@ -63,11 +66,11 @@ Generado: ${new Date().toLocaleString('es-MX')}
           </div>
           <div class="header">PRECIO PRODUCTO</div>
           <div class="header">================</div>
-          ${filteredProducts.map(product => 
+          ${activeProducts.map(product => 
             `<div class="price-line">$${((product[`price${selectedPriceLevel}` as keyof typeof product] as number) || 0).toFixed(2)} - ${product.name.toUpperCase()}</div>`
           ).join('')}
           <div class="footer">================</div>
-          <div class="footer">Total productos: ${filteredProducts.length}</div>
+          <div class="footer">Total productos: ${activeProducts.length}</div>
           <div class="footer">Generado: ${new Date().toLocaleString('es-MX')}</div>
         </body>
         </html>
@@ -224,11 +227,11 @@ Generado: ${new Date().toLocaleString('es-MX')}
           <div className="flex items-center justify-center">
             <button
               onClick={handlePrintPrices}
-              disabled={filteredProducts.length === 0}
+              disabled={filteredProducts.filter(p => p.status === 'active').length === 0}
               className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed font-bold shadow-lg"
             >
               <Printer size={20} />
-              <span>Imprimir Precio Nivel {selectedPriceLevel} ({filteredProducts.length} productos)</span>
+              <span>Imprimir Precio Nivel {selectedPriceLevel} ({filteredProducts.filter(p => p.status === 'active').length} productos)</span>
             </button>
           </div>
         </div>
