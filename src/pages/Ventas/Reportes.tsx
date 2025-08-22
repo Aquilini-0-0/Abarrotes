@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useSales } from '../../hooks/useSales';
+import { useProducts } from '../../hooks/useProducts';
 import { BarChart3, TrendingUp, DollarSign, ShoppingCart, Eye, X, User, FileText, Calculator, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAutoSync } from '../../hooks/useAutoSync';
 
 export function ReportesVentas() {
   const { sales, loading, error } = useSales();
+  const { products } = useProducts();
   const [selectedSale, setSelectedSale] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [viewMode, setViewMode] = useState<'detailed' | 'summary' | 'extended'>('extended');
