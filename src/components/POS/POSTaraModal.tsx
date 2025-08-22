@@ -35,7 +35,7 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
   }, [client, onClose]);
 
   const taraOptions: TaraOption[] = [
-    { id: '1', name: 'SIN TARA', weight: 0.0 },
+    { id: '1', name: 'SIN TARA/VENTA POR PIEZA', weight: 0.0 },
     { id: '2', name: 'MADERA', weight: 2.5 },
     { id: '3', name: 'PLÁSTICO GRANDE', weight: 2.0 },
     { id: '4', name: 'PLÁSTICO CHICO', weight: 1.5 },
