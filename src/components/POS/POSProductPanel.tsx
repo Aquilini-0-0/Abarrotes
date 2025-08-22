@@ -157,17 +157,7 @@ export function POSProductPanel({
           </div>
 
           {/* Client Price Level Indicator */}
-          <div className="col-span-2 sm:col-span-2">
-            <label className="block text-orange-50 text-[10px] sm:text-xs mb-0.5 sm:mb-1 font-medium">Precio</label>
-            <div className="bg-white border border-orange-300 text-gray-900 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-1 lg:py-2 rounded-lg text-center font-bold text-[10px] sm:text-xs lg:text-sm">
-              P{effectivePriceLevel}
-            </div>
-            {selectedClient && (
-              <div className="text-orange-100 text-[8px] sm:text-[10px] text-center mt-0.5">
-                Cliente: P{selectedClient.default_price_level}
-              </div>
-            )}
-          </div>
+
         </div>
 
       </div>
