@@ -295,9 +295,6 @@ export function ListadoRemisiones() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="BODEGA">BODEGA</option>
-              <option value="SUCURSAL-CENTRO">SUCURSAL-CENTRO</option>
-              <option value="SUCURSAL-NORTE">SUCURSAL-NORTE</option>
-              <option value="SUCURSAL-SUR">SUCURSAL-SUR</option>
             </select>
           </div>
 
