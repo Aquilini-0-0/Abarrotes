@@ -234,7 +234,11 @@ export function POSRemisionesModal({ onClose }: POSRemisionesModalProps) {
         </head>
         <body>
           <div class="logo">
-            <img src="${window.location.origin}/logoduran2.png" alt="DURAN" />
+           <img 
+  src="https://raw.githubusercontent.com/Aquilini-0-0/Abarrotes/main/public/logoduran2.png" 
+  alt="DURAN" 
+/>
+
           </div>
           <div class="header">
             <div class="company-name">DURAN ERP</div>
