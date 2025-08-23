@@ -15,46 +15,35 @@ export function Usuarios() {
   const [viewingUsuario, setViewingUsuario] = useState<UsuarioSistema | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [newUsuario, setNewUsuario] = useState({
-    almacen: '',
-    nombre_completo: '',
-    nombre_usuario: '',
+    name: '',
+    email: '',
+    role: 'Empleado' as 'Admin' | 'Gerente' | 'Empleado',
     password: '',
-    correo: '',
-    monto_autorizacion: 0,
-    puesto: 'Vendedor' as 'Admin' | 'Vendedor' | 'Chofer',
     rfc: '',
     curp: '',
     telefono: '',
-    estatus: true,
-    permisos: {
-      agregar_clientes: false,
-      corte_normal: false,
-      deshabilitar_reimpresiones: false,
-      habilitar_cancelaciones: false,
-      habilitar_cobro_directo: false,
-      habilitar_precio_libre: false,
-      habilitar_venta_sin_existencia: false,
-      habilitar_ventas_credito: false,
-      habilitar_ventas_especiales: false,
-      mostrar_registro_anticipos: false,
-      ver_imprimir_cortes: false
-    }
+    permiso_corte_normal: false,
+    permiso_des_reimpresion_remisiones: false,
+    permiso_cancelaciones: false,
+    permiso_cobro_directo: false,
+    permiso_precio_libre: false,
+    permiso_venta_sin_existencia: false,
+    permiso_ventas_credito: false,
+    permiso_ventas_especiales: false,
+    permiso_antipos: false,
+    permiso_ver_imprimir_cortes: false,
+    permiso_agregar_clientes: false
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newUsuario.nombre_completo.trim()) {
+    if (!newUsuario.name.trim()) {
       alert('El nombre completo es requerido');
       return;
     }
     
-    if (!newUsuario.nombre_usuario.trim()) {
-      alert('El nombre de usuario es requerido');
-      return;
-    }
-    
-    if (!newUsuario.correo.trim()) {
+    if (!newUsuario.email.trim()) {
       alert('El correo es requerido');
       return;
     }
@@ -66,11 +55,8 @@ export function Usuarios() {
 
     try {
       if (editingUsuario) {
-        // For updates, only include password if it's provided
-        const updateData = { ...newUsuario };
-        if (!newUsuario.password.trim()) {
-          delete updateData.password;
-        }
+        // For updates, don't include password (auth updates would need separate handling)
+        const { password, ...updateData } = newUsuario;
         await updateUsuario(editingUsuario.id, updateData);
         alert('Usuario actualizado exitosamente');
         setEditingUsuario(null);
@@ -80,30 +66,24 @@ export function Usuarios() {
       }
       
       setNewUsuario({
-        almacen: '',
-        nombre_completo: '',
-        nombre_usuario: '',
+        name: '',
+        email: '',
+        role: 'Empleado',
         password: '',
-        correo: '',
-        monto_autorizacion: 0,
-        puesto: 'Vendedor',
         rfc: '',
         curp: '',
         telefono: '',
-        estatus: true,
-        permisos: {
-          agregar_clientes: false,
-          corte_normal: false,
-          deshabilitar_reimpresiones: false,
-          habilitar_cancelaciones: false,
-          habilitar_cobro_directo: false,
-          habilitar_precio_libre: false,
-          habilitar_venta_sin_existencia: false,
-          habilitar_ventas_credito: false,
-          habilitar_ventas_especiales: false,
-          mostrar_registro_anticipos: false,
-          ver_imprimir_cortes: false
-        }
+        permiso_corte_normal: false,
+        permiso_des_reimpresion_remisiones: false,
+        permiso_cancelaciones: false,
+        permiso_cobro_directo: false,
+        permiso_precio_libre: false,
+        permiso_venta_sin_existencia: false,
+        permiso_ventas_credito: false,
+        permiso_ventas_especiales: false,
+        permiso_antipos: false,
+        permiso_ver_imprimir_cortes: false,
+        permiso_agregar_clientes: false
       });
       setShowForm(false);
     } catch (err) {
@@ -115,18 +95,24 @@ export function Usuarios() {
   const handleEdit = (usuario: UsuarioSistema) => {
     setEditingUsuario(usuario);
     setNewUsuario({
-      almacen: usuario.almacen,
-      nombre_completo: usuario.nombre_completo,
-      nombre_usuario: usuario.nombre_usuario,
+      name: usuario.name,
+      email: usuario.email,
+      role: usuario.role,
       password: '', // Don't pre-fill password for security
-      correo: usuario.correo,
-      monto_autorizacion: usuario.monto_autorizacion,
-      puesto: usuario.puesto,
       rfc: usuario.rfc,
       curp: usuario.curp,
       telefono: usuario.telefono,
-      estatus: usuario.estatus,
-      permisos: usuario.permisos
+      permiso_corte_normal: usuario.permiso_corte_normal,
+      permiso_des_reimpresion_remisiones: usuario.permiso_des_reimpresion_remisiones,
+      permiso_cancelaciones: usuario.permiso_cancelaciones,
+      permiso_cobro_directo: usuario.permiso_cobro_directo,
+      permiso_precio_libre: usuario.permiso_precio_libre,
+      permiso_venta_sin_existencia: usuario.permiso_venta_sin_existencia,
+      permiso_ventas_credito: usuario.permiso_ventas_credito,
+      permiso_ventas_especiales: usuario.permiso_ventas_especiales,
+      permiso_antipos: usuario.permiso_antipos,
+      permiso_ver_imprimir_cortes: usuario.permiso_ver_imprimir_cortes,
+      permiso_agregar_clientes: usuario.permiso_agregar_clientes
     });
     setShowForm(true);
   };
@@ -139,18 +125,24 @@ export function Usuarios() {
   const handlePermissions = (usuario: UsuarioSistema) => {
     setEditingUsuario(usuario);
     setNewUsuario({
-      almacen: usuario.almacen,
-      nombre_completo: usuario.nombre_completo,
-      nombre_usuario: usuario.nombre_usuario,
+      name: usuario.name,
+      email: usuario.email,
+      role: usuario.role,
       password: '',
-      correo: usuario.correo,
-      monto_autorizacion: usuario.monto_autorizacion,
-      puesto: usuario.puesto,
       rfc: usuario.rfc,
       curp: usuario.curp,
       telefono: usuario.telefono,
-      estatus: usuario.estatus,
-      permisos: usuario.permisos
+      permiso_corte_normal: usuario.permiso_corte_normal,
+      permiso_des_reimpresion_remisiones: usuario.permiso_des_reimpresion_remisiones,
+      permiso_cancelaciones: usuario.permiso_cancelaciones,
+      permiso_cobro_directo: usuario.permiso_cobro_directo,
+      permiso_precio_libre: usuario.permiso_precio_libre,
+      permiso_venta_sin_existencia: usuario.permiso_venta_sin_existencia,
+      permiso_ventas_credito: usuario.permiso_ventas_credito,
+      permiso_ventas_especiales: usuario.permiso_ventas_especiales,
+      permiso_antipos: usuario.permiso_antipos,
+      permiso_ver_imprimir_cortes: usuario.permiso_ver_imprimir_cortes,
+      permiso_agregar_clientes: usuario.permiso_agregar_clientes
     });
     setShowPermissionsModal(true);
   };
@@ -168,38 +160,25 @@ export function Usuarios() {
   };
 
   const filteredUsuarios = usuarios.filter(usuario =>
-    usuario.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    usuario.nombre_usuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    usuario.correo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    usuario.almacen.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    usuario.puesto.toLowerCase().includes(searchTerm.toLowerCase())
+    usuario.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    usuario.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    usuario.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const columns = [
-    { key: 'almacen', label: 'Almacén', sortable: true },
-    { key: 'nombre_completo', label: 'Nombre', sortable: true },
+    { key: 'name', label: 'Nombre', sortable: true },
+    { key: 'email', label: 'Email', sortable: true },
     { 
-      key: 'puesto', 
+      key: 'role', 
       label: 'Cargo', 
       sortable: true,
       render: (value: string) => (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
           value === 'Admin' ? 'bg-red-100 text-red-800' :
-          value === 'Vendedor' ? 'bg-blue-100 text-blue-800' :
+          value === 'Gerente' ? 'bg-blue-100 text-blue-800' :
           'bg-green-100 text-green-800'
         }`}>
           {value}
-        </span>
-      )
-    },
-    {
-      key: 'estatus',
-      label: 'Estatus',
-      render: (value: boolean) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
-          {value ? 'Habilitado' : 'Deshabilitado'}
         </span>
       )
     },
@@ -242,8 +221,8 @@ export function Usuarios() {
   ];
 
   const totalUsuarios = usuarios.length;
-  const usuariosActivos = usuarios.filter(u => u.estatus).length;
-  const administradores = usuarios.filter(u => u.puesto === 'Admin').length;
+  const usuariosActivos = usuarios.length; // All users are considered active
+  const administradores = usuarios.filter(u => u.role === 'Admin').length;
 
   return (
     <div className="space-y-6">
@@ -366,26 +345,6 @@ export function Usuarios() {
 
             <form onSubmit={handleSubmit} className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Almacén
-                  </label>
-                  <select
-                    value={newUsuario.almacen}
-                    onChange={(e) => setNewUsuario(prev => ({ ...prev, almacen: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={warehousesLoading}
-                  >
-                    <option value="">
-                      {warehousesLoading ? 'Cargando almacenes...' : 'Seleccionar almacén'}
-                    </option>
-                    {warehouses.map(warehouse => (
-                      <option key={warehouse.id} value={warehouse.name}>
-                        {warehouse.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -393,8 +352,8 @@ export function Usuarios() {
                   </label>
                   <input
                     type="text"
-                    value={newUsuario.nombre_completo}
-                    onChange={(e) => setNewUsuario(prev => ({ ...prev, nombre_completo: e.target.value }))}
+                    value={newUsuario.name}
+                    onChange={(e) => setNewUsuario(prev => ({ ...prev, name: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Ej: Juan Pérez García"
                     required
@@ -403,14 +362,14 @@ export function Usuarios() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre de Usuario *
+                    Correo Electrónico *
                   </label>
                   <input
-                    type="text"
-                    value={newUsuario.nombre_usuario}
-                    onChange={(e) => setNewUsuario(prev => ({ ...prev, nombre_usuario: e.target.value }))}
+                    type="email"
+                    value={newUsuario.email}
+                    onChange={(e) => setNewUsuario(prev => ({ ...prev, email: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ej: jperez"
+                    placeholder="Ej: juan@duran.com"
                     required
                   />
                 </div>
@@ -431,46 +390,17 @@ export function Usuarios() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Correo *
-                  </label>
-                  <input
-                    type="email"
-                    value={newUsuario.correo}
-                    onChange={(e) => setNewUsuario(prev => ({ ...prev, correo: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ej: juan@duran.com"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Monto Autorización
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newUsuario.monto_autorizacion}
-                    onChange={(e) => setNewUsuario(prev => ({ ...prev, monto_autorizacion: parseFloat(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.00"
-                    min="0"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Puesto *
+                    Rol *
                   </label>
                   <select
-                    value={newUsuario.puesto}
-                    onChange={(e) => setNewUsuario(prev => ({ ...prev, puesto: e.target.value as 'Admin' | 'Vendedor' | 'Chofer' }))}
+                    value={newUsuario.role}
+                    onChange={(e) => setNewUsuario(prev => ({ ...prev, role: e.target.value as 'Admin' | 'Gerente' | 'Empleado' }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   >
                     <option value="Admin">Admin</option>
-                    <option value="Vendedor">Vendedor</option>
-                    <option value="Chofer">Chofer</option>
+                    <option value="Gerente">Gerente</option>
+                    <option value="Empleado">Empleado</option>
                   </select>
                 </div>
 
@@ -511,19 +441,6 @@ export function Usuarios() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Ej: 555-123-4567"
                   />
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="estatus"
-                    checked={newUsuario.estatus}
-                    onChange={(e) => setNewUsuario(prev => ({ ...prev, estatus: e.target.checked }))}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="estatus" className="ml-2 block text-sm text-gray-900">
-                    Usuario Habilitado
-                  </label>
                 </div>
               </div>
 
@@ -571,29 +488,26 @@ export function Usuarios() {
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {Object.entries({
-                  agregar_clientes: 'Agregar Clientes',
-                  corte_normal: 'Corte Normal',
-                  deshabilitar_reimpresiones: 'Deshabilitar Reimpresiones de Remisiones',
-                  habilitar_cancelaciones: 'Habilitar Cancelaciones',
-                  habilitar_cobro_directo: 'Habilitar Cobro Directo',
-                  habilitar_precio_libre: 'Habilitar Precio Libre',
-                  habilitar_venta_sin_existencia: 'Habilitar Venta sin Existencia',
-                  habilitar_ventas_credito: 'Habilitar Ventas a Crédito',
-                  habilitar_ventas_especiales: 'Habilitar Ventas Especiales',
-                  mostrar_registro_anticipos: 'Mostrar Registro/Cancelación Anticipos',
-                  ver_imprimir_cortes: 'Ver Imprimir/Cortes'
+                  permiso_corte_normal: 'Corte Normal',
+                  permiso_des_reimpresion_remisiones: 'Deshabilitar Reimpresiones de Remisiones',
+                  permiso_cancelaciones: 'Habilitar Cancelaciones',
+                  permiso_cobro_directo: 'Habilitar Cobro Directo',
+                  permiso_precio_libre: 'Habilitar Precio Libre',
+                  permiso_venta_sin_existencia: 'Habilitar Venta sin Existencia',
+                  permiso_ventas_credito: 'Habilitar Ventas a Crédito',
+                  permiso_ventas_especiales: 'Habilitar Ventas Especiales',
+                  permiso_antipos: 'Mostrar Registro/Cancelación Anticipos',
+                  permiso_ver_imprimir_cortes: 'Ver Imprimir/Cortes',
+                  permiso_agregar_clientes: 'Agregar Clientes'
                 }).map(([key, label]) => (
                   <div key={key} className="flex items-center">
                     <input
                       type="checkbox"
                       id={key}
-                      checked={newUsuario.permisos[key as keyof typeof newUsuario.permisos] || false}
+                      checked={newUsuario[key as keyof typeof newUsuario] as boolean || false}
                       onChange={(e) => setNewUsuario(prev => ({
                         ...prev,
-                        permisos: {
-                          ...prev.permisos,
-                          [key]: e.target.checked
-                        }
+                        [key]: e.target.checked
                       }))}
                       className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                     />
@@ -615,7 +529,20 @@ export function Usuarios() {
                 <button
                   onClick={async () => {
                     try {
-                      await updateUsuario(editingUsuario.id, { permisos: newUsuario.permisos });
+                      const permissionUpdates = {
+                        permiso_corte_normal: newUsuario.permiso_corte_normal,
+                        permiso_des_reimpresion_remisiones: newUsuario.permiso_des_reimpresion_remisiones,
+                        permiso_cancelaciones: newUsuario.permiso_cancelaciones,
+                        permiso_cobro_directo: newUsuario.permiso_cobro_directo,
+                        permiso_precio_libre: newUsuario.permiso_precio_libre,
+                        permiso_venta_sin_existencia: newUsuario.permiso_venta_sin_existencia,
+                        permiso_ventas_credito: newUsuario.permiso_ventas_credito,
+                        permiso_ventas_especiales: newUsuario.permiso_ventas_especiales,
+                        permiso_antipos: newUsuario.permiso_antipos,
+                        permiso_ver_imprimir_cortes: newUsuario.permiso_ver_imprimir_cortes,
+                        permiso_agregar_clientes: newUsuario.permiso_agregar_clientes
+                      };
+                      await updateUsuario(editingUsuario.id, permissionUpdates);
                       setShowPermissionsModal(false);
                       setEditingUsuario(null);
                       alert('Permisos actualizados exitosamente');
@@ -662,19 +589,19 @@ export function Usuarios() {
                   <div className="space-y-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Nombre Completo</label>
-                      <p className="text-gray-900 font-medium">{viewingUsuario.nombre_completo}</p>
+                      <p className="text-gray-900 font-medium">{viewingUsuario.name}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-600">Usuario</label>
-                      <p className="text-gray-900 font-mono">{viewingUsuario.nombre_usuario}</p>
+                      <label className="block text-sm font-medium text-gray-600">Email</label>
+                      <p className="text-gray-900">{viewingUsuario.email}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-600">Correo</label>
-                      <p className="text-gray-900">{viewingUsuario.correo}</p>
+                      <label className="block text-sm font-medium text-gray-600">RFC</label>
+                      <p className="text-gray-900">{viewingUsuario.rfc || 'No especificado'}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-600">Teléfono</label>
-                      <p className="text-gray-900">{viewingUsuario.telefono || 'No especificado'}</p>
+                      <label className="block text-sm font-medium text-gray-600">CURP</label>
+                      <p className="text-gray-900">{viewingUsuario.curp || 'No especificado'}</p>
                     </div>
                   </div>
                 </div>
@@ -683,26 +610,22 @@ export function Usuarios() {
                   <h3 className="font-semibold text-gray-900 mb-4">Información Laboral</h3>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-600">Almacén</label>
-                      <p className="text-gray-900">{viewingUsuario.almacen || 'No asignado'}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-600">Puesto</label>
+                      <label className="block text-sm font-medium text-gray-600">Rol</label>
                       <p className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        viewingUsuario.puesto === 'Admin' ? 'bg-red-100 text-red-800' :
-                        viewingUsuario.puesto === 'Vendedor' ? 'bg-blue-100 text-blue-800' :
+                        viewingUsuario.role === 'Admin' ? 'bg-red-100 text-red-800' :
+                        viewingUsuario.role === 'Gerente' ? 'bg-blue-100 text-blue-800' :
                         'bg-green-100 text-green-800'
                       }`}>
-                        {viewingUsuario.puesto}
+                        {viewingUsuario.role}
                       </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-600">Monto Autorización</label>
-                      <p className="text-gray-900 font-mono">${viewingUsuario.monto_autorizacion.toLocaleString('es-MX')}</p>
+                      <label className="block text-sm font-medium text-gray-600">Teléfono</label>
+                      <p className="text-gray-900">{viewingUsuario.telefono || 'No especificado'}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Fecha de Registro</label>
-                      <p className="text-gray-900">{new Date(viewingUsuario.fecha_registro).toLocaleDateString('es-MX')}</p>
+                      <p className="text-gray-900">{new Date(viewingUsuario.created_at).toLocaleDateString('es-MX')}</p>
                     </div>
                   </div>
                 </div>
@@ -712,26 +635,26 @@ export function Usuarios() {
                 <h3 className="font-semibold text-gray-900 mb-3">Permisos Asignados</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {Object.entries({
-                    agregar_clientes: 'Agregar Clientes',
-                    corte_normal: 'Corte Normal',
-                    deshabilitar_reimpresiones: 'Deshabilitar Reimpresiones',
-                    habilitar_cancelaciones: 'Habilitar Cancelaciones',
-                    habilitar_cobro_directo: 'Habilitar Cobro Directo',
-                    habilitar_precio_libre: 'Habilitar Precio Libre',
-                    habilitar_venta_sin_existencia: 'Habilitar Venta sin Existencia',
-                    habilitar_ventas_credito: 'Habilitar Ventas a Crédito',
-                    habilitar_ventas_especiales: 'Habilitar Ventas Especiales',
-                    mostrar_registro_anticipos: 'Mostrar Registro Anticipos',
-                    ver_imprimir_cortes: 'Ver Imprimir/Cortes'
+                    permiso_corte_normal: 'Corte Normal',
+                    permiso_des_reimpresion_remisiones: 'Deshabilitar Reimpresiones',
+                    permiso_cancelaciones: 'Habilitar Cancelaciones',
+                    permiso_cobro_directo: 'Habilitar Cobro Directo',
+                    permiso_precio_libre: 'Habilitar Precio Libre',
+                    permiso_venta_sin_existencia: 'Habilitar Venta sin Existencia',
+                    permiso_ventas_credito: 'Habilitar Ventas a Crédito',
+                    permiso_ventas_especiales: 'Habilitar Ventas Especiales',
+                    permiso_antipos: 'Mostrar Registro Anticipos',
+                    permiso_ver_imprimir_cortes: 'Ver Imprimir/Cortes',
+                    permiso_agregar_clientes: 'Agregar Clientes'
                   }).map(([key, label]) => (
                     <div key={key} className="flex items-center">
                       <div className={`w-3 h-3 rounded-full mr-2 ${
-                        viewingUsuario.permisos[key as keyof typeof viewingUsuario.permisos] 
+                        viewingUsuario[key as keyof UsuarioSistema] 
                           ? 'bg-green-500' 
                           : 'bg-red-500'
                       }`}></div>
                       <span className={`text-sm ${
-                        viewingUsuario.permisos[key as keyof typeof viewingUsuario.permisos] 
+                        viewingUsuario[key as keyof UsuarioSistema] 
                           ? 'text-green-700' 
                           : 'text-red-700'
                       }`}>

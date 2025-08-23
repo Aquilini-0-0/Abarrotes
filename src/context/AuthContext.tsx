@@ -6,17 +6,34 @@ import { Database } from '../types/database';
 
 interface AuthContextType {
   user: User | null;
+  userPermissions: UserPermissions | null;
   login: (email: string, password: string) => Promise<boolean>;
   loginPOS: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
   loading: boolean;
+  hasPermission: (permission: keyof UserPermissions) => boolean;
+}
+
+interface UserPermissions {
+  permiso_corte_normal: boolean;
+  permiso_des_reimpresion_remisiones: boolean;
+  permiso_cancelaciones: boolean;
+  permiso_cobro_directo: boolean;
+  permiso_precio_libre: boolean;
+  permiso_venta_sin_existencia: boolean;
+  permiso_ventas_credito: boolean;
+  permiso_ventas_especiales: boolean;
+  permiso_antipos: boolean;
+  permiso_ver_imprimir_cortes: boolean;
+  permiso_agregar_clientes: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [userPermissions, setUserPermissions] = useState<UserPermissions | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Auto-sync for user-related data
@@ -38,7 +55,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Get user profile from our users table
         const { data: userProfile, error } = await supabase
           .from('users')
-          .select('*')
+          .select(`
+            id, name, email, role, avatar,
+            permiso_corte_normal,
+            permiso_des_reimpresion_remisiones,
+            permiso_cancelaciones,
+            permiso_cobro_directo,
+            permiso_precio_libre,
+            permiso_venta_sin_existencia,
+            permiso_ventas_credito,
+            permiso_ventas_especiales,
+            permiso_antipos,
+            permiso_ver_imprimir_cortes,
+            permiso_agregar_clientes
+          `)
           .eq('auth_id', authUser.id)
           .single();
 
@@ -60,7 +90,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: userProfile.role,
             avatar: userProfile.avatar
           };
+          
+          const permissions: UserPermissions = {
+            permiso_corte_normal: userProfile.permiso_corte_normal || false,
+            permiso_des_reimpresion_remisiones: userProfile.permiso_des_reimpresion_remisiones || false,
+            permiso_cancelaciones: userProfile.permiso_cancelaciones || false,
+            permiso_cobro_directo: userProfile.permiso_cobro_directo || false,
+            permiso_precio_libre: userProfile.permiso_precio_libre || false,
+            permiso_venta_sin_existencia: userProfile.permiso_venta_sin_existencia || false,
+            permiso_ventas_credito: userProfile.permiso_ventas_credito || false,
+            permiso_ventas_especiales: userProfile.permiso_ventas_especiales || false,
+            permiso_antipos: userProfile.permiso_antipos || false,
+            permiso_ver_imprimir_cortes: userProfile.permiso_ver_imprimir_cortes || false,
+            permiso_agregar_clientes: userProfile.permiso_agregar_clientes || false
+          };
+          
           setUser(userData);
+          setUserPermissions(permissions);
           setLoading(false);
           return true;
         }
@@ -82,7 +128,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Get user profile from our users table
         const { data: userProfile, error } = await supabase
           .from('users')
-          .select('*')
+          .select(`
+            id, name, email, role, avatar,
+            permiso_corte_normal,
+            permiso_des_reimpresion_remisiones,
+            permiso_cancelaciones,
+            permiso_cobro_directo,
+            permiso_precio_libre,
+            permiso_venta_sin_existencia,
+            permiso_ventas_credito,
+            permiso_ventas_especiales,
+            permiso_antipos,
+            permiso_ver_imprimir_cortes,
+            permiso_agregar_clientes
+          `)
           .eq('auth_id', authUser.id)
           .single();
 
@@ -99,7 +158,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: userProfile.role,
             avatar: userProfile.avatar
           };
+          
+          const permissions: UserPermissions = {
+            permiso_corte_normal: userProfile.permiso_corte_normal || false,
+            permiso_des_reimpresion_remisiones: userProfile.permiso_des_reimpresion_remisiones || false,
+            permiso_cancelaciones: userProfile.permiso_cancelaciones || false,
+            permiso_cobro_directo: userProfile.permiso_cobro_directo || false,
+            permiso_precio_libre: userProfile.permiso_precio_libre || false,
+            permiso_venta_sin_existencia: userProfile.permiso_venta_sin_existencia || false,
+            permiso_ventas_credito: userProfile.permiso_ventas_credito || false,
+            permiso_ventas_especiales: userProfile.permiso_ventas_especiales || false,
+            permiso_antipos: userProfile.permiso_antipos || false,
+            permiso_ver_imprimir_cortes: userProfile.permiso_ver_imprimir_cortes || false,
+            permiso_agregar_clientes: userProfile.permiso_agregar_clientes || false
+          };
+          
           setUser(userData);
+          setUserPermissions(permissions);
           return true;
         }
       }
@@ -115,6 +190,7 @@ const logout = async () => {
   try {
     await signOut();
     setUser(null);
+    setUserPermissions(null);
 
     // Elimina la info del sistema (POS o ERP)
     localStorage.removeItem('loginSystem');
@@ -129,6 +205,16 @@ const logout = async () => {
   }
 };
 
+
+  const hasPermission = (permission: keyof UserPermissions): boolean => {
+    // Admin users have all permissions
+    if (user?.role === 'Admin') {
+      return true;
+    }
+    
+    // Check specific permission
+    return userPermissions?.[permission] || false;
+  };
 
   // Check for existing session and listen for auth changes
   React.useEffect(() => {
@@ -169,6 +255,7 @@ const logout = async () => {
       async (event, session) => {
         if (event === 'SIGNED_OUT') {
           setUser(null);
+          setUserPermissions(null);
           window.location.href = '/login';
         } else if (false && event === 'SIGNED_IN' && session?.user) {
           const { data: userProfile } = await supabase
@@ -201,11 +288,13 @@ const logout = async () => {
   return (
     <AuthContext.Provider value={{
       user,
+      userPermissions,
       login,
       loginPOS,
       logout,
       isAuthenticated: !!user,
-      loading: false
+      loading: false,
+      hasPermission
     }}>
       {children}
     </AuthContext.Provider>

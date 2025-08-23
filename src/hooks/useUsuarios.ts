@@ -4,33 +4,24 @@ import { supabase } from '../lib/supabase';
 export interface UsuarioSistema {
   id: string;
   auth_id?: string;
-  almacen: string;
   name: string; // Keep original name field
-  nombre_completo: string;
-  nombre_usuario: string;
   email: string; // Keep original email field
-  correo: string;
-  monto_autorizacion: number;
   role: 'Admin' | 'Gerente' | 'Empleado'; // Keep original role
-  puesto: 'Admin' | 'Vendedor' | 'Chofer';
   rfc: string;
   curp: string;
   telefono: string;
-  estatus: boolean;
-  permisos: {
-    agregar_clientes?: boolean;
-    corte_normal?: boolean;
-    deshabilitar_reimpresiones?: boolean;
-    habilitar_cancelaciones?: boolean;
-    habilitar_cobro_directo?: boolean;
-    habilitar_precio_libre?: boolean;
-    habilitar_venta_sin_existencia?: boolean;
-    habilitar_ventas_credito?: boolean;
-    habilitar_ventas_especiales?: boolean;
-    mostrar_registro_anticipos?: boolean;
-    ver_imprimir_cortes?: boolean;
-  };
-  fecha_registro: string;
+  // Permission fields
+  permiso_corte_normal: boolean;
+  permiso_des_reimpresion_remisiones: boolean;
+  permiso_cancelaciones: boolean;
+  permiso_cobro_directo: boolean;
+  permiso_precio_libre: boolean;
+  permiso_venta_sin_existencia: boolean;
+  permiso_ventas_credito: boolean;
+  permiso_ventas_especiales: boolean;
+  permiso_antipos: boolean;
+  permiso_ver_imprimir_cortes: boolean;
+  permiso_agregar_clientes: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -45,7 +36,29 @@ export function useUsuarios() {
       setLoading(true);
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select(`
+          id,
+          auth_id,
+          name,
+          email,
+          role,
+          rfc,
+          curp,
+          telefono,
+          permiso_corte_normal,
+          permiso_des_reimpresion_remisiones,
+          permiso_cancelaciones,
+          permiso_cobro_directo,
+          permiso_precio_libre,
+          permiso_venta_sin_existencia,
+          permiso_ventas_credito,
+          permiso_ventas_especiales,
+          permiso_antipos,
+          permiso_ver_imprimir_cortes,
+          permiso_agregar_clientes,
+          created_at,
+          updated_at
+        `)
         .order('name', { ascending: true });
 
       if (error) throw error;
@@ -53,21 +66,23 @@ export function useUsuarios() {
       const formattedUsuarios: UsuarioSistema[] = data.map(item => ({
         id: item.id,
         auth_id: item.auth_id,
-        almacen: '', // Default empty since column doesn't exist yet
         name: item.name,
-        nombre_completo: item.name,
-        nombre_usuario: '', // Default empty since column doesn't exist yet
         email: item.email,
-        correo: item.email, // Map email to correo for compatibility
-        monto_autorizacion: 0, // Default 0 since column doesn't exist yet
         role: item.role,
-        puesto: item.role, // Map role to puesto for compatibility
-        rfc: '', // Default empty since column doesn't exist yet
-        curp: '', // Default empty since column doesn't exist yet
-        telefono: '', // Default empty since column doesn't exist yet
-        estatus: true, // Default to true
-        permisos: {}, // Default empty permissions
-        fecha_registro: item.created_at,
+        rfc: item.rfc || '',
+        curp: item.curp || '',
+        telefono: item.telefono || '',
+        permiso_corte_normal: item.permiso_corte_normal || false,
+        permiso_des_reimpresion_remisiones: item.permiso_des_reimpresion_remisiones || false,
+        permiso_cancelaciones: item.permiso_cancelaciones || false,
+        permiso_cobro_directo: item.permiso_cobro_directo || false,
+        permiso_precio_libre: item.permiso_precio_libre || false,
+        permiso_venta_sin_existencia: item.permiso_venta_sin_existencia || false,
+        permiso_ventas_credito: item.permiso_ventas_credito || false,
+        permiso_ventas_especiales: item.permiso_ventas_especiales || false,
+        permiso_antipos: item.permiso_antipos || false,
+        permiso_ver_imprimir_cortes: item.permiso_ver_imprimir_cortes || false,
+        permiso_agregar_clientes: item.permiso_agregar_clientes || false,
         created_at: item.created_at,
         updated_at: item.updated_at
       }));
@@ -80,16 +95,16 @@ export function useUsuarios() {
     }
   };
 
-  const createUsuario = async (usuarioData: Omit<UsuarioSistema, 'id' | 'created_at' | 'updated_at' | 'fecha_registro'>) => {
+  const createUsuario = async (usuarioData: Omit<UsuarioSistema, 'id' | 'created_at' | 'updated_at'> & { password: string }) => {
     try {
       // First create the authentication user
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: usuarioData.correo,
+        email: usuarioData.email,
         password: usuarioData.password,
         options: {
           data: {
-            name: usuarioData.nombre_completo,
-            role: usuarioData.puesto
+            name: usuarioData.name,
+            role: usuarioData.role
           }
         }
       });
@@ -107,9 +122,23 @@ export function useUsuarios() {
         .from('users')
         .insert([{
           auth_id: authData.user.id, // Link to the authentication user
-          name: usuarioData.nombre_completo,
-          email: usuarioData.correo,
-          role: usuarioData.puesto === 'Admin' ? 'Admin' : usuarioData.puesto === 'Vendedor' ? 'Empleado' : 'Empleado',
+          name: usuarioData.name,
+          email: usuarioData.email,
+          role: usuarioData.role,
+          rfc: usuarioData.rfc,
+          curp: usuarioData.curp,
+          telefono: usuarioData.telefono,
+          permiso_corte_normal: usuarioData.permiso_corte_normal,
+          permiso_des_reimpresion_remisiones: usuarioData.permiso_des_reimpresion_remisiones,
+          permiso_cancelaciones: usuarioData.permiso_cancelaciones,
+          permiso_cobro_directo: usuarioData.permiso_cobro_directo,
+          permiso_precio_libre: usuarioData.permiso_precio_libre,
+          permiso_venta_sin_existencia: usuarioData.permiso_venta_sin_existencia,
+          permiso_ventas_credito: usuarioData.permiso_ventas_credito,
+          permiso_ventas_especiales: usuarioData.permiso_ventas_especiales,
+          permiso_antipos: usuarioData.permiso_antipos,
+          permiso_ver_imprimir_cortes: usuarioData.permiso_ver_imprimir_cortes,
+          permiso_agregar_clientes: usuarioData.permiso_agregar_clientes
         }])
         .select()
         .single();
@@ -119,21 +148,23 @@ export function useUsuarios() {
       const newUsuario: UsuarioSistema = {
         id: data.id,
         auth_id: authData.user.id,
-        almacen: usuarioData.almacen,
         name: data.name,
-        nombre_completo: data.name,
-        nombre_usuario: usuarioData.nombre_usuario,
         email: data.email,
-        correo: data.email,
-        monto_autorizacion: usuarioData.monto_autorizacion,
         role: data.role,
-        puesto: usuarioData.puesto,
-        rfc: usuarioData.rfc,
-        curp: usuarioData.curp,
-        telefono: usuarioData.telefono,
-        estatus: usuarioData.estatus,
-        permisos: usuarioData.permisos,
-        fecha_registro: data.created_at,
+        rfc: data.rfc,
+        curp: data.curp,
+        telefono: data.telefono,
+        permiso_corte_normal: data.permiso_corte_normal,
+        permiso_des_reimpresion_remisiones: data.permiso_des_reimpresion_remisiones,
+        permiso_cancelaciones: data.permiso_cancelaciones,
+        permiso_cobro_directo: data.permiso_cobro_directo,
+        permiso_precio_libre: data.permiso_precio_libre,
+        permiso_venta_sin_existencia: data.permiso_venta_sin_existencia,
+        permiso_ventas_credito: data.permiso_ventas_credito,
+        permiso_ventas_especiales: data.permiso_ventas_especiales,
+        permiso_antipos: data.permiso_antipos,
+        permiso_ver_imprimir_cortes: data.permiso_ver_imprimir_cortes,
+        permiso_agregar_clientes: data.permiso_agregar_clientes,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -153,19 +184,9 @@ export function useUsuarios() {
 
   const updateUsuario = async (id: string, usuarioData: Partial<UsuarioSistema>) => {
     try {
-      // Prepare update data, mapping fields correctly
-      const updateData: any = {};
-      
-      if (usuarioData.nombre_completo !== undefined) updateData.name = usuarioData.nombre_completo;
-      if (usuarioData.correo !== undefined) updateData.email = usuarioData.correo;
-      if (usuarioData.puesto !== undefined) {
-        // Map puesto to role for compatibility
-        updateData.role = usuarioData.puesto === 'Admin' ? 'Admin' : usuarioData.puesto === 'Vendedor' ? 'Empleado' : 'Empleado';
-      }
-      
       const { data, error } = await supabase
         .from('users')
-        .update(updateData)
+        .update(usuarioData)
         .eq('id', id)
         .select()
         .single();
@@ -175,21 +196,23 @@ export function useUsuarios() {
       const updatedUsuario: UsuarioSistema = {
         id: data.id,
         auth_id: data.auth_id,
-        almacen: usuarioData.almacen || '',
         name: data.name,
-        nombre_completo: data.name,
-        nombre_usuario: usuarioData.nombre_usuario || '',
         email: data.email,
-        correo: data.email,
-        monto_autorizacion: usuarioData.monto_autorizacion || 0,
         role: data.role,
-        puesto: usuarioData.puesto || data.role,
-        rfc: usuarioData.rfc || '',
-        curp: usuarioData.curp || '',
-        telefono: usuarioData.telefono || '',
-        estatus: usuarioData.estatus !== false,
-        permisos: usuarioData.permisos || {},
-        fecha_registro: data.created_at,
+        rfc: data.rfc,
+        curp: data.curp,
+        telefono: data.telefono,
+        permiso_corte_normal: data.permiso_corte_normal,
+        permiso_des_reimpresion_remisiones: data.permiso_des_reimpresion_remisiones,
+        permiso_cancelaciones: data.permiso_cancelaciones,
+        permiso_cobro_directo: data.permiso_cobro_directo,
+        permiso_precio_libre: data.permiso_precio_libre,
+        permiso_venta_sin_existencia: data.permiso_venta_sin_existencia,
+        permiso_ventas_credito: data.permiso_ventas_credito,
+        permiso_ventas_especiales: data.permiso_ventas_especiales,
+        permiso_antipos: data.permiso_antipos,
+        permiso_ver_imprimir_cortes: data.permiso_ver_imprimir_cortes,
+        permiso_agregar_clientes: data.permiso_agregar_clientes,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -209,6 +232,16 @@ export function useUsuarios() {
 
   const deleteUsuario = async (id: string) => {
     try {
+      // Get the user data first to get auth_id
+      const { data: userData, error: fetchError } = await supabase
+        .from('users')
+        .select('auth_id')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Delete from users table first (this will cascade due to foreign key)
       const { error } = await supabase
         .from('users')
         .delete()
@@ -216,6 +249,17 @@ export function useUsuarios() {
 
       if (error) throw error;
 
+      // Delete from auth if auth_id exists
+      if (userData.auth_id) {
+        try {
+          const { error: authError } = await supabase.auth.admin.deleteUser(userData.auth_id);
+          if (authError) {
+            console.warn('Could not delete auth user (may require service role):', authError);
+          }
+        } catch (authErr) {
+          console.warn('Could not delete auth user:', authErr);
+        }
+      }
       setUsuarios(prev => prev.filter(u => u.id !== id));
       
       // Trigger automatic sync

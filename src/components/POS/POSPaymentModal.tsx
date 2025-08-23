@@ -7,6 +7,7 @@ import { POSOrder, POSClient, PaymentBreakdown, Payment } from '../../types/pos'
 import { supabase } from '../../lib/supabase';
 import { useProducts } from '../../hooks/useProducts';
 import { useAuth } from '../../context/AuthContext';
+import { PermissionModal } from '../Common/PermissionModal';
 
 
 
@@ -46,7 +47,7 @@ interface POSPaymentModalProps {
 
 export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPayment }: POSPaymentModalProps) {
   const { products } = useProducts();
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
 
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer' | 'credit' | 'mixed' | 'vales'>('cash');
 
@@ -86,6 +87,8 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const [stockIssues, setStockIssues] = useState<Array<{product_name: string, required: number, available: number}>>([]);
   const [pendingPaymentData, setPendingPaymentData] = useState<any>(null);
   const [stockOverride, setStockOverride] = useState(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [permissionMessage, setPermissionMessage] = useState('');
 
   // Calculate remaining balance for paid orders - fetch from database
   const [orderData, setOrderData] = useState<any>(() => ({
@@ -328,6 +331,12 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
     }
 
+    // Check credit permission
+    if (paymentMethod === 'credit' && !hasPermission('permiso_ventas_credito')) {
+      setPermissionMessage('No tienes el permiso para realizar ventas a crédito. El administrador debe asignártelo desde el ERS.');
+      setShowPermissionModal(true);
+      return;
+    }
 
 
     // Validate stock before processing payment
@@ -405,6 +414,14 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const handleStockValidationConfirm = (proceed: boolean) => {
     setShowStockValidation(false);
     if (proceed) {
+      // Check stock override permission
+      if (!hasPermission('permiso_venta_sin_existencia')) {
+        setPermissionMessage('No tienes el permiso para realizar ventas sin existencia. El administrador debe asignártelo desde el ERS.');
+        setShowPermissionModal(true);
+        setPendingPaymentData(null);
+        return;
+      }
+      
       setStockOverride(true);
       // If user confirms to proceed despite stock issues, process the payment
       if (pendingPaymentData) {
@@ -1143,7 +1160,7 @@ SISTEMA ERP DURAN
 
                 (paymentMethod === 'mixed' && !paymentComplete) ||
 
-                (paymentMethod === 'credit' && !client) || // El botón solo se deshabilita si no hay cliente para crédito
+                (paymentMethod === 'credit' && (!client || !hasPermission('permiso_ventas_credito'))) ||
 
                 (paymentMethod === 'vales' && !selectedVale)
 
@@ -1182,6 +1199,13 @@ SISTEMA ERP DURAN
           </div>
 
         </div>
+
+        {/* Permission Modal */}
+        <PermissionModal
+          isOpen={showPermissionModal}
+          onClose={() => setShowPermissionModal(false)}
+          message={permissionMessage}
+        />
 
         {/* Stock Validation Modal */}
         {showStockValidation && (

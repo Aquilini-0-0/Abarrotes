@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Plus, Edit, Trash2, User, CreditCard, AlertTriangle, X } from 'lucide-react';
 import { POSOrder, POSOrderItem, POSClient } from '../../types/pos';
 import { POSEditItemModal } from './POSEditItemModal';
+import { PermissionModal } from '../Common/PermissionModal';
+import { useAuth } from '../../context/AuthContext';
 
 interface POSOrderPanelProps {
   order: POSOrder | null;
@@ -40,6 +42,7 @@ export function POSOrderPanel({
   onRefreshData,
   products
 }: POSOrderPanelProps) {
+  const { hasPermission } = useAuth();
   const [showClientModal, setShowClientModal] = useState(false);
   const [searchClient, setSearchClient] = useState('');
   const [observations, setObservations] = useState('');
@@ -57,6 +60,8 @@ export function POSOrderPanel({
   const [adminPassword, setAdminPassword] = useState('');
   const [pendingAction, setPendingAction] = useState<'save' | 'pay' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [permissionMessage, setPermissionMessage] = useState('');
 
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(searchClient.toLowerCase()) ||
@@ -80,6 +85,13 @@ export function POSOrderPanel({
   const creditExceeded = client && (isCredit || order?.is_credit) && (creditUsed + orderTotal) > client.credit_limit;
 
   const handleApplyDiscount = () => {
+    // Check discount permission
+    if (!hasPermission('permiso_ventas_especiales')) {
+      setPermissionMessage('No tienes el permiso para aplicar descuentos. El administrador debe asignártelo desde el ERS.');
+      setShowPermissionModal(true);
+      return;
+    }
+    
     if (discountAmount > (order?.subtotal || 0)) {
       alert('El descuento no puede ser mayor al subtotal del pedido');
       return;
@@ -613,6 +625,13 @@ export function POSOrderPanel({
           </div>
         </div>
       )}
+
+      {/* Permission Modal */}
+      <PermissionModal
+        isOpen={showPermissionModal}
+        onClose={() => setShowPermissionModal(false)}
+        message={permissionMessage}
+      />
 
       {/* Edit Item Modal */}
       {showEditItemModal && editingItem && products && (

@@ -5,15 +5,19 @@ import { useClients } from '../../hooks/useClients';
 import { useSales } from '../../hooks/useSales';
 import { Client } from '../../types';
 import { AutocompleteInput } from '../../components/Common/AutocompleteInput';
+import { PermissionModal } from '../../components/Common/PermissionModal';
+import { useAuth } from '../../context/AuthContext';
 import { Plus, MapPin, Phone, Mail, CreditCard, Edit, Trash2, Eye, X } from 'lucide-react';
 
 export function Clientes() {
   const { clients, loading, error, createClient, updateClient, deleteClient } = useClients();
   const { sales } = useSales();
+  const { hasPermission } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [newClient, setNewClient] = useState({
     name: '',
     rfc: '',
@@ -223,7 +227,13 @@ export function Clientes() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Gestión de Clientes</h1>
         <button 
-          onClick={() => setShowForm(true)}
+          onClick={() => {
+            if (!hasPermission('permiso_agregar_clientes')) {
+              setShowPermissionModal(true);
+              return;
+            }
+            setShowForm(true);
+          }}
           className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus size={16} />
@@ -711,6 +721,13 @@ export function Clientes() {
           </Card>
         </div>
       </div>
+
+      {/* Permission Modal */}
+      <PermissionModal
+        isOpen={showPermissionModal}
+        onClose={() => setShowPermissionModal(false)}
+        message="No tienes el permiso para agregar clientes. El administrador debe asignártelo desde el ERS."
+      />
 
       {/* History Modal */}
       {showHistoryModal && selectedClient && (

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Edit, Lock, AlertTriangle, Package, DollarSign, Calculator, TrendingUp, Info } from 'lucide-react';
 import { POSProduct, POSOrderItem, TaraOption } from '../../types/pos';
+import { PermissionModal } from '../Common/PermissionModal';
+import { useAuth } from '../../context/AuthContext';
 
 interface POSEditItemModalProps {
   item: POSOrderItem;
@@ -10,6 +12,7 @@ interface POSEditItemModalProps {
 }
 
 export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItemModalProps) {
+  const { hasPermission } = useAuth();
   const [quantity, setQuantity] = useState(item.quantity);
   const [priceLevel, setPriceLevel] = useState<1 | 2 | 3 | 4 | 5>(item.price_level);
   const [customPrice, setCustomPrice] = useState(item.unit_price);
@@ -17,6 +20,7 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
   const [selectedTara, setSelectedTara] = useState<TaraOption | null>(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
 
   const taraOptions: TaraOption[] = [
     { id: '1', name: 'SIN TARA', factor: 1, price_adjustment: 0 },
@@ -46,8 +50,12 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
       return;
     }
 
-    // Validación de precio libre - SIEMPRE pedir contraseña para precio libre
+    // Validación de precio libre - verificar permiso primero
     if (useCustomPrice) {
+      if (!hasPermission('permiso_precio_libre')) {
+        setShowPermissionModal(true);
+        return;
+      }
       setShowPasswordModal(true);
       return;
     }
@@ -230,17 +238,24 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
                     type="checkbox"
                     id="useCustomPrice"
                     checked={useCustomPrice}
+                    disabled={!hasPermission('permiso_precio_libre')}
                     onChange={(e) => {
+                      if (!hasPermission('permiso_precio_libre')) {
+                        setShowPermissionModal(true);
+                        return;
+                      }
                       setUseCustomPrice(e.target.checked);
                       if (!e.target.checked) {
                         setCustomPrice(product.prices[`price${priceLevel}`]);
                       }
                     }}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-2"
+                    className={`w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-2 ${
+                      !hasPermission('permiso_precio_libre') ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   />
                   <label htmlFor="useCustomPrice" className="text-gray-700 font-medium flex items-center">
                     <Calculator className="h-4 w-4 mr-2 text-orange-600" />
-                    Usar precio libre
+                    Usar precio libre {!hasPermission('permiso_precio_libre') && '(Sin permiso)'}
                   </label>
                 </div>
                 <input
@@ -439,6 +454,13 @@ export function POSEditItemModal({ item, product, onClose, onSave }: POSEditItem
             </button>
           </div>
         </div>
+
+        {/* Permission Modal */}
+        <PermissionModal
+          isOpen={showPermissionModal}
+          onClose={() => setShowPermissionModal(false)}
+          message="No tienes el permiso para usar precios libres. El administrador debe asignártelo desde el ERS."
+        />
 
         {/* Password Modal */}
         {showPasswordModal && (
