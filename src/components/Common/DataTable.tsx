@@ -95,6 +95,7 @@ export function DataTable({
         <title>${title}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; }
+          .img { transform: scale(1.5); }
           .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #3B82F6; padding-bottom: 10px; }
           .title { font-size: 24px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
           .date { font-size: 12px; color: #6B7280; }
