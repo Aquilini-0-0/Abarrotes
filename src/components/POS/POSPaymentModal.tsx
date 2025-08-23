@@ -503,8 +503,9 @@ LE ATENDIO: ${user?.name || 'Usuario'}
 
 GRACIAS POR SU COMPRA
 ==========================
-SISTEMA ERP DURAN
 ${new Date().toLocaleString('es-MX')}
+SISTEMA ERP DURAN
+
     `;
 
     // Create and download .txt file automatically
