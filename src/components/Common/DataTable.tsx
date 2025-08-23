@@ -84,7 +84,14 @@ export function DataTable({
       <!DOCTYPE html>
       <html>
       <head>
+      
         <meta charset="UTF-8">
+
+        <img 
+  src="https://raw.githubusercontent.com/Aquilini-0-0/Abarrotes/main/public/logoduran2.png" 
+  alt="DURAN" 
+/>
+
         <title>${title}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; }
