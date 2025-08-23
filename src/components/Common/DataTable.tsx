@@ -92,7 +92,8 @@ export function DataTable({
         <title>${title}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; }
-          .img { transform: scale(1.5); }
+           .logo { text-align: center; margin-bottom: 20px; }
+    .logo img { max-width: 200px; height: auto; } /* aquí ajustas el tamaño */
           .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #3B82F6; padding-bottom: 10px; }
           .title { font-size: 24px; font-weight: bold; color: #1F2937; margin-bottom: 5px; }
           .date { font-size: 12px; color: #6B7280; }
@@ -105,10 +106,12 @@ export function DataTable({
         </style>
       </head>
       <body>
-              <img 
-  src="https://raw.githubusercontent.com/Aquilini-0-0/Abarrotes/main/public/logoduran2.png" 
-  alt="DURAN" 
-/>
+  <div class="logo">
+    <img 
+      src="https://raw.githubusercontent.com/Aquilini-0-0/Abarrotes/main/public/logoduran2.png" 
+      alt="DURAN"
+    />
+  </div>
         <div class="header">
           <div class="title">${title}</div>
           <div class="date">Generado el ${new Date().toLocaleString('es-MX')}</div>
