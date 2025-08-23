@@ -87,10 +87,7 @@ export function DataTable({
       
         <meta charset="UTF-8">
 
-        <img 
-  src="https://raw.githubusercontent.com/Aquilini-0-0/Abarrotes/main/public/logoduran2.png" 
-  alt="DURAN" 
-/>
+
 
         <title>${title}</title>
         <style>
@@ -108,6 +105,10 @@ export function DataTable({
         </style>
       </head>
       <body>
+              <img 
+  src="https://raw.githubusercontent.com/Aquilini-0-0/Abarrotes/main/public/logoduran2.png" 
+  alt="DURAN" 
+/>
         <div class="header">
           <div class="title">${title}</div>
           <div class="date">Generado el ${new Date().toLocaleString('es-MX')}</div>
