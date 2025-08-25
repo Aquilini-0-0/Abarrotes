@@ -57,10 +57,26 @@ export function ReportesVentas() {
       precio_unit: item.price,
       precio_total: item.total,
       forma_pago: sale.status === 'paid' ? 'Efectivo' : 'Crédito',
-      costo_compra_unit: item.price * 0.7, // Estimado - vendría del producto
-      costo_total: item.total * 0.7,
-      utilidad: item.total * 0.3,
-      porcentaje_utilidad: 30 // Porcentaje de utilidad
+      costo_compra_unit: (() => {
+        const product = products?.find(p => p.name === item.product_name);
+        return product?.cost || (item.price * 0.7);
+      })(),
+      costo_total: (() => {
+        const product = products?.find(p => p.name === item.product_name);
+        const cost = product?.cost || (item.price * 0.7);
+        return item.quantity * cost;
+      })(),
+      utilidad: (() => {
+        const product = products?.find(p => p.name === item.product_name);
+        const cost = product?.cost || (item.price * 0.7);
+        return item.total - (item.quantity * cost);
+      })(),
+      porcentaje_utilidad: (() => {
+        const product = products?.find(p => p.name === item.product_name);
+        const cost = product?.cost || (item.price * 0.7);
+        const totalCost = item.quantity * cost;
+        return totalCost > 0 ? ((item.total - totalCost) / totalCost) * 100 : 0;
+      })()
     }))
   );
 

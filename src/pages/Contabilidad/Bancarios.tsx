@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useBankMovements } from '../../hooks/useBankMovements';
+import { useCatalogos } from '../../hooks/useCatalogos';
 import { Plus, TrendingUp, TrendingDown, CreditCard, BarChart3 } from 'lucide-react';
 
 export function MovimientosBancarios() {
   const { movimientos, loading, error, createMovement } = useBankMovements();
+  const { cuentas } = useCatalogos();
 
   const [showForm, setShowForm] = useState(false);
   const [newMovimiento, setNewMovimiento] = useState({
@@ -289,9 +291,9 @@ export function MovimientosBancarios() {
                     required
                   >
                     <option value="">Seleccionar banco</option>
-                    <option value="BBVA">BBVA</option>
-                    <option value="Santander">Santander</option>
-                    <option value="Banorte">Banorte</option>
+                    {Array.from(new Set(cuentas.map(c => c.banco))).map(banco => (
+                      <option key={banco} value={banco}>{banco}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -306,9 +308,13 @@ export function MovimientosBancarios() {
                     required
                   >
                     <option value="">Seleccionar cuenta</option>
-                    <option value="**** 1234">**** 1234</option>
-                    <option value="**** 5678">**** 5678</option>
-                    <option value="**** 9012">**** 9012</option>
+                    {cuentas
+                      .filter(cuenta => cuenta.banco === newMovimiento.banco && cuenta.activa)
+                      .map(cuenta => (
+                        <option key={cuenta.id} value={cuenta.numero_cuenta}>
+                          {cuenta.numero_cuenta} ({cuenta.tipo})
+                        </option>
+                      ))}
                   </select>
                 </div>
 

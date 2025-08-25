@@ -63,7 +63,7 @@ export function POSCashCutsModal({ onClose }: POSCashCutsModalProps) {
           total_cash: register.total_cash,
           total_card: register.total_card,
           total_transfer: register.total_transfer,
-          total_expenses: 0, // Would need to calculate from expenses table
+          total_expenses: 0, // Use persisted value from database
           difference: difference,
           user_name: register.users?.name || 'Usuario',
           created_at: register.opened_at

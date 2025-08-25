@@ -37,9 +37,9 @@ export function ReporteCostos() {
   }).sort((a, b) => {
     switch (filtros.ordenar) {
       case 'margen_desc':
-        return b.margen_porcentaje - a.margen_porcentaje;
+        return a.margen_porcentaje - b.margen_porcentaje; // Más baratos al final
       case 'margen_asc':
-        return a.margen_porcentaje - b.margen_porcentaje;
+        return b.margen_porcentaje - a.margen_porcentaje; // Más caros al inicio
       case 'utilidad_desc':
         return b.utilidad_potencial - a.utilidad_potencial;
       case 'valor_desc':

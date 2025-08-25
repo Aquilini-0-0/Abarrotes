@@ -34,7 +34,10 @@ export function ReporteInventario() {
 
   const productosFiltrados = products.filter(product => {
     if (filtros.linea && product.line !== filtros.linea) return false;
-    if (filtros.estado && product.status !== filtros.estado) return false;
+    if (filtros.estado) {
+      if (filtros.estado === 'active' && product.status !== 'active') return false;
+      if (filtros.estado === 'disabled' && product.status !== 'disabled') return false;
+    }
     if (filtros.stockMinimo && product.stock >= parseInt(filtros.stockMinimo)) return false;
     if (filtros.busqueda && !product.name.toLowerCase().includes(filtros.busqueda.toLowerCase())) return false;
     return true;
@@ -108,9 +111,15 @@ export function ReporteInventario() {
   ];
 
   const totalProductos = productosFiltrados.length;
-  const productosActivos = productosFiltrados.filter(p => p.status === 'active').length;
+  const productosActivos = filtros.estado === 'disabled' 
+    ? productosFiltrados.filter(p => p.status === 'disabled').length
+    : productosFiltrados.filter(p => p.status === 'active').length;
   const stockBajo = productosFiltrados.filter(p => p.stock < 20).length;
-  const valorTotal = productosFiltrados.reduce((sum, p) => sum + (p.stock * p.cost), 0);
+  const valorTotal = productosFiltrados.reduce((sum, p) => {
+    const stock = Number(p.stock) || 0;
+    const cost = Number(p.cost) || 0;
+    return sum + (stock * cost);
+  }, 0);
 
   const lineasUnicas = Array.from(new Set(products.map(p => p.line)));
 
@@ -138,7 +147,9 @@ export function ReporteInventario() {
             </div>
             <div>
               <div className="text-2xl font-bold text-green-600">{productosActivos}</div>
-              <div className="text-sm text-gray-500">Disponibles</div>
+              <div className="text-sm text-gray-500">
+                {filtros.estado === 'disabled' ? 'Inactivos' : 'Disponibles'}
+              </div>
             </div>
           </div>
         </Card>

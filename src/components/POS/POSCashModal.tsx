@@ -82,6 +82,12 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
   const handleCloseRegister = async () => {
     setIsClosing(true);
     try {
+      // Update the cash register with the actual total sales before closing
+      await supabase
+        .from('cash_registers')
+        .update({ total_sales: totalSales })
+        .eq('id', cashRegister.id);
+
       await onCloseRegister(closingAmount);
       onClose();
     } catch (err) {

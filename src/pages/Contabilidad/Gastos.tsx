@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useExpenses } from '../../hooks/useExpenses';
+import { useCatalogos } from '../../hooks/useCatalogos';
 import { Expense } from '../../types';
 import { Plus, TrendingDown, DollarSign, Calendar, Edit, Trash2, X } from 'lucide-react';
 
 export function Gastos() {
   const { expenses, loading, error, createExpense, updateExpense, deleteExpense } = useExpenses();
+  const { cuentas } = useCatalogos();
   const [showForm, setShowForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [newExpense, setNewExpense] = useState({
@@ -266,15 +268,18 @@ export function Gastos() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Cuenta Bancaria
                   </label>
-                  <select 
+                  <select
                     value={newExpense.bank_account}
                     onChange={(e) => setNewExpense(prev => ({ ...prev, bank_account: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Seleccionar cuenta</option>
-                    <option value="BBVA - *1234">BBVA - *1234</option>
-                    <option value="Santander - *5678">Santander - *5678</option>
-                    <option value="Banorte - *9012">Banorte - *9012</option>
+                    <option value="Efectivo">Efectivo</option>
+                    {cuentas.filter(cuenta => cuenta.activa).map(cuenta => (
+                      <option key={cuenta.id} value={`${cuenta.banco} - ${cuenta.numero_cuenta}`}>
+                        {cuenta.banco} - {cuenta.numero_cuenta}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
