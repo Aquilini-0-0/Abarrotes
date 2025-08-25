@@ -211,7 +211,7 @@ export function ReporteInventario() {
                 >
                   <option value="">Todos los estados</option>
                   <option value="active">Activo</option>
-                  <option value="disabled">Inactivo</option>
+                  <option value="disabled">Deshabilitado</option>
                 </select>
               </div>
               <div>
