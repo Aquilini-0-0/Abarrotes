@@ -93,13 +93,13 @@ export function ListadoRemisiones() {
   };
 
   const handlePrintRemision = (remision: Remision) => {
-    // Create print window with full page format (A4/Letter size) - Identical to POS
+    // Create print window with full page format (A4/Letter size) - Same as POS
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(`
         <html>
         <head>
-          <title>Remision_${remision.folio}_ffd.html</title>
+          <title>Remision_${remision.folio}_ffd.txt</title>
           <style>
             body { 
               font-family: Arial, sans-serif; 
@@ -226,7 +226,7 @@ export function ListadoRemisiones() {
         </head>
         <body>
           <div class="logo">
-            <img 
+           <img 
               src="https://raw.githubusercontent.com/Aquilini-0-0/Abarrotes/main/public/logoduran2.png" 
               alt="DURAN" 
             />
@@ -244,15 +244,11 @@ export function ListadoRemisiones() {
               <div class="info-title">Información del Documento</div>
               <div class="info-item">
                 <span class="info-label">Folio:</span>
-                <span class="info-value">${remision.folio_remision}</span>
+                <span class="info-value">${remision.folio}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">Fecha Emisión:</span>
+                <span class="info-label">Fecha de Emisión:</span>
                 <span class="info-value">${new Date(remision.fecha_emision).toLocaleDateString('es-MX')}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Caja:</span>
-                <span class="info-value">CAJA-01</span>
               </div>
             </div>
 
@@ -267,28 +263,16 @@ export function ListadoRemisiones() {
                 <span class="info-value">${remision.factura}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">Tipo de Pago:</span>
+                <span class="info-label">Tipo:</span>
                 <span class="info-value">${remision.tipo}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Forma de Pago:</span>
-                <span class="info-value">Efectivo</span>
               </div>
             </div>
 
             <div class="info-section">
               <div class="info-title">Personal</div>
               <div class="info-item">
-                <span class="info-label">Vendedor:</span>
+                <span class="info-label">Capturista:</span>
                 <span class="info-value">${remision.capturista}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Cajero:</span>
-                <span class="info-value">${remision.capturista}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">DEV:</span>
-                <span class="info-value">NO</span>
               </div>
             </div>
           </div>
@@ -307,16 +291,7 @@ export function ListadoRemisiones() {
               ESTATUS DEL DOCUMENTO
             </div>
             <div class="status-badge">
-              ${remision.estatus}
-            </div>
-          </div>
-
-          <div class="observations-section">
-            <div style="font-weight: bold; color: #92400E; margin-bottom: 15px; font-size: 16px;">
-              OBSERVACIONES
-            </div>
-            <div style="color: #78350F; font-size: 14px; line-height: 1.6;">
-              Remisión generada desde el sistema ERP
+              CERRADA
             </div>
           </div>
 
@@ -324,7 +299,7 @@ export function ListadoRemisiones() {
             <div class="signature-box">
               <div class="signature-line"></div>
               <div style="font-weight: bold; color: #374151;">ENTREGÓ</div>
-              <div style="color: #6B7280; font-size: 12px;">${remision.capturista || 'Vendedor'}</div>
+              <div style="color: #6B7280; font-size: 12px;">${remision.capturista}</div>
             </div>
             <div class="signature-box">
               <div class="signature-line"></div>
@@ -348,7 +323,7 @@ export function ListadoRemisiones() {
       }, 250);
     }
 
-    alert('✅ Remisión enviada a impresión en formato carta');
+    alert('Remisión enviada a impresión en formato carta');
   };
 
   const handlePrintPDF = () => {
@@ -763,6 +738,7 @@ export function ListadoRemisiones() {
                   Cerrar
                 </button>
                 <button
+                  onClick={() => handlePrintRemision(selectedRemision)}
                   className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
                   <Printer size={16} />
