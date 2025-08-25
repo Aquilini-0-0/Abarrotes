@@ -697,7 +697,7 @@ export function ListadoCompras() {
                         if (selectedProduct) {
                           handleInputChange('producto', selectedProduct.name);
                           handleInputChange('proveedor_id', ''); // Reset proveedor
-                          handleInputChange('codigo_barras', selectedProduct.code);
+                          
                           handleInputChange('marca', selectedProduct.line);
                           handleInputChange('unidad_medida', selectedProduct.unit);
                           handleInputChange('costo_unitario', selectedProduct.cost);
