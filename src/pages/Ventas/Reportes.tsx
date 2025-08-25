@@ -59,21 +59,21 @@ export function ReportesVentas() {
       forma_pago: sale.status === 'paid' ? 'Efectivo' : 'Crédito',
       costo_compra_unit: (() => {
         const product = products?.find(p => p.name === item.product_name);
-        return product?.cost || (item.price * 0.7);
+        return product?.cost || 0;
       })(),
       costo_total: (() => {
         const product = products?.find(p => p.name === item.product_name);
-        const cost = product?.cost || (item.price * 0.7);
+        const cost = product?.cost || 0;
         return item.quantity * cost;
       })(),
       utilidad: (() => {
         const product = products?.find(p => p.name === item.product_name);
-        const cost = product?.cost || (item.price * 0.7);
+        const cost = product?.cost || 0;
         return item.total - (item.quantity * cost);
       })(),
       porcentaje_utilidad: (() => {
         const product = products?.find(p => p.name === item.product_name);
-        const cost = product?.cost || (item.price * 0.7);
+        const cost = product?.cost || 0;
         const totalCost = item.quantity * cost;
         return totalCost > 0 ? ((item.total - totalCost) / totalCost) * 100 : 0;
       })()
