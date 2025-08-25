@@ -91,7 +91,7 @@ export function ReporteInventario() {
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
           value === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
         }`}>
-          {value === 'active' ? 'Activo' : 'Inactivo'}
+          {value === 'active' ? 'Activo' : 'Deshabilitado'}
         </span>
       )
     },
