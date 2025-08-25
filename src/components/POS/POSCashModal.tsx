@@ -33,31 +33,18 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
     
     setLoadingSales(true);
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('sales')
         .select('total')
         .eq('created_by', user.id)
-        .gte('created_at', cashRegister.opened_at);
-
-      // If cash register is closed, filter by closed_at time
-      if (cashRegister.closed_at) {
-        query = query.lte('created_at', cashRegister.closed_at);
-      }
-
-      const { data, error } = await query;
+        .gte('created_at', cashRegister.opened_at)
+        .lte('created_at', cashRegister.closed_at || new Date().toISOString())
+        .neq('status', 'pending'); // Exclude pending sales
       
       if (error) throw error;
       
       const total = data?.reduce((sum, sale) => sum + sale.total, 0) || 0;
       setTotalSales(total);
-
-      // Update the cash register with the calculated total_sales
-      if (total !== cashRegister.total_sales) {
-        await supabase
-          .from('cash_registers')
-          .update({ total_sales: total })
-          .eq('id', cashRegister.id);
-      }
     } catch (err) {
       console.error('Error fetching sales for cash register:', err);
       setTotalSales(0);

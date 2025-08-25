@@ -68,12 +68,12 @@ export function ReportesVentas() {
       })(),
       utilidad: (() => {
         const product = products?.find(p => p.name === item.product_name);
-        const cost = product?.cost || 0;
+        const cost = product?.cost || (item.price * 0.7);
         return item.total - (item.quantity * cost);
       })(),
       porcentaje_utilidad: (() => {
         const product = products?.find(p => p.name === item.product_name);
-        const cost = product?.cost || 0;
+        const cost = product?.cost || (item.price * 0.7);
         const totalCost = item.quantity * cost;
         return totalCost > 0 ? ((item.total - totalCost) / totalCost) * 100 : 0;
       })()
