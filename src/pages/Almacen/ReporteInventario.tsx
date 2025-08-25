@@ -34,10 +34,7 @@ export function ReporteInventario() {
 
   const productosFiltrados = products.filter(product => {
     if (filtros.linea && product.line !== filtros.linea) return false;
-    if (filtros.estado) {
-      if (filtros.estado === 'active' && product.status !== 'active') return false;
-      if (filtros.estado === 'disabled' && product.status !== 'disabled') return false;
-    }
+    if (filtros.estado && product.status !== filtros.estado) return false;
     if (filtros.stockMinimo && product.stock >= parseInt(filtros.stockMinimo)) return false;
     if (filtros.busqueda && !product.name.toLowerCase().includes(filtros.busqueda.toLowerCase())) return false;
     return true;
@@ -111,9 +108,8 @@ export function ReporteInventario() {
   ];
 
   const totalProductos = productosFiltrados.length;
-  const productosActivos = filtros.estado === 'disabled' 
-    ? productosFiltrados.filter(p => p.status === 'disabled').length
-    : productosFiltrados.filter(p => p.status === 'active').length;
+  const productosActivos = productosFiltrados.filter(p => p.status === 'active').length;
+  const productosInactivos = productosFiltrados.filter(p => p.status === 'disabled').length;
   const stockBajo = productosFiltrados.filter(p => p.stock < 20).length;
   const valorTotal = productosFiltrados.reduce((sum, p) => {
     const stock = Number(p.stock) || 0;
@@ -146,9 +142,11 @@ export function ReporteInventario() {
               <TrendingUp className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-green-600">{productosActivos}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {filtros.estado === 'disabled' ? productosInactivos : productosActivos}
+              </div>
               <div className="text-sm text-gray-500">
-                {filtros.estado === 'disabled' ? 'Inactivos' : 'Disponibles'}
+                {filtros.estado === 'disabled' ? 'Deshabilitados' : 'Activos'}
               </div>
             </div>
           </div>
