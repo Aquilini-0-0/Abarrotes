@@ -21,29 +21,70 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
   const [totalSales, setTotalSales] = useState(0);
   const [loadingSales, setLoadingSales] = useState(false);
 
-  // Fetch sales data when cash register is available
+  // Force refresh sales data when modal opens
   useEffect(() => {
     if (cashRegister) {
-      fetchSalesForCashRegister();
+      // Trigger a manual sync to get latest data
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      // Wait a moment for sync then fetch
+      setTimeout(() => {
+        fetchSalesForCashRegister();
+      }, 500);
     }
   }, [cashRegister]);
+
+  // Listen for real-time updates
+  useEffect(() => {
+    const handleDataUpdate = () => {
+      if (cashRegister) {
+        fetchSalesForCashRegister();
+      }
+    };
+
+    window.addEventListener('posDataUpdate', handleDataUpdate);
+    window.addEventListener('refreshData', handleDataUpdate);
+    
+    return () => {
+      window.removeEventListener('posDataUpdate', handleDataUpdate);
+      window.removeEventListener('refreshData', handleDataUpdate);
+    };
+  }, [cashRegister]);
+
+  // Fetch sales data when cash register is available
 
   const fetchSalesForCashRegister = async () => {
     if (!cashRegister || !user) return;
     
     setLoadingSales(true);
     try {
+      console.log('Fetching sales for cash register:', {
+        cashRegisterId: cashRegister.id,
+        userId: user.id,
+        openedAt: cashRegister.opened_at,
+        closedAt: cashRegister.closed_at
+      });
+
       const { data, error } = await supabase
         .from('sales')
         .select('total')
         .eq('created_by', user.id)
         .gte('created_at', cashRegister.opened_at)
-        .lte('created_at', cashRegister.closed_at || new Date().toISOString())
-        .neq('status', 'pending'); // Exclude pending sales
+        .lte('created_at', cashRegister.closed_at || new Date().toISOString());
       
       if (error) throw error;
       
-      const total = data?.reduce((sum, sale) => sum + sale.total, 0) || 0;
+      // Filter out pending sales and calculate total
+      const validSales = data?.filter(sale => sale.status !== 'pending') || [];
+      const total = validSales.reduce((sum, sale) => sum + sale.total, 0);
+      
+      console.log('Sales found for cash register:', {
+        totalSales: data?.length || 0,
+        validSales: validSales.length,
+        totalAmount: total
+      });
+      
       setTotalSales(total);
     } catch (err) {
       console.error('Error fetching sales for cash register:', err);
@@ -69,10 +110,39 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
   const handleCloseRegister = async () => {
     setIsClosing(true);
     try {
-      // Update the cash register with the actual total sales before closing
+      // Force refresh sales data before closing
+      await fetchSalesForCashRegister();
+      
+      // Wait a moment to ensure data is fresh
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Fetch the most up-to-date sales data
+      const { data: latestSales, error: salesError } = await supabase
+        .from('sales')
+        .select('total, status')
+        .eq('created_by', user.id)
+        .gte('created_at', cashRegister.opened_at)
+        .lte('created_at', new Date().toISOString());
+
+      if (salesError) {
+        console.error('Error fetching latest sales:', salesError);
+      }
+
+      // Calculate final total excluding pending sales
+      const finalTotalSales = latestSales
+        ?.filter(sale => sale.status !== 'pending')
+        .reduce((sum, sale) => sum + sale.total, 0) || totalSales;
+
+      console.log('Final sales calculation for cash register close:', {
+        totalSalesFromState: totalSales,
+        finalCalculatedTotal: finalTotalSales,
+        salesCount: latestSales?.length || 0
+      });
+
+      // Update the cash register with the final calculated total sales
       await supabase
         .from('cash_registers')
-        .update({ total_sales: totalSales })
+        .update({ total_sales: finalTotalSales })
         .eq('id', cashRegister.id);
 
       await onCloseRegister(closingAmount);
@@ -202,6 +272,15 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
               {/* Ventas del Turno */}
               <div className="bg-green-50 rounded-xl p-4 border border-green-200">
                 <h4 className="font-bold text-green-900 mb-3 text-center">Ventas del Turno</h4>
+                <div className="flex justify-center mb-3">
+                  <button
+                    onClick={fetchSalesForCashRegister}
+                    disabled={loadingSales}
+                    className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 text-xs font-medium"
+                  >
+                    {loadingSales ? 'Actualizando...' : 'Actualizar Ventas'}
+                  </button>
+                </div>
                 <div className="text-center">
                   <div className="text-green-600 text-sm font-medium">Total de Ventas</div>
                   <div className="text-green-800 font-mono text-2xl font-bold">
@@ -212,6 +291,11 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                     )}
                   </div>
                   <div className="text-green-500 text-xs mt-1">ventas realizadas en este turno</div>
+                </div>
+                <div className="mt-3 text-center">
+                  <div className="text-xs text-green-600">
+                    Última actualización: {new Date().toLocaleTimeString('es-MX')}
+                  </div>
                 </div>
               </div>
 
