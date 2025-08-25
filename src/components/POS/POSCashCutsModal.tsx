@@ -59,11 +59,10 @@ export function POSCashCutsModal({ onClose }: POSCashCutsModalProps) {
           date: openingDate,
           opening_amount: register.opening_amount,
           closing_amount: register.closing_amount || 0,
-          total_sales: register.total_sales || 0, // Use persisted total_sales from database
           total_cash: register.total_cash,
           total_card: register.total_card,
           total_transfer: register.total_transfer,
-          total_sales: actualTotalSales, // Use persisted value from database
+          total_sales: register.total_sales || 0,
           difference: difference,
           user_name: register.users?.name || 'Usuario',
           created_at: register.opened_at
