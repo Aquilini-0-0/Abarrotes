@@ -411,11 +411,11 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                   onClick={() => {
                     if (formData.cost > 0) {
                       const basePrice = formData.cost * 1.3; // 30% margen
-                      handleChange('price1', basePrice);
-                      handleChange('price2', basePrice * 1.1);
+                      handleChange('price1', basePrice* 1.4);
+                      handleChange('price2', basePrice * * 1.3);
                       handleChange('price3', basePrice * 1.2);
-                      handleChange('price4', basePrice * 1.3);
-                      handleChange('price5', basePrice * 1.4);
+                      handleChange('price4', basePrice * 1.1);
+                      handleChange('price5', basePrice );
                     }
                   }}
                   className="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors"
@@ -427,11 +427,11 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                   onClick={() => {
                     if (formData.cost > 0) {
                       const basePrice = formData.cost * 1.5; // 50% margen
-                      handleChange('price1', basePrice);
-                      handleChange('price2', basePrice * 1.1);
+                      handleChange('price1', basePrice* 1.4);
+                      handleChange('price2', basePrice * 1.3);
                       handleChange('price3', basePrice * 1.2);
-                      handleChange('price4', basePrice * 1.3);
-                      handleChange('price5', basePrice * 1.4);
+                      handleChange('price4', basePrice * 1.1);
+                      handleChange('price5', basePrice );
                     }
                   }}
                   className="px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-sm font-medium transition-colors"
@@ -443,11 +443,11 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                   onClick={() => {
                     if (formData.cost > 0) {
                       const basePrice = formData.cost * 2; // 100% margen
-                      handleChange('price1', basePrice);
-                      handleChange('price2', basePrice * 1.1);
+                      handleChange('price1', basePrice* 1.4);
+                      handleChange('price2', basePrice * 1.3);
                       handleChange('price3', basePrice * 1.2);
-                      handleChange('price4', basePrice * 1.3);
-                      handleChange('price5', basePrice * 1.4);
+                      handleChange('price4', basePrice * 1.1);
+                      handleChange('price5', basePrice );
                     }
                   }}
                   className="px-3 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg text-sm font-medium transition-colors"
