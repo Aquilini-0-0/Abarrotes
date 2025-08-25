@@ -697,7 +697,7 @@ export function ListadoCompras() {
                         if (selectedProduct) {
                           handleInputChange('producto', selectedProduct.name);
                           handleInputChange('proveedor_id', ''); // Reset proveedor
-                          
+                          handleInputChange('codigo_barras', selectedProduct.code);
                           handleInputChange('marca', selectedProduct.line);
                           handleInputChange('unidad_medida', selectedProduct.unit);
                           handleInputChange('costo_unitario', selectedProduct.cost);
@@ -741,18 +741,7 @@ export function ListadoCompras() {
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Código de Barras
-                    </label>
-                    <input
-                      type="text"
-                      value={newDetalle.codigo_barras}
-                      onChange={(e) => handleInputChange('codigo_barras', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Código de barras"
-                    />
-                  </div>
+                
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
