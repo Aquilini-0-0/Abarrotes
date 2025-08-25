@@ -412,7 +412,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                     if (formData.cost > 0) {
                       const basePrice = formData.cost * 1.3; // 30% margen
                       handleChange('price1', basePrice* 1.4);
-                      handleChange('price2', basePrice * * 1.3);
+                      handleChange('price2', basePrice * 1.3);
                       handleChange('price3', basePrice * 1.2);
                       handleChange('price4', basePrice * 1.1);
                       handleChange('price5', basePrice );
