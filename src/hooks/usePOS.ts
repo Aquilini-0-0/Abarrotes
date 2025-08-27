@@ -499,11 +499,7 @@ export function usePOS() {
               .from('clients')
               .update({ balance: client.balance + orderData.total })
               .eq('id', orderData.client_id);
-          }
-        }
-
-        return { newAmountPaid: 0, newRemainingBalance: orderData.total, newStatus: 'pending' };
-      } else if (paymentData.method === 'vales' && paymentData.selectedVale) {
+            const savedOrder = await saveOrder(order, paymentData.stockOverride || false);
         // Handle vale payment - save only the cash amount paid
         const valeAmount = paymentData.valeAmount || Math.min(paymentData.selectedVale.disponible, orderData.total);
         const cashAmount = paymentData.cashAmount || Math.max(0, orderData.total - valeAmount);
