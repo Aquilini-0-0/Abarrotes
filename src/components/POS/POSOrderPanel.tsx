@@ -516,15 +516,6 @@ export function POSOrderPanel({
       CANCELAR
     </button>
 
-    <button
-      onClick={onCancel}
-      className="bg-black text-white py-0.5 sm:py-1 lg:py-2 px-0.5 sm:px-1 lg:px-2 rounded-md font-semibold text-[8px] sm:text-[10px] lg:text-xs shadow-sm transition-all duration-200 border border-gray-800 flex flex-col items-center justify-center min-h-[32px] sm:min-h-[40px] lg:min-h-[48px]"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22m-5-4h-8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z" />
-      </svg>
-      ELIMINAR
-    </button>
   </div>
 </div>
 
