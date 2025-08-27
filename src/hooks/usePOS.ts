@@ -466,10 +466,11 @@ export function usePOS() {
           });
         }
 
-        // Update sale with partial payment and remaining balance as credit
+        // Update sale: status = pending, amount_paid = cash+card+transfer, remaining_balance = credit
         const { error: updateError } = await supabase
           .from('sales')
           .update({
+            total: orderData.total, // Keep original total
             amount_paid: cashCardTransferTotal,
             remaining_balance: creditAmount,
             status: 'pending' // Mark as pending since there's credit remaining
@@ -495,6 +496,68 @@ export function usePOS() {
         }
 
         return { newAmountPaid: cashCardTransferTotal, newRemainingBalance: creditAmount, newStatus: 'pending' };
+      } else if (paymentData.method === 'mixed' && paymentData.breakdown && paymentData.breakdown.credit === 0) {
+        // Mixed payment WITHOUT credit - mark as paid
+        const totalPaid = paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer;
+        
+        // Create payment record
+        const { error: paymentError } = await supabase
+          .from('payments')
+          .insert({
+            sale_id: orderId,
+            amount: totalPaid,
+            payment_method: 'cash', // Simplified for mixed payments
+            reference: paymentData.reference || `MIX-${Date.now().toString().slice(-6)}`,
+            created_by: user?.id
+          });
+
+        if (paymentError) throw paymentError;
+
+        // Update sale: status = paid, amount_paid = total, remaining_balance = 0
+        const { error: updateError } = await supabase
+          .from('sales')
+          .update({
+            total: orderData.total, // Keep original total
+            amount_paid: totalPaid,
+            remaining_balance: 0,
+            status: 'paid' // Mark as paid since no credit
+          })
+          .eq('id', orderId);
+
+        if (updateError) throw updateError;
+
+        // Process inventory movements and update stock for paid orders
+        for (const item of orderData.sale_items) {
+          // Create inventory movement
+          await supabase
+            .from('inventory_movements')
+            .insert({
+              product_id: item.product_id,
+              product_name: item.product_name,
+              type: 'salida',
+              quantity: item.quantity,
+              date: orderData.date,
+              reference: `POS-${orderId.slice(-6)}`,
+              user_name: user?.name || 'POS User',
+              created_by: user?.id
+            });
+
+          // Update product stock
+          const { data: product } = await supabase
+            .from('products')
+            .select('stock')
+            .eq('id', item.product_id)
+            .single();
+
+          if (product) {
+            await supabase
+              .from('products')
+              .update({ stock: product.stock - item.quantity })
+              .eq('id', item.product_id);
+          }
+        }
+
+        return { newAmountPaid: totalPaid, newRemainingBalance: 0, newStatus: 'paid' };
       }
 
       // Handle credit sales differently
