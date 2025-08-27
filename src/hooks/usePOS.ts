@@ -396,7 +396,17 @@ export function usePOS() {
       // Trigger ERS sales sync
       window.dispatchEvent(new CustomEvent('posDataUpdate'));
       
-      return saleData;
+      // Return a complete POSOrder object with the database ID
+      const savedOrder: POSOrder = {
+        ...order,
+        id: saleData.id,
+        status: saleData.status,
+        created_at: saleData.created_at,
+        amount_paid: saleData.amount_paid || 0,
+        remaining_balance: saleData.remaining_balance || saleData.total
+      };
+      
+      return savedOrder;
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Error saving order');
     }

@@ -305,6 +305,9 @@ export function POSLayout() {
         // For new orders, save first then process payment
         const savedOrder = await saveOrder(currentOrder, paymentData.stockOverride);
         
+        // Update the active order with the new database ID
+        updateActiveOrder(savedOrder);
+        
         // Process the payment using the hook
         const paymentAmount = paymentData.method === 'mixed' 
           ? paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer + paymentData.breakdown.credit
@@ -378,6 +381,8 @@ export function POSLayout() {
     if (currentOrder) {
       try {
         const savedOrder = await saveOrder({ ...currentOrder, status: 'pending' }, false);
+        // Update the active order with the new database ID
+        updateActiveOrder(savedOrder);
         markTabAsSaved(activeTabId);
         closeTab(activeTabId); // Close the tab after saving
         alert('Pedido guardado');
