@@ -251,31 +251,6 @@ export function usePOS() {
           unit_price: unitPrice,
           total: item.quantity * unitPrice
         };
-      }
-      return item;
-    });
-
-    const subtotal = updatedItems.reduce((sum, item) => sum + item.total, 0);
-    return {
-      ...order,
-      items: updatedItems,
-      subtotal,
-      total: subtotal - order.discount_total
-    };
-  };
-  // Apply discount to order
-  const applyDiscount = (order: POSOrder, discountAmount: number): POSOrder => {
-    if (!order) throw new Error('No hay pedido activo');
-
-    return {
-      ...order,
-      discount_total: discountAmount,
-      total: order.subtotal - discountAmount
-    };
-  };
-
-  // Save order to database
-  const saveOrder = async (order: POSOrder, stockOverride: boolean = false) => {
     try {
       // Validate stock before saving (unless overridden)
       if (!stockOverride) {
