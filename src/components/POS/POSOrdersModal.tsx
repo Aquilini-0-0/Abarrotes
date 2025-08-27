@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Search, Eye, Trash2, CreditCard, Edit, FileText } from 'lucide-react';
 import { POSOrder } from '../../types/pos';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 interface POSOrdersModalProps {
   orders: POSOrder[];
