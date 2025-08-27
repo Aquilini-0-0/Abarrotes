@@ -131,6 +131,30 @@ export function useSales() {
     }
   };
 
+  const updateSale = async (id: string, updates: Partial<Sale>) => {
+    try {
+      const { data, error } = await supabase
+        .from('sales')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update local state
+      setSales(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
+      return data;
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Error updating sale');
+    }
+  };
   useEffect(() => {
     fetchSales();
     
@@ -166,6 +190,7 @@ export function useSales() {
     error,
     createSale,
     updateSaleStatus,
+    updateSale,
     refetch: fetchSales
   };
 }

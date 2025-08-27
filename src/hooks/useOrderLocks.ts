@@ -269,16 +269,36 @@ export function useOrderLocks() {
 
   // Auto-cleanup expired locks every minute
   useEffect(() => {
-    const interval = setInterval(() => {
-      cleanExpiredLocks().catch(err => {
+    const interval = setInterval(async () => {
+      await cleanExpiredLocks().catch(err => {
         console.warn('Periodic expired lock cleanup failed (non-critical):', err);
       });
-    }, 60000);
+      // Also refresh locks to get latest state
+      await fetchLocks().catch(err => {
+        console.warn('Periodic lock refresh failed (non-critical):', err);
+      });
+    }, 30000); // Check every 30 seconds instead of 60
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     fetchLocks();
+    
+    // Set up real-time subscription for order locks
+    const subscription = supabase
+      .channel('order_locks_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'order_locks' }, 
+        (payload) => {
+          console.log('Order lock change detected:', payload);
+          fetchLocks();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, []);
 
   return {

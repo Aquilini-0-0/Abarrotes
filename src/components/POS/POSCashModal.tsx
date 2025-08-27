@@ -265,12 +265,20 @@ export function POSCashModal({ cashRegister, onClose, onOpenRegister, onCloseReg
                 </button>
                 <button
                   onClick={handleCloseRegister}
-                  disabled={isClosing}
+                  disabled={isClosing || closingAmount <= 0}
                   className="flex-1 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-colors"
                 >
                   {isClosing ? 'Cerrando...' : 'Cerrar Caja'}
                 </button>
               </div>
+              
+              {closingAmount <= 0 && (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-yellow-800 text-sm">
+                    ⚠️ Ingrese el efectivo contado para cerrar la caja
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

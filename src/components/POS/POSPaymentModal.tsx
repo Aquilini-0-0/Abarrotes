@@ -432,13 +432,13 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
     }
   };
 
-  const processPayment = (overrideStock = false) => {
+  const processPayment = async (overrideStock = false) => {
     setIsProcessing(true);
     
     // Generate and download .txt ticket automatically before processing payment
     generateAndDownloadTicket();
     
-    const paymentData = {
+    let paymentData = {
       method: paymentMethod,
       breakdown: paymentMethod === 'mixed' ? paymentBreakdown : undefined,
       cashReceived: paymentMethod === 'cash' ? cashReceived : undefined,
@@ -449,6 +449,70 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       printA4
     };
 
+    // Handle mixed payment with credit portion
+    if (paymentMethod === 'mixed' && paymentBreakdown.credit > 0) {
+      try {
+        // First, save the order if it's new
+        let orderId = order.id;
+        if (order.id.startsWith('temp-')) {
+          const savedOrder = await onProcessPayment?.(order.id, {
+            ...paymentData,
+            method: 'cash', // Save as cash for the non-credit portion
+            amount: paymentBreakdown.cash + paymentBreakdown.card + paymentBreakdown.transfer
+          });
+          orderId = savedOrder?.id || order.id;
+        }
+
+        // Calculate amounts
+        const cashCardTransferTotal = paymentBreakdown.cash + paymentBreakdown.card + paymentBreakdown.transfer;
+        const creditAmount = paymentBreakdown.credit;
+
+        // Process the cash/card/transfer portion first
+        if (cashCardTransferTotal > 0) {
+          await supabase.from('payments').insert({
+            sale_id: orderId,
+            amount: cashCardTransferTotal,
+            payment_method: 'cash', // Simplified for mixed payments
+            reference: `MIX-${Date.now().toString().slice(-6)}`,
+            created_by: user?.id
+          });
+        }
+
+        // Update sale with partial payment and remaining balance as credit
+        await supabase
+          .from('sales')
+          .update({
+            amount_paid: cashCardTransferTotal,
+            remaining_balance: creditAmount,
+            status: 'pending' // Mark as pending since there's credit remaining
+          })
+          .eq('id', orderId);
+
+        // Update client balance for the credit portion
+        if (client && client.id) {
+          const { data: clientData } = await supabase
+            .from('clients')
+            .select('balance')
+            .eq('id', client.id)
+            .single();
+
+          if (clientData) {
+            await supabase
+              .from('clients')
+              .update({ balance: clientData.balance + creditAmount })
+              .eq('id', client.id);
+          }
+        }
+
+        alert(`Pago mixto procesado exitosamente. Efectivo/Tarjeta: $${cashCardTransferTotal.toFixed(2)}, Crédito: $${creditAmount.toFixed(2)}`);
+        
+      } catch (err) {
+        console.error('Error processing mixed payment with credit:', err);
+        alert('Error al procesar el pago mixto');
+        setIsProcessing(false);
+        return;
+      }
+    }
     // Simulate processing delay
     setTimeout(() => {
       onConfirm(paymentData);

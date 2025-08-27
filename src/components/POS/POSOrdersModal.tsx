@@ -206,6 +206,19 @@ return (
                       <Eye size={12} className="sm:w-4 sm:h-4" />
                     </button>
 
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteOrder(order.id);
+                          }}
+                          className="p-0.5 sm:p-1 text-red-600 hover:text-red-800"
+                          title="Eliminar pedido"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22m-5-4h-8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z" />
+                          </svg>
+                        </button>
+
                     {order.status === 'draft' && (
                       <button
                         onClick={(e) => {
@@ -476,4 +489,57 @@ return (
   </div>
 );
 
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('¿Está seguro de eliminar este pedido? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      // Delete sale items first (foreign key constraint)
+      const { error: itemsError } = await supabase
+        .from('sale_items')
+        .delete()
+        .eq('sale_id', orderId);
+
+      if (itemsError) throw itemsError;
+
+      // Delete payments if any
+      const { error: paymentsError } = await supabase
+        .from('payments')
+        .delete()
+        .eq('sale_id', orderId);
+
+      if (paymentsError) throw paymentsError;
+
+      // Delete the sale
+      const { error: saleError } = await supabase
+        .from('sales')
+        .delete()
+        .eq('id', orderId);
+
+      if (saleError) throw saleError;
+
+      // Update local state
+      const updatedOrders = orders.filter(order => order.id !== orderId);
+      
+      // Trigger refresh in parent component
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
+      // Dispatch event to refresh orders
+      window.dispatchEvent(new CustomEvent('posDataUpdate'));
+      
+      alert('Pedido eliminado exitosamente');
+      
+      // Force re-render by updating a state that would cause parent to re-fetch
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
+    } catch (err) {
+      console.error('Error deleting order:', err);
+      alert('Error al eliminar el pedido: ' + (err instanceof Error ? err.message : 'Error desconocido'));
+    }
+  };
 }
