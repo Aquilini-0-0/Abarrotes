@@ -251,6 +251,9 @@ export function usePOS() {
           unit_price: unitPrice,
           total: item.quantity * unitPrice
         };
+      }
+    }
+    )
     try {
       // Validate stock before saving (unless overridden)
       if (!stockOverride) {
