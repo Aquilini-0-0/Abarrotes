@@ -264,6 +264,19 @@ export function usePOS() {
     };
   };
 
+  // Apply discount to order
+  function applyDiscount(order: POSOrder, discountAmount: number): POSOrder {
+    if (!order) throw new Error('No hay pedido activo');
+    
+    const updatedOrder = {
+      ...order,
+      discount_total: discountAmount,
+      total: order.subtotal - discountAmount
+    };
+    
+    return updatedOrder;
+  }
+
   // Save order to database
   const saveOrder = async (order: POSOrder, stockOverride: boolean = false): Promise<POSOrder> => {
     try {
