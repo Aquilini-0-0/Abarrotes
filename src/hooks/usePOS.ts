@@ -252,8 +252,20 @@ export function usePOS() {
           total: item.quantity * unitPrice
         };
       }
-    }
-    )
+      return item;
+    });
+
+    const subtotal = updatedItems.reduce((sum, item) => sum + item.total, 0);
+    return {
+      ...order,
+      items: updatedItems,
+      subtotal,
+      total: subtotal - order.discount_total
+    };
+  };
+
+  // Save order to database
+  const saveOrder = async (order: POSOrder, stockOverride: boolean = false): Promise<POSOrder> => {
     try {
       // Validate stock before saving (unless overridden)
       if (!stockOverride) {
@@ -499,7 +511,11 @@ export function usePOS() {
               .from('clients')
               .update({ balance: client.balance + orderData.total })
               .eq('id', orderData.client_id);
-            const savedOrder = await saveOrder(order, paymentData.stockOverride || false);
+          }
+        }
+
+        return { newAmountPaid: 0, newRemainingBalance: orderData.total, newStatus: 'pending' };
+      } else if (paymentData.method === 'vales' && paymentData.selectedVale) {
         // Handle vale payment - save only the cash amount paid
         const valeAmount = paymentData.valeAmount || Math.min(paymentData.selectedVale.disponible, orderData.total);
         const cashAmount = paymentData.cashAmount || Math.max(0, orderData.total - valeAmount);
