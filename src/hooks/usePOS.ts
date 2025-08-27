@@ -308,8 +308,14 @@ export function usePOS() {
         }
       };
 
+      // Helper function to check if ID is a valid UUID
+      const isValidUUID = (id: string): boolean => {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(id);
+      };
+
       let saleData;
-      let isNewOrder = order.id.startsWith('temp-');
+      let isNewOrder = order.id.startsWith('temp-') || !isValidUUID(order.id);
       
       // Check if this is an existing order (not temp)
       if (!isNewOrder) {
