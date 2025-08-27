@@ -405,12 +405,18 @@ export function usePOS() {
   // Process payment for an order
   const processPayment = async (orderId: string, paymentData: {
     amount: number;
-    method: 'cash' | 'card' | 'transfer' | 'credit' | 'vales';
+    method: 'cash' | 'card' | 'transfer' | 'credit' | 'vales' | 'mixed';
     reference?: string;
     selectedVale?: any;
     stockOverride?: boolean;
     valeAmount?: number;
     cashAmount?: number;
+    breakdown?: {
+      cash: number;
+      card: number;
+      transfer: number;
+      credit: number;
+    };
   }) => {
     try {
       // Get current order data
@@ -430,6 +436,53 @@ export function usePOS() {
         .single();
 
       if (orderError) throw orderError;
+
+      // Handle mixed payment with credit
+      if (paymentData.method === 'mixed' && paymentData.breakdown && paymentData.breakdown.credit > 0) {
+        const cashCardTransferTotal = paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer;
+        const creditAmount = paymentData.breakdown.credit;
+
+        // Process the cash/card/transfer portion first
+        if (cashCardTransferTotal > 0) {
+          await supabase.from('payments').insert({
+            sale_id: orderId,
+            amount: cashCardTransferTotal,
+            payment_method: 'cash', // Simplified for mixed payments
+            reference: paymentData.reference || `MIX-${Date.now().toString().slice(-6)}`,
+            created_by: user?.id
+          });
+        }
+
+        // Update sale with partial payment and remaining balance as credit
+        const { error: updateError } = await supabase
+          .from('sales')
+          .update({
+            amount_paid: cashCardTransferTotal,
+            remaining_balance: creditAmount,
+            status: 'pending' // Mark as pending since there's credit remaining
+          })
+          .eq('id', orderId);
+
+        if (updateError) throw updateError;
+
+        // Update client balance for the credit portion
+        if (orderData.client_id) {
+          const { data: clientData } = await supabase
+            .from('clients')
+            .select('balance')
+            .eq('id', orderData.client_id)
+            .single();
+
+          if (clientData) {
+            await supabase
+              .from('clients')
+              .update({ balance: clientData.balance + creditAmount })
+              .eq('id', orderData.client_id);
+          }
+        }
+
+        return { newAmountPaid: cashCardTransferTotal, newRemainingBalance: creditAmount, newStatus: 'pending' };
+      }
 
       // Handle credit sales differently
       if (paymentData.method === 'credit') {
