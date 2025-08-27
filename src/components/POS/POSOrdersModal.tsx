@@ -18,6 +18,60 @@ export function POSOrdersModal({ orders, onClose, onSelectOrder, onEditOrder }: 
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrderDetail, setSelectedOrderDetail] = useState<POSOrder | null>(null);
 
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('¿Está seguro de eliminar este pedido? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      // Delete sale items first (foreign key constraint)
+      const { error: itemsError } = await supabase
+        .from('sale_items')
+        .delete()
+        .eq('sale_id', orderId);
+
+      if (itemsError) throw itemsError;
+
+      // Delete payments if any
+      const { error: paymentsError } = await supabase
+        .from('payments')
+        .delete()
+        .eq('sale_id', orderId);
+
+      if (paymentsError) throw paymentsError;
+
+      // Delete the sale
+      const { error: saleError } = await supabase
+        .from('sales')
+        .delete()
+        .eq('id', orderId);
+
+      if (saleError) throw saleError;
+
+      // Update local state
+      const updatedOrders = orders.filter(order => order.id !== orderId);
+      
+      // Trigger refresh in parent component
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
+      // Dispatch event to refresh orders
+      window.dispatchEvent(new CustomEvent('posDataUpdate'));
+      
+      alert('Pedido eliminado exitosamente');
+      
+      // Force re-render by updating a state that would cause parent to re-fetch
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
+    } catch (err) {
+      console.error('Error deleting order:', err);
+      alert('Error al eliminar el pedido: ' + (err instanceof Error ? err.message : 'Error desconocido'));
+    }
+  };
+
   let filteredOrders = orders.filter(order => {
     const matchesSearch = order.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.id.toLowerCase().includes(searchTerm.toLowerCase());
@@ -488,58 +542,4 @@ return (
     )}
   </div>
 );
-
-  const handleDeleteOrder = async (orderId: string) => {
-    if (!confirm('¿Está seguro de eliminar este pedido? Esta acción no se puede deshacer.')) {
-      return;
-    }
-
-    try {
-      // Delete sale items first (foreign key constraint)
-      const { error: itemsError } = await supabase
-        .from('sale_items')
-        .delete()
-        .eq('sale_id', orderId);
-
-      if (itemsError) throw itemsError;
-
-      // Delete payments if any
-      const { error: paymentsError } = await supabase
-        .from('payments')
-        .delete()
-        .eq('sale_id', orderId);
-
-      if (paymentsError) throw paymentsError;
-
-      // Delete the sale
-      const { error: saleError } = await supabase
-        .from('sales')
-        .delete()
-        .eq('id', orderId);
-
-      if (saleError) throw saleError;
-
-      // Update local state
-      const updatedOrders = orders.filter(order => order.id !== orderId);
-      
-      // Trigger refresh in parent component
-      if (window.triggerSync) {
-        window.triggerSync();
-      }
-      
-      // Dispatch event to refresh orders
-      window.dispatchEvent(new CustomEvent('posDataUpdate'));
-      
-      alert('Pedido eliminado exitosamente');
-      
-      // Force re-render by updating a state that would cause parent to re-fetch
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-      
-    } catch (err) {
-      console.error('Error deleting order:', err);
-      alert('Error al eliminar el pedido: ' + (err instanceof Error ? err.message : 'Error desconocido'));
-    }
-  };
 }
