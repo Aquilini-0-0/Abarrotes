@@ -586,6 +586,7 @@ export function POSLayout() {
             // Just view the order details, don't edit
           }}
           onEditOrder={handleEditOrder}
+          onOrderDeleted={refetch}
         />
       )}
 

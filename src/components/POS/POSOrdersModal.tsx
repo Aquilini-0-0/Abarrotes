@@ -9,9 +9,10 @@ interface POSOrdersModalProps {
   onClose: () => void;
   onSelectOrder: (order: POSOrder) => void;
   onEditOrder?: (order: POSOrder) => void;
+  onOrderDeleted?: () => void;
 }
 
-export function POSOrdersModal({ orders, onClose, onSelectOrder, onEditOrder }: POSOrdersModalProps) {
+export function POSOrdersModal({ orders, onClose, onSelectOrder, onEditOrder, onOrderDeleted }: POSOrdersModalProps) {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -49,9 +50,6 @@ export function POSOrdersModal({ orders, onClose, onSelectOrder, onEditOrder }: 
 
       if (saleError) throw saleError;
 
-      // Update local state
-      const updatedOrders = orders.filter(order => order.id !== orderId);
-      
       // Trigger refresh in parent component
       if (window.triggerSync) {
         window.triggerSync();
@@ -60,12 +58,12 @@ export function POSOrdersModal({ orders, onClose, onSelectOrder, onEditOrder }: 
       // Dispatch event to refresh orders
       window.dispatchEvent(new CustomEvent('posDataUpdate'));
       
-      alert('Pedido eliminado exitosamente');
+      // Notify parent component to refresh orders
+      if (onOrderDeleted) {
+        onOrderDeleted();
+      }
       
-      // Force re-render by updating a state that would cause parent to re-fetch
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      alert('Pedido eliminado exitosamente');
       
     } catch (err) {
       console.error('Error deleting order:', err);
