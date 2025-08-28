@@ -9,7 +9,6 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isCreatingUsers, setIsCreatingUsers] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [selectedSystem, setSelectedSystem] = useState<SystemType>('ERS');
@@ -17,124 +16,56 @@ export function LoginForm() {
   const { login, loginPOS } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setError('');
-
-  try {
-    // Guarda el sistema seleccionado
-    localStorage.setItem('loginSystem', selectedSystem); // 👈 Guardamos ERP o POS
-
-    const success = selectedSystem === 'POS' 
-      ? await loginPOS(email, password)
-      : await login(email, password);
-
-    console.log(selectedSystem);
-
-    if (!success) {
-      if (selectedSystem === 'ERS') {
-        setError('Acceso denegado. Solo usuarios con rol de Administrador pueden acceder al ERS. Si es la primera vez que usas el sistema, haz clic en "Crear Usuarios de Prueba" primero.');
-      } else {
-        setError('Email o contraseña incorrectos. Si es la primera vez que usas el sistema, haz clic en "Crear Usuarios de Prueba" primero.');
-      }
-    }
-  } catch (err) {
-    console.error('Login error:', err);
-    if (err instanceof Error && err.message.includes('Invalid login credentials')) {
-      if (selectedSystem === 'ERS') {
-        setError('Credenciales inválidas o acceso denegado. Solo administradores pueden acceder al ERS. Si es la primera vez que usas el sistema, necesitas crear los usuarios de prueba primero.');
-      } else {
-        setError('Credenciales inválidas. Si es la primera vez que usas el sistema, necesitas crear los usuarios de prueba primero.');
-      }
-    } else {
-      setError('Error al iniciar sesión. Verifica tu conexión a internet.');
-    }
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
-
-  const createTestUsers = async () => {
-    setIsCreatingUsers(true);
+    e.preventDefault();
+    setIsLoading(true);
     setError('');
-    setSuccess('');
 
     try {
-      // Check if Supabase is configured
-      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-        setError('Supabase no está configurado. Por favor haz clic en "Connect to Supabase" en la esquina superior derecha.');
-        return;
-      }
+      // Guarda el sistema seleccionado
+      localStorage.setItem('loginSystem', selectedSystem); // 👈 Guardamos ERP o POS
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-users`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const success = selectedSystem === 'POS' 
+        ? await loginPOS(email, password)
+        : await login(email, password);
 
-      const data = await response.json();
-      
-      if (response.ok) {
-        const successCount = data.results.filter((r: any) => r.success).length;
-        setSuccess(`✅ ${successCount} usuarios creados exitosamente. Ya puedes iniciar sesión.`);
-      } else {
-        setError('Error al crear usuarios: ' + (data.error || 'Error desconocido'));
+      console.log(selectedSystem);
+
+      if (!success) {
+        if (selectedSystem === 'ERS') {
+          setError('Acceso denegado. Solo usuarios con rol de Administrador pueden acceder al ERS.');
+        } else {
+          setError('Email o contraseña incorrectos.');
+        }
       }
     } catch (err) {
-      if (err instanceof TypeError && err.message.includes('fetch')) {
-        setError('No se puede conectar a Supabase. Por favor configura la conexión primero.');
+      console.error('Login error:', err);
+      if (err instanceof Error && err.message.includes('Invalid login credentials')) {
+        if (selectedSystem === 'ERS') {
+          setError('Credenciales inválidas o acceso denegado. Solo administradores pueden acceder al ERS.');
+        } else {
+          setError('Credenciales inválidas.');
+        }
       } else {
-        setError('Error de conexión al crear usuarios');
+        setError('Error al iniciar sesión. Verifica tu conexión a internet.');
       }
     } finally {
-      setIsCreatingUsers(false);
+      setIsLoading(false);
     }
   };
-
-  const testUsers = [
-    {
-      role: 'Administrador',
-      email: 'admin@duran.com',
-      password: 'admin123',
-      icon: Shield,
-      bgColor: 'bg-red-100',
-      iconColor: 'text-red-600',
-    },
-    {
-      role: 'Gerente',
-      email: 'gerente@duran.com',
-      password: 'gerente123',
-      icon: BarChart3,
-      bgColor: 'bg-yellow-100',
-      iconColor: 'text-yellow-600',
-    },
-    {
-      role: 'Empleado',
-      email: 'empleado@duran.com',
-      password: 'empleado123',
-      icon: Users,
-      bgColor: 'bg-green-100',
-      iconColor: 'text-green-600',
-    },
-  ];
 
   const isERS = selectedSystem === 'ERS';
   const isPOS = selectedSystem === 'POS';
 
   // Colores dinámicos basados en el sistema seleccionado
-const primaryColor = isERS ? 'blue' : 'orange';
-const gradientFrom = isERS ? 'from-blue-600' : 'from-orange-400';
-const gradientVia = isERS ? 'via-blue-700' : 'via-red-500';
-const gradientTo = isERS ? 'to-blue-800' : 'to-red-600';
-const focusColor = isERS ? 'focus:border-blue-600' : 'focus:border-orange-500';
-const focusRing = isERS ? 'focus:ring-blue-300' : 'focus:ring-orange-200';
-const buttonGradient = isERS
-  ? 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'
-  : 'from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600';
+  const primaryColor = isERS ? 'blue' : 'orange';
+  const gradientFrom = isERS ? 'from-blue-600' : 'from-orange-400';
+  const gradientVia = isERS ? 'via-blue-700' : 'via-red-500';
+  const gradientTo = isERS ? 'to-blue-800' : 'to-red-600';
+  const focusColor = isERS ? 'focus:border-blue-600' : 'focus:border-orange-500';
+  const focusRing = isERS ? 'focus:ring-blue-300' : 'focus:ring-orange-200';
+  const buttonGradient = isERS
+    ? 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'
+    : 'from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600';
 
 
   return (
@@ -433,77 +364,14 @@ const buttonGradient = isERS
                     </>
                   ) : (
                     <>
-                      <Lock className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                      <Lock className="w-4 h-4 sm:w-5 sm:w-5 mr-1 sm:mr-2" />
                       Iniciar Sesión en {selectedSystem}
                     </>
                   )}
                 </button>
               </form>
-
-                {/* Divider */}
-                <div className="relative my-6 sm:my-8">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 sm:px-6 bg-white text-gray-500 font-medium text-xs sm:text-sm">o configura el sistema</span>
-                  </div>
-                </div>
-
-                {/* Create Test Users Button */}
-                <button
-                  type="button"
-                  onClick={createTestUsers}
-                  disabled={isCreatingUsers}
-                  className={`w-full flex justify-center items-center py-3 sm:py-4 px-4 sm:px-6 border-2 ${isERS ? 'border-blue-300 text-blue-700 hover:bg-blue-50' : 'border-orange-300 text-orange-700 hover:bg-orange-50'} text-sm sm:text-base font-semibold rounded-lg sm:rounded-xl bg-white focus:outline-none focus:ring-4 ${focusRing} disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md`}
-                >
-                  {isCreatingUsers ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-current mr-2 sm:mr-3"></div>
-                      Creando usuarios...
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-                      Crear Usuarios de Prueba
-                    </>
-                  )}
-                </button>
-
-                {/* Test Users Info */}
-                <div className="mt-4 sm:mt-6 bg-gray-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-200">
-                  <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 sm:mb-3 text-center">
-                    Usuarios de Prueba Disponibles
-                  </h3>
-                  <div className="space-y-2 sm:space-y-3">
-                    {testUsers.map((user, index) => {
-                      const IconComponent = user.icon;
-                      return (
-                        <div key={index} className="flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg border border-gray-100 hover:shadow-sm transition-shadow duration-200">
-                          <div className="flex items-center space-x-2 sm:space-x-3">
-                            <div className={`w-8 h-8 sm:w-10 sm:h-10 ${user.bgColor} rounded-lg flex items-center justify-center`}>
-                              <IconComponent className={`w-4 h-4 sm:w-5 sm:h-5 ${user.iconColor}`} />
-                            </div>
-                            <div>
-                              <p className="text-xs sm:text-sm font-semibold text-gray-800">{user.role}</p>
-                              <p className="text-[10px] sm:text-xs text-gray-600">{user.email}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-[10px] sm:text-xs text-gray-500 font-mono bg-gray-100 px-1 sm:px-2 py-0.5 sm:py-1 rounded">
-                              {user.password}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <p className="text-[10px] sm:text-xs text-gray-500 text-center mt-2 sm:mt-3">
-                    {isERS ? 'Solo administradores pueden acceder al ERS' : 'Todos los usuarios pueden acceder al POS'}
-                  </p>
-                </div>
-              </div>
             </div>
+          </div>
 
           {/* Footer */}
           <div className="text-center mt-6 sm:mt-8">
