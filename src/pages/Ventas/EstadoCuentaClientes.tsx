@@ -121,8 +121,7 @@ export function EstadoCuentaClientes() {
               <th>Saldo Actual</th>
               <th>Crédito Disponible</th>
               <th>Última Compra</th>
-              <th>Días Vencimiento</th>
-              <th>Estatus</th>
+    
             </tr>
           </thead>
           <tbody>
