@@ -399,7 +399,7 @@ export function Usuarios() {
                     required
                   >
                     <option value="Admin">Admin</option>
-                    <option value="Gerente">Gerente</option>
+                    <option value="Chofer">Chofer</option>
                     <option value="Empleado">Empleado</option>
                   </select>
                 </div>
