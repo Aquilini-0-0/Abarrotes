@@ -503,7 +503,6 @@ const buttonGradient = isERS
                   </p>
                 </div>
               </div>
-            </div>
 
           {/* Footer */}
           <div className="text-center mt-6 sm:mt-8">
