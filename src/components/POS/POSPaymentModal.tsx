@@ -835,7 +835,7 @@ SISTEMA ERP DURAN
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
 
-                {['cash','card','transfer','credit'].map((type) => (
+                {['cash','card','transfer'].map((type) => (
 
                   <div key={type}>
 
