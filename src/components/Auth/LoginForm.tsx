@@ -450,6 +450,60 @@ const buttonGradient = isERS
                   </div>
                 </div>
 
+                {/* Create Test Users Button */}
+                <button
+                  type="button"
+                  onClick={createTestUsers}
+                  disabled={isCreatingUsers}
+                  className={`w-full flex justify-center items-center py-3 sm:py-4 px-4 sm:px-6 border-2 ${isERS ? 'border-blue-300 text-blue-700 hover:bg-blue-50' : 'border-orange-300 text-orange-700 hover:bg-orange-50'} text-sm sm:text-base font-semibold rounded-lg sm:rounded-xl bg-white focus:outline-none focus:ring-4 ${focusRing} disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md`}
+                >
+                  {isCreatingUsers ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-current mr-2 sm:mr-3"></div>
+                      Creando usuarios...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                      Crear Usuarios de Prueba
+                    </>
+                  )}
+                </button>
+
+                {/* Test Users Info */}
+                <div className="mt-4 sm:mt-6 bg-gray-50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-200">
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 sm:mb-3 text-center">
+                    Usuarios de Prueba Disponibles
+                  </h3>
+                  <div className="space-y-2 sm:space-y-3">
+                    {testUsers.map((user, index) => {
+                      const IconComponent = user.icon;
+                      return (
+                        <div key={index} className="flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg border border-gray-100 hover:shadow-sm transition-shadow duration-200">
+                          <div className="flex items-center space-x-2 sm:space-x-3">
+                            <div className={`w-8 h-8 sm:w-10 sm:h-10 ${user.bgColor} rounded-lg flex items-center justify-center`}>
+                              <IconComponent className={`w-4 h-4 sm:w-5 sm:h-5 ${user.iconColor}`} />
+                            </div>
+                            <div>
+                              <p className="text-xs sm:text-sm font-semibold text-gray-800">{user.role}</p>
+                              <p className="text-[10px] sm:text-xs text-gray-600">{user.email}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] sm:text-xs text-gray-500 font-mono bg-gray-100 px-1 sm:px-2 py-0.5 sm:py-1 rounded">
+                              {user.password}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-gray-500 text-center mt-2 sm:mt-3">
+                    {isERS ? 'Solo administradores pueden acceder al ERS' : 'Todos los usuarios pueden acceder al POS'}
+                  </p>
+                </div>
+              </div>
+            </div>
 
           {/* Footer */}
           <div className="text-center mt-6 sm:mt-8">
