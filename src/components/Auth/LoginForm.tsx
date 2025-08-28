@@ -438,6 +438,7 @@ const buttonGradient = isERS
                     </>
                   )}
                 </button>
+              </form>
 
                 {/* Divider */}
                 <div className="relative my-6 sm:my-8">
