@@ -199,6 +199,58 @@ const fetchReportes = useCallback(async () => {
   };
 
   const handleExportReport = (reporte: CashRegisterReport) => {
+    // First fetch the sales detail for this cash register
+    fetchSalesDetailForExport(reporte);
+  };
+
+  const fetchSalesDetailForExport = async (reporte: CashRegisterReport) => {
+    try {
+      // Get the cash register data to find user_id, opened_at and closed_at times
+      const { data: cashRegister, error: cashError } = await supabase
+        .from('cash_registers')
+        .select('user_id, opened_at, closed_at')
+        .eq('id', reporte.id)
+        .single();
+
+      if (cashError) throw cashError;
+
+      // Query sales that occurred during the cash register session for the specific user
+      let query = supabase
+        .from('sales')
+        .select(`
+          *,
+          sale_items(
+            product_name,
+            quantity,
+            price,
+            total
+          )
+        `)
+        .eq('created_by', cashRegister.user_id)
+        .gte('created_at', cashRegister.opened_at);
+
+      // If cash register is closed, filter by closed_at time
+      if (cashRegister.closed_at) {
+        query = query.lte('created_at', cashRegister.closed_at);
+      } else {
+        // If still open, filter up to now
+        query = query.lte('created_at', new Date().toISOString());
+      }
+
+      const { data: salesForExport, error: salesError } = await query.order('created_at', { ascending: false });
+
+      if (salesError) throw salesError;
+
+      // Generate the ticket with sales detail
+      generateTicketWithSalesDetail(reporte, salesForExport || []);
+    } catch (err) {
+      console.error('Error fetching sales for export:', err);
+      // Fallback to basic ticket without sales detail
+      generateTicketWithSalesDetail(reporte, []);
+    }
+  };
+
+  const generateTicketWithSalesDetail = (reporte: CashRegisterReport, salesForTicket: any[]) => {
     const content = `
 REPORTE DETALLADO DE CAJA - ${reporte.caja}
 ================================================
@@ -223,6 +275,20 @@ Total Ventas:            $${reporte.total_ventas.toLocaleString('es-MX', { minim
 ESTADÍSTICAS:
 - Número de Tickets:      ${reporte.numero_tickets}
 - Ticket Promedio:        $${reporte.ticket_promedio.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+
+DETALLE DE VENTAS:
+================================================
+${salesForTicket.length > 0 ? salesForTicket.map(sale => {
+  const productos = sale.sale_items?.map(item => `${item.product_name} (${item.quantity})`).join(', ') || 'Sin productos';
+  return `
+FOLIO: #${sale.id.slice(-6).toUpperCase()}
+CLIENTE: ${sale.client_name}
+HORA: ${new Date(sale.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+TOTAL: $${sale.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+ESTADO: ${sale.status === 'paid' ? 'PAGADO' : sale.status === 'pending' ? 'PENDIENTE' : 'GUARDADO'}
+PRODUCTOS: ${productos}
+------------------------------------------------`;
+}).join('\n') : 'No hay ventas registradas en esta sesión de caja'}
 
 CÓDIGO DE BARRAS: ${reporte.id}
 
