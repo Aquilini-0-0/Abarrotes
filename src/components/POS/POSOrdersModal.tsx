@@ -240,6 +240,10 @@ return (
                           alert('NO PUEDES EDITAR ESTE PEDIDO PORQUE YA HA SIDO PAGADO');
                           return;
                         }
+                        if (order.status === 'pending') {
+                          alert('NO PUEDES EDITAR ESTE PEDIDO PORQUE YA HA SIDO DADO A CRÉDITO');
+                          return;
+                        }
                         if (onEditOrder) {
                           onEditOrder(order);
                         } else {
@@ -247,7 +251,7 @@ return (
                         }
                       }}
                       className={`p-0.5 sm:p-1 ${
-                        order.status === 'paid' 
+                        order.status === 'paid' || order.status === 'pending'
                           ? 'text-gray-400 cursor-not-allowed' 
                           : 'text-blue-600 hover:text-blue-800'
                       }`}
