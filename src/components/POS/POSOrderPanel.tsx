@@ -253,7 +253,7 @@ export function POSOrderPanel({
                       {item.product_name}
                     </div>
                     <div className="text-xs text-gray-600 mt-1">
-                      Precio: ${item.unit_price.toFixed(2)} | Total: ${item.total_price.toFixed(2)}
+                      Precio: ${(item.unit_price || 0).toFixed(2)} | Total: ${(item.total_price || 0).toFixed(2)}
                     </div>
                   </div>
                   
