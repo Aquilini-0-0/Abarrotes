@@ -462,7 +462,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
     // Get order details with proper validation
     const observations = order.observations && order.observations.trim() ? order.observations : 'ninguna';
     const driver = order.driver && order.driver.trim() ? order.driver : 'Sin chofer';
-    const route = order.route && route.trim() ? order.route : 'Sin ruta';
+    const route = order.route && order.route.trim() ? order.route : 'Sin ruta';
 
     const getPaymentMethodText = () => {
       switch (paymentMethod) {
