@@ -726,42 +726,38 @@ ${new Date().toLocaleString('es-MX')}
         </div>
       </div>
 
-    {/* Footer compacto */}
+{/* Footer compacto */}
 <div className="bg-gradient-to-br from-orange-400 via-red-500 to-red-400 py-1 sm:py-2 px-2 sm:px-3">
-  <div className="grid grid-cols-3 gap-1 sm:gap-2">
+  <div className="grid grid-cols-2 gap-2 sm:gap-3">
     
-    {/* Botón Procesar */}
-   {/* Botón Pagar */}
-{/* Botón Pagar */}
-<button
-  onClick={handleProcessPayment}
-  disabled={newPayment.amount <= 0 || newPayment.amount > selectedSale.balance}
-  className="flex flex-col items-center justify-center gap-0.5 min-h-[36px] sm:min-h-[42px] px-3 rounded-lg font-medium text-xs sm:text-sm shadow-md transition-all
-             bg-gradient-to-r from-green-400 to-green-500 text-white hover:from-green-500 hover:to-green-600 
-             disabled:from-gray-300 disabled:to-gray-400 disabled:text-gray-700"
->
-  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-  </svg>
-  PAGAR
-</button>
+    {/* Botón Pagar */}
+    <button
+      onClick={handleProcessPayment}
+      disabled={newPayment.amount <= 0 || newPayment.amount > selectedSale.balance}
+      className="flex flex-col items-center justify-center gap-0.5 min-h-[40px] sm:min-h-[48px] px-4 rounded-lg font-medium text-sm sm:text-base shadow-md transition-all
+                 bg-gradient-to-r from-green-400 to-green-500 text-white hover:from-green-500 hover:to-green-600 
+                 disabled:from-gray-300 disabled:to-gray-400 disabled:text-gray-700 w-full"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+      </svg>
+      PAGAR
+    </button>
 
-
-{/* Botón Cancelar */}
-<button
-  onClick={() => {
-    setShowPaymentForm(false);
-    setSelectedSale(null);
-  }}
-  className="flex flex-col items-center justify-center gap-0.5 min-h-[36px] sm:min-h-[42px] px-3 rounded-lg font-medium text-xs sm:text-sm shadow-md transition-all
-             bg-white text-red-500 border border-red-500 hover:bg-red-50"
->
-  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-  </svg>
-  CANCELAR
-</button>
-
+    {/* Botón Cancelar */}
+    <button
+      onClick={() => {
+        setShowPaymentForm(false);
+        setSelectedSale(null);
+      }}
+      className="flex flex-col items-center justify-center gap-0.5 min-h-[40px] sm:min-h-[48px] px-4 rounded-lg font-medium text-sm sm:text-base shadow-md transition-all
+                 bg-white text-red-500 border border-red-500 hover:bg-red-50 w-full"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      </svg>
+      CANCELAR
+    </button>
 
         </div>
       </div>
