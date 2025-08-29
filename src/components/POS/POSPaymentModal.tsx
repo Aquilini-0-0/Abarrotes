@@ -521,7 +521,6 @@ ${order.discount_total > 0 ? `DESCUENTO: -$${order.discount_total.toFixed(2)}\n`
 METODO DE PAGO: ${getPaymentMethodText()}
 ${getPaymentDetails()}
 ${isAlreadyPaid ? `SALDO ANTERIOR: $${amountPaid.toFixed(2)}\nPAGO ACTUAL: $${amountToPay.toFixed(2)}\n` : ''}
-
 OBSERVACIONES: ${observations || 'ninguna'}
 CHOFER: ${driver || 'Sin chofer'}
 RUTA: ${route || 'Sin ruta'}
