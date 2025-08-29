@@ -302,7 +302,18 @@ CÓDIGO DE BARRAS: ${reporte.id}
 Generado el ${new Date().toLocaleString('es-MX')}
     `;
 
-    // Create print window
+    // Create and download .txt file
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Reporte_Caja_${reporte.caja}_${new Date(reporte.fecha).toISOString().split('T')[0]}_ffd.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    // Also create print window for immediate viewing
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(`
@@ -314,7 +325,8 @@ Generado el ${new Date().toLocaleString('es-MX')}
               font-family: 'Courier New', monospace; 
               font-size: 12px; 
               margin: 20px;
-              max-width: 300px;
+              max-width: 400px;
+              line-height: 1.3;
             }
             .logo { text-align: left; margin-bottom: 10px; }
             .logo img { max-width: 80px; height: auto; }
@@ -322,8 +334,10 @@ Generado el ${new Date().toLocaleString('es-MX')}
             .separator { text-align: center; margin: 10px 0; }
             .total { font-weight: bold; font-size: 14px; }
             .footer { text-align: center; margin-top: 15px; font-size: 10px; }
-            .sale-detail { margin: 5px 0; }
-            .product-item { margin-left: 10px; font-size: 10px; }
+            .sale-detail { margin: 8px 0; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+            .product-item { margin-left: 15px; font-size: 10px; color: #666; }
+            .sale-header { font-weight: bold; margin-bottom: 3px; }
+            .sale-info { margin: 2px 0; }
           </style>
         </head>
         <body>
@@ -350,30 +364,33 @@ Generado el ${new Date().toLocaleString('es-MX')}
           <div class="separator">=====================================</div>
           ${salesForTicket.length > 0 ? salesForTicket.map(sale => `
             <div class="sale-detail">
-              <div>FOLIO: #${sale.id.slice(-6).toUpperCase()}</div>
-              <div>CLIENTE: ${sale.client_name}</div>
-              <div>HORA: ${new Date(sale.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>
-              <div>TOTAL: $${sale.total.toFixed(2)}</div>
-              <div>ESTADO: ${sale.status === 'paid' ? 'PAGADO' : sale.status === 'pending' ? 'PENDIENTE' : 'GUARDADO'}</div>
-              <div>PRODUCTOS:</div>
+              <div class="sale-header">FOLIO: #${sale.id.slice(-6).toUpperCase()}</div>
+              <div class="sale-info">CLIENTE: ${sale.client_name}</div>
+              <div class="sale-info">HORA: ${new Date(sale.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>
+              <div class="sale-info">TOTAL: $${sale.total.toFixed(2)}</div>
+              <div class="sale-info">ESTADO: ${sale.status === 'paid' ? 'PAGADO' : sale.status === 'pending' ? 'PENDIENTE' : 'GUARDADO'}</div>
+              <div class="sale-info">PRODUCTOS:</div>
               ${sale.sale_items?.map(item => `
                 <div class="product-item">• ${item.product_name}</div>
                 <div class="product-item">  Cant: ${item.quantity} | Precio: $${item.price.toFixed(2)} | Total: $${item.total.toFixed(2)}</div>
               `).join('') || '<div class="product-item">• Sin productos</div>'}
-              <div>-------------------------------------</div>
             </div>
           `).join('') : '<div>No hay ventas registradas en esta sesión de caja</div>'}
           <br>
           <div class="footer">SISTEMA ERP DURAN</div>
           <div class="footer">REPORTE GENERADO AUTOMÁTICAMENTE</div>
+          <div class="footer">${new Date().toLocaleString('es-MX')}</div>
         </body>
         </html>
       `);
       printWindow.document.close();
       setTimeout(() => {
         printWindow.print();
+        printWindow.close();
       }, 250);
     }
+
+    alert('✅ Reporte de caja exportado e impreso exitosamente');
   };
 
   const columns = [
