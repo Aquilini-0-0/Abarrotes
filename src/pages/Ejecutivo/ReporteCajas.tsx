@@ -286,7 +286,13 @@ CLIENTE: ${sale.client_name}
 HORA: ${new Date(sale.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
 TOTAL: $${sale.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
 ESTADO: ${sale.status === 'paid' ? 'PAGADO' : sale.status === 'pending' ? 'PENDIENTE' : 'GUARDADO'}
-PRODUCTOS: ${productos}
+
+PRODUCTOS VENDIDOS:
+${sale.sale_items?.map(item => `  • ${item.product_name}
+    Cantidad: ${item.quantity}
+    Precio Unit: $${item.price.toFixed(2)}
+    Total: $${item.total.toFixed(2)}`).join('\n') || '  • Sin productos'}
+
 ------------------------------------------------`;
 }).join('\n') : 'No hay ventas registradas en esta sesión de caja'}
 
@@ -316,6 +322,8 @@ Generado el ${new Date().toLocaleString('es-MX')}
             .separator { text-align: center; margin: 10px 0; }
             .total { font-weight: bold; font-size: 14px; }
             .footer { text-align: center; margin-top: 15px; font-size: 10px; }
+            .sale-detail { margin: 5px 0; }
+            .product-item { margin-left: 10px; font-size: 10px; }
           </style>
         </head>
         <body>
@@ -337,6 +345,24 @@ Generado el ${new Date().toLocaleString('es-MX')}
           <div class="total">DIFERENCIA: $${reporte.diferencia.toFixed(2)}</div>
           <div class="total">TICKETS: ${reporte.numero_tickets}</div>
           <div class="total">PROMEDIO: $${reporte.ticket_promedio.toFixed(2)}</div>
+          <br>
+          <div class="header">DETALLE DE VENTAS:</div>
+          <div class="separator">=====================================</div>
+          ${salesForTicket.length > 0 ? salesForTicket.map(sale => `
+            <div class="sale-detail">
+              <div>FOLIO: #${sale.id.slice(-6).toUpperCase()}</div>
+              <div>CLIENTE: ${sale.client_name}</div>
+              <div>HORA: ${new Date(sale.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</div>
+              <div>TOTAL: $${sale.total.toFixed(2)}</div>
+              <div>ESTADO: ${sale.status === 'paid' ? 'PAGADO' : sale.status === 'pending' ? 'PENDIENTE' : 'GUARDADO'}</div>
+              <div>PRODUCTOS:</div>
+              ${sale.sale_items?.map(item => `
+                <div class="product-item">• ${item.product_name}</div>
+                <div class="product-item">  Cant: ${item.quantity} | Precio: $${item.price.toFixed(2)} | Total: $${item.total.toFixed(2)}</div>
+              `).join('') || '<div class="product-item">• Sin productos</div>'}
+              <div>-------------------------------------</div>
+            </div>
+          `).join('') : '<div>No hay ventas registradas en esta sesión de caja</div>'}
           <br>
           <div class="footer">SISTEMA ERP DURAN</div>
           <div class="footer">REPORTE GENERADO AUTOMÁTICAMENTE</div>
