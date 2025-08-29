@@ -101,8 +101,6 @@ MOVIMIENTOS DE EFECTIVO:
                          _______________
 Total Ventas:            $${cut.total_sales.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
 
-GASTOS:
-- Total Gastos:           $${cut.total_expenses.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
 
 RESUMEN:
 - Efectivo Esperado:      $${(cut.opening_amount + cut.total_cash - cut.total_expenses).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
