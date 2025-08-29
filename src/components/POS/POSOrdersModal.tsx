@@ -284,14 +284,18 @@ return (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirm('¿Eliminar este pedido?')) {
-                            // Handle delete
+                          if (order.status === 'paid' || order.status === 'pending') {
+                            if (order.status === 'paid') {
+                              alert('NO PUEDES EDITAR ESTE PEDIDO PORQUE YA HA SIDO PAGADO');
+                            } else if (order.status === 'pending') {
+                              alert('NO PUEDES EDITAR ESTE PEDIDO PORQUE FUE DADO A CRÉDITO');
+                            }
                           }
                         }}
                         className="p-0.5 sm:p-1 text-red-600 hover:text-red-500"
-                        title="Eliminar"
+                          order.status === 'paid' || order.status === 'pending'
                       >
-                        <Trash2 size={12} className="sm:w-4 sm:h-4" />
+                        A Crédito
                       </button>
                     )}
                   </div>

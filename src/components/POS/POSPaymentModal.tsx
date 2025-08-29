@@ -435,6 +435,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const processPayment = async (overrideStock = false) => {
     setIsProcessing(true);
     
+    try {
     // Generate and download .txt ticket automatically before processing payment
     generateAndDownloadTicket();
     
@@ -449,11 +450,17 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       printA4
     };
 
-    // Simulate processing delay
-    setTimeout(() => {
+      // Process payment immediately
       onConfirm(paymentData);
+      
+      // Close modal after successful payment
+      setTimeout(() => {
+        onClose();
+      }, 500);
+    } catch (err) {
+      console.error('Error processing payment:', err);
       setIsProcessing(false);
-    }, 1000);
+    }
   };
 
   const generateAndDownloadTicket = () => {
@@ -1175,11 +1182,11 @@ SISTEMA ERP DURAN
 
               }
 
-              className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-bold shadow disabled:opacity-50 text-sm transition-all ${
+              className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-bold shadow disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-all ${
 
                 isProcessing 
 
-                  ? 'bg-gray-400 cursor-not-allowed' 
+                  ? 'bg-gray-400 cursor-not-allowed text-white' 
 
                   : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
 
@@ -1191,7 +1198,7 @@ SISTEMA ERP DURAN
 
                 <div className="flex items-center justify-center">
 
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
 
                   Procesando pago...
 

@@ -580,6 +580,36 @@ export function usePOS() {
 
         if (updateError) throw updateError;
 
+        // Process inventory movements and update stock for credit sales too
+        for (const item of orderData.sale_items) {
+          // Create inventory movement
+          await supabase
+            .from('inventory_movements')
+            .insert({
+              product_id: item.product_id,
+              product_name: item.product_name,
+              type: 'salida',
+              quantity: item.quantity,
+              date: orderData.date,
+              reference: `POS-CREDIT-${orderId.slice(-6)}`,
+              user_name: user?.name || 'POS User',
+              created_by: user?.id
+            });
+
+          // Update product stock
+          const { data: product } = await supabase
+            .from('products')
+            .select('stock')
+            .eq('id', item.product_id)
+            .single();
+
+          if (product) {
+            await supabase
+              .from('products')
+              .update({ stock: product.stock - item.quantity })
+              .eq('id', item.product_id);
+          }
+        }
         // Update client balance for credit sale
         if (orderData.client_id) {
           const { data: client } = await supabase
