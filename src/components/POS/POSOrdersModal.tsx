@@ -539,11 +539,20 @@ return (
                   onClick={() => {
                     setShowDetailModal(false);
                     setSelectedOrderDetail(null);
-                    onEditOrder(selectedOrderDetail);
+                    if (selectedOrderDetail.status === 'saved') {
+                      onEditOrder(selectedOrderDetail);
+                    } else {
+                      alert('Solo se pueden editar pedidos guardados');
+                    }
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    selectedOrderDetail.status === 'saved'
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                  }`}
+                  disabled={selectedOrderDetail.status !== 'saved'}
                 >
-                  Editar Pedido
+                  {selectedOrderDetail.status === 'saved' ? 'Editar Pedido' : 'No Editable'}
                 </button>
               )}
             </div>
