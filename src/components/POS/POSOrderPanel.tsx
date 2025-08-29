@@ -388,16 +388,13 @@ export function POSOrderPanel({
       <div className="grid grid-cols-2 gap-1 sm:gap-2">
         <div>
           <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Chofer</label>
-          <select
+          <input
+            type="text"
             value={driver}
             onChange={(e) => setDriver(e.target.value)}
             className="w-full bg-white border border-orange-200 text-gray-900 px-1 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
-          >
-            <option value="">Sin chofer</option>
-            <option value="Juan Pérez">Juan Pérez</option>
-            <option value="María García">María García</option>
-            <option value="Carlos López">Carlos López</option>
-          </select>
+            placeholder="Nombre del chofer..."
+          />
         </div>
         <div>
           <label className="block text-gray-600 text-[8px] sm:text-[10px] mb-0.5 sm:mb-1 font-medium">Ruta</label>

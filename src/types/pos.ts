@@ -54,9 +54,9 @@ export interface POSOrder {
   is_invoice: boolean;
   is_quote: boolean;
   is_external: boolean;
-  observations?: string;
-  driver?: string;
-  route?: string;
+  observations: string;
+  driver: string;
+  route: string;
   created_by: string;
   created_at: string;
   payments?: Payment[];

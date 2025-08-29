@@ -459,6 +459,11 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const generateAndDownloadTicket = () => {
     if (!order) return;
 
+    // Get order details from POSOrderPanel state
+    const observations = order.observations || '';
+    const driver = order.driver || '';
+    const route = order.route || '';
+
     const getPaymentMethodText = () => {
       switch (paymentMethod) {
         case 'cash': return 'EFECTIVO';
@@ -516,6 +521,11 @@ ${order.discount_total > 0 ? `DESCUENTO: -$${order.discount_total.toFixed(2)}\n`
 METODO DE PAGO: ${getPaymentMethodText()}
 ${getPaymentDetails()}
 ${isAlreadyPaid ? `SALDO ANTERIOR: $${amountPaid.toFixed(2)}\nPAGO ACTUAL: $${amountToPay.toFixed(2)}\n` : ''}
+
+OBSERVACIONES: ${observations || 'ninguna'}
+CHOFER: ${driver || 'Sin chofer'}
+RUTA: ${route || 'Sin ruta'}
+
 LE ATENDIO: ${user?.name || 'Usuario'}
 
 GRACIAS POR SU COMPRA
