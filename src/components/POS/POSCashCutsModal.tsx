@@ -98,11 +98,6 @@ MOVIMIENTOS DE EFECTIVO:
 - Apertura de Caja:       $${cut.opening_amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
 - Cierre de Caja:         $${cut.closing_amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
 - Diferencia:             $${cut.difference.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-
-VENTAS POR MÉTODO DE PAGO:
-- Ventas en Efectivo:     $${cut.total_cash.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-- Ventas con Tarjeta:     $${cut.total_card.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-- Ventas Transferencia:   $${cut.total_transfer.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                          _______________
 Total Ventas:            $${cut.total_sales.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
 
