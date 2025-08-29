@@ -286,17 +286,6 @@ export function useUsuarios() {
 
       if (error) throw error;
 
-      // Delete from auth if auth_id exists
-      if (userData.auth_id) {
-        try {
-          const { error: authError } = await supabase.auth.admin.deleteUser(userData.auth_id);
-          if (authError) {
-            console.warn('Could not delete auth user (may require service role):', authError);
-          }
-        } catch (authErr) {
-          console.warn('Could not delete auth user:', authErr);
-        }
-      }
       setUsuarios(prev => prev.filter(u => u.id !== id));
       
       // Trigger automatic sync
