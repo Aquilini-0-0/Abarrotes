@@ -120,6 +120,194 @@ export function POSOrderPanel({
     setShowCreditAuthModal(false);
     setAdminPassword('');
 
+    // Execute the pending action
+    if (pendingAction === 'save') {
+      handleSaveClick();
+    } else if (pendingAction === 'pay') {
+      onPay();
+    }
+
+    setPendingAction(null);
+  };
+
+  const handleCancelCreditAuth = () => {
+    setShowCreditAuthModal(false);
+    setAdminPassword('');
+    setPendingAction(null);
+  };
+
+  const handleSaveClick = async () => {
+    if (isSaving) return; // Prevent multiple saves
+    
+    setIsSaving(true);
+    try {
+      // Save with status 'saved' instead of 'pending'
+      if (order) {
+        const savedOrder = await saveOrder({ ...order, status: 'saved' }, false);
+        markTabAsSaved(activeTabId);
+        closeTab(activeTabId); // Close the tab after saving
+        alert('Pedido guardado');
+      }
+    } catch (err) {
+      console.error('Error saving order:', err);
+      if (err instanceof Error && err.message.includes('stock')) {
+        // Extract product names from error message or check order items
+        const stockIssues = order?.items.filter(item => {
+          const product = products?.find(p => p.id === item.product_id);
+          return product && item.quantity > product.stock;
+        }) || [];
+        
+        if (stockIssues.length > 0) {
+          const productNames = stockIssues.map(item => item.product_name).join(', ');
+          alert(`No se pudo guardar el pedido porque no hay stock suficiente para: ${productNames}`);
+        } else {
+          alert('No se pudo guardar el pedido por falta de stock');
+        }
+      } else {
+        alert('Error al guardar el pedido');
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePayClick = () => {
+    // Check credit limit if it's a credit sale
+    if (isCredit && client && order) {
+      const totalAfterSale = client.balance + order.total;
+      if (totalAfterSale > client.credit_limit) {
+        setPendingAction('pay');
+        setShowCreditAuthModal(true);
+        return;
+      }
+    }
+    onPay();
+  };
+
+  const handleSelectClient = (client: POSClient) => {
+    onSelectClient(client);
+    setShowClientModal(false);
+    setSearchClient('');
+    
+    // Trigger refresh to update last order info
+    if (onRefreshData) {
+      onRefreshData();
+    }
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm h-full flex flex-col">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-2 sm:p-3 rounded-t-lg">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm sm:text-base font-semibold">Pedido Actual</h2>
+          <div className="text-xs sm:text-sm opacity-90">
+            {order?.items.length || 0} productos
+          </div>
+        </div>
+      </div>
+
+      {/* Client Selection */}
+      <div className="bg-gray-50 p-2 sm:p-3 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-medium text-gray-700">Cliente</label>
+          <button
+            onClick={() => setShowClientModal(true)}
+            className="text-orange-600 hover:text-orange-700 text-xs font-medium"
+          >
+            {client ? 'Cambiar' : 'Seleccionar'}
+          </button>
+        </div>
+        
+        {client ? (
+          <div className="bg-white p-2 rounded-md border border-gray-200">
+            <div className="flex items-center space-x-2">
+              <User size={14} className="text-gray-400" />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium text-gray-900 truncate">{client.name}</div>
+                <div className="text-xs text-gray-600">RFC: {client.rfc}</div>
+                <div className="text-xs text-gray-600">Zona: {client.zone}</div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowClientModal(true)}
+            className="w-full bg-white border-2 border-dashed border-gray-300 rounded-md p-3 text-center hover:border-orange-400 hover:bg-orange-50 transition-colors"
+          >
+            <User size={20} className="mx-auto text-gray-400 mb-1" />
+            <div className="text-xs text-gray-600">Seleccionar Cliente</div>
+          </button>
+        )}
+      </div>
+
+      {/* Order Items */}
+      <div className="flex-1 overflow-y-auto">
+        {order?.items.length ? (
+          <div className="divide-y divide-gray-200">
+            {order.items.map((item) => (
+              <div key={item.id} className="p-2 sm:p-3 hover:bg-gray-50">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                      {item.product_name}
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      Precio: ${item.unit_price.toFixed(2)} | Total: ${item.total_price.toFixed(2)}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-1 ml-2">
+                    <div className="flex items-center bg-gray-100 rounded-md">
+                      <button
+                        onClick={() => onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                        className="p-1 hover:bg-gray-200 rounded-l-md"
+                      >
+                        <span className="text-xs font-bold">-</span>
+                      </button>
+                      <span className="px-2 py-1 text-xs font-medium min-w-[2rem] text-center">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                        className="p-1 hover:bg-gray-200 rounded-r-md"
+                      >
+                        <span className="text-xs font-bold">+</span>
+                      </button>
+                    </div>
+                    
+                    <button
+                      onClick={() => {
+                        setEditingItem(item);
+                        setShowEditItemModal(true);
+                      }}
+                      className="p-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded"
+                    >
+                      <Edit size={12} />
+                    </button>
+                    
+                    <button
+                      onClick={() => onRemoveItem(item.id)}
+                      className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center text-gray-500">
+              <div className="text-4xl mb-2">🛒</div>
+              <div className="text-sm">No hay productos en el pedido</div>
+              <div className="text-xs mt-1">Agrega productos desde el catálogo</div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Order Options */}
       <div className="bg-gray-50 p-2 sm:p-3 border-t border-gray-200">
         <div className="grid grid-cols-2 gap-2 mb-3">
@@ -447,94 +635,4 @@ export function POSOrderPanel({
       )}
     </div>
   );
-
-  const validateAdminPassword = (password: string) => {
-    return password === 'admin123'; // En producción, validar contra la base de datos
-  };
-
-  const handleCreditAuth = async () => {
-    if (!validateAdminPassword(adminPassword)) {
-      alert('Contraseña de administrador incorrecta');
-      setAdminPassword('');
-      return;
-    }
-
-    setShowCreditAuthModal(false);
-    setAdminPassword('');
-
-    // Execute the pending action
-    if (pendingAction === 'save') {
-      handleSaveClick();
-    } else if (pendingAction === 'pay') {
-      onPay();
-    }
-
-    setPendingAction(null);
-  };
-
-  const handleCancelCreditAuth = () => {
-    setShowCreditAuthModal(false);
-    setAdminPassword('');
-    setPendingAction(null);
-  };
-
-  const handleSaveClick = async () => {
-    if (isSaving) return; // Prevent multiple saves
-    
-    setIsSaving(true);
-    try {
-      // Save with status 'saved' instead of 'pending'
-      if (order) {
-        const savedOrder = await saveOrder({ ...order, status: 'saved' }, false);
-        markTabAsSaved(activeTabId);
-        closeTab(activeTabId); // Close the tab after saving
-        alert('Pedido guardado');
-      }
-    } catch (err) {
-      console.error('Error saving order:', err);
-      if (err instanceof Error && err.message.includes('stock')) {
-        // Extract product names from error message or check order items
-        const stockIssues = order?.items.filter(item => {
-          const product = products?.find(p => p.id === item.product_id);
-          return product && item.quantity > product.stock;
-        }) || [];
-        
-        if (stockIssues.length > 0) {
-          const productNames = stockIssues.map(item => item.product_name).join(', ');
-          alert(`No se pudo guardar el pedido porque no hay stock suficiente para: ${productNames}`);
-        } else {
-          alert('No se pudo guardar el pedido por falta de stock');
-        }
-      } else {
-        alert('Error al guardar el pedido');
-      }
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handlePayClick = () => {
-    // Check credit limit if it's a credit sale
-    if (isCredit && client && order) {
-      const totalAfterSale = client.balance + order.total;
-      if (totalAfterSale > client.credit_limit) {
-        setPendingAction('pay');
-        setShowCreditAuthModal(true);
-        return;
-      }
-    }
-    onPay();
-  };
-
-  const handleSelectClient = (client: POSClient) => {
-    onSelectClient(client);
-    setShowClientModal(false);
-    setSearchClient('');
-    
-    // Trigger refresh to update last order info
-    if (onRefreshData) {
-      onRefreshData();
-    }
-  };
-}
 }
