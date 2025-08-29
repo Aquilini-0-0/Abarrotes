@@ -390,7 +390,7 @@ export function POSMenuBar({
             <div className="text-gray-500 text-[10px] sm:text-xs lg:text-sm font-medium">{user?.name}</div>
             <div className="text-gray-600 text-[8px] sm:text-[10px] lg:text-xs">{user?.role}</div>
           </div>
-          <div className="h-8 w-8 bg-orange-500 rounded-full flex items-center justify-center">
+          <div className="h-8 w-8 bg-orange-600 rounded-full flex items-center justify-center">
               <User size={16} className="text-white" />
             </div>
         </div>
