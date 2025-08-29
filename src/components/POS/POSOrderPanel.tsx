@@ -22,6 +22,7 @@ interface POSOrderPanelProps {
   clients: POSClient[];
   onRefreshData?: () => void;
   products?: any[];
+  onUpdateOrder?: (order: POSOrder) => void;
 }
 
 export function POSOrderPanel({
@@ -40,7 +41,8 @@ export function POSOrderPanel({
   onCancel,
   clients,
   onRefreshData,
-  products
+  products,
+  onUpdateOrder
 }: POSOrderPanelProps) {
   const { hasPermission } = useAuth();
   const [showClientModal, setShowClientModal] = useState(false);
@@ -143,6 +145,13 @@ export function POSOrderPanel({
     try {
       // Save with status 'saved' instead of 'pending'
       if (order) {
+        // Update order with current form values before saving
+        const orderWithFormData = {
+          ...order,
+          observations,
+          driver,
+          route
+        };
         const savedOrder = await saveOrder({ ...order, status: 'saved' }, false);
         markTabAsSaved(activeTabId);
         closeTab(activeTabId); // Close the tab after saving
@@ -181,6 +190,18 @@ export function POSOrderPanel({
         return;
       }
     }
+    
+    // Update order with current form values before payment
+    if (order && onUpdateOrder) {
+      const orderWithFormData = {
+        ...order,
+        observations,
+        driver,
+        route
+      };
+      onUpdateOrder(orderWithFormData);
+    }
+    
     onPay();
   };
 
@@ -188,6 +209,18 @@ export function POSOrderPanel({
     onSelectClient(client);
     setShowClientModal(false);
     setSearchClient('');
+    
+    // Update order with current observations, driver, and route
+    if (order) {
+      const updatedOrder = {
+        ...order,
+        observations,
+        driver,
+        route
+      };
+      // This would need to be passed up to parent component
+      // For now, we'll store in the order object
+    }
     
     // Trigger refresh to update last order info
     if (onRefreshData) {

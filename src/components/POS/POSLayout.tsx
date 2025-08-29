@@ -523,6 +523,7 @@ export function POSLayout() {
             clients={clients}
             onRefreshData={refetch}
             products={products}
+            onUpdateOrder={updateActiveOrder}
           />
         </div>
 
