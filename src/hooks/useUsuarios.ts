@@ -241,6 +241,43 @@ export function useUsuarios() {
 
       if (fetchError) throw fetchError;
 
+      // First, update all sales records that reference this user to set created_by to NULL
+      const { error: salesUpdateError } = await supabase
+        .from('sales')
+        .update({ created_by: null })
+        .eq('created_by', id);
+
+      if (salesUpdateError) throw salesUpdateError;
+
+      // Also update other tables that might reference this user
+      const { error: expensesUpdateError } = await supabase
+        .from('expenses')
+        .update({ created_by: null })
+        .eq('created_by', id);
+
+      if (expensesUpdateError) throw expensesUpdateError;
+
+      const { error: paymentsUpdateError } = await supabase
+        .from('payments')
+        .update({ created_by: null })
+        .eq('created_by', id);
+
+      if (paymentsUpdateError) throw paymentsUpdateError;
+
+      const { error: inventoryUpdateError } = await supabase
+        .from('inventory_movements')
+        .update({ created_by: null })
+        .eq('created_by', id);
+
+      if (inventoryUpdateError) throw inventoryUpdateError;
+
+      const { error: traspasosUpdateError } = await supabase
+        .from('traspasos_almacenes')
+        .update({ created_by: null })
+        .eq('created_by', id);
+
+      if (traspasosUpdateError) throw traspasosUpdateError;
+
       // Delete from users table first (this will cascade due to foreign key)
       const { error } = await supabase
         .from('users')
