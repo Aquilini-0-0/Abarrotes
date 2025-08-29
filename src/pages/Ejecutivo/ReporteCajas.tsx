@@ -265,11 +265,6 @@ MOVIMIENTOS DE EFECTIVO:
 - Cierre de Caja:         $${reporte.cierre.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
 - Diferencia:             $${reporte.diferencia.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
 
-VENTAS POR MÉTODO DE PAGO:
-- Ventas en Efectivo:     $${reporte.ventas_efectivo.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-- Ventas con Tarjeta:     $${reporte.ventas_tarjeta.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-- Ventas Transferencia:   $${reporte.ventas_transferencia.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                         _______________
 Total Ventas:            $${reporte.total_ventas.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
 
 ESTADÍSTICAS:
