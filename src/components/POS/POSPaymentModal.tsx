@@ -459,6 +459,11 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const generateAndDownloadTicket = () => {
     if (!order) return;
 
+    // Get order details from POSOrderPanel
+    const orderObservations = order.observations || '';
+    const orderDriver = order.driver || '';
+    const orderRoute = order.route || '';
+
     const getPaymentMethodText = () => {
       switch (paymentMethod) {
         case 'cash': return 'EFECTIVO';
@@ -512,6 +517,10 @@ ${order.items.map(item =>
 
 SUBTOTAL: $${order.subtotal.toFixed(2)}
 ${order.discount_total > 0 ? `DESCUENTO: -$${order.discount_total.toFixed(2)}\n` : ''}TOTAL: $${amountToPay.toFixed(2)}
+
+OBSERVACIONES: ${orderObservations || 'ninguna'}
+CHOFER: ${orderDriver || 'Sin chofer'}
+RUTA: ${orderRoute || 'Sin ruta'}
 
 METODO DE PAGO: ${getPaymentMethodText()}
 ${getPaymentDetails()}
