@@ -65,6 +65,28 @@ export function POSOrderPanel({
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [permissionMessage, setPermissionMessage] = useState('');
 
+  // Initialize form values from order if available
+  React.useEffect(() => {
+    if (order) {
+      setObservations(order.observations || '');
+      setDriver(order.driver || '');
+      setRoute(order.route || '');
+    }
+  }, [order?.id]); // Only update when order ID changes
+
+  // Update order when form values change
+  React.useEffect(() => {
+    if (order && onUpdateOrder) {
+      const updatedOrder = {
+        ...order,
+        observations,
+        driver,
+        route
+      };
+      onUpdateOrder(updatedOrder);
+    }
+  }, [observations, driver, route, order?.id, onUpdateOrder]);
+
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(searchClient.toLowerCase()) ||
     c.rfc.toLowerCase().includes(searchClient.toLowerCase())
