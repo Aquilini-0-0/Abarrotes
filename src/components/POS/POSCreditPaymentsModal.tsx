@@ -746,16 +746,6 @@ ${new Date().toLocaleString('es-MX')}
   PAGAR
 </button>
 
-{/* Botón Guardar */}
-<button
-  className="flex flex-col items-center justify-center gap-0.5 min-h-[36px] sm:min-h-[42px] px-3 rounded-lg font-medium text-xs sm:text-sm shadow-md transition-all
-             bg-gradient-to-r from-orange-400 to-red-400 text-white hover:from-orange-500 hover:to-red-500"
->
-  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-  </svg>
-  GUARDAR
-</button>
 
 {/* Botón Cancelar */}
 <button
