@@ -293,7 +293,7 @@ return (
                           }
                         }}
                         className="p-0.5 sm:p-1 text-red-600 hover:text-red-500"
-                          order.status === 'paid' || order.status === 'pending'
+                        title="A Crédito"
                       >
                         A Crédito
                       </button>
