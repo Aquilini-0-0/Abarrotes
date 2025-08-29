@@ -336,4 +336,15 @@ export function POSOrderPanel({
     </div>
 
     {creditExceeded && (
-      <div className="mt-1
+      <div className="mt-1 sm:mt-2 bg-red-50 border border-red-200 rounded-lg p-2 flex items-center space-x-2">
+        <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
+        <div className="text-red-700 text-xs">
+          <div className="font-semibold">Límite de crédito excedido</div>
+          <div>
+            Este pedido excederá el límite de crédito del cliente por ${((creditUsed + orderTotal) - client.credit_limit).toLocaleString('es-MX')}
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
