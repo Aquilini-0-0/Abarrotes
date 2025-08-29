@@ -63,6 +63,7 @@ export function POSCashCutsModal({ onClose }: POSCashCutsModalProps) {
           total_card: register.total_card,
           total_transfer: register.total_transfer,
           total_sales: register.total_sales || 0,
+          total_expenses: 0,
           difference: difference,
           user_name: register.users?.name || 'Usuario',
           created_at: register.opened_at
