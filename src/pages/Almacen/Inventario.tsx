@@ -256,7 +256,7 @@ export function Inventario() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Precio de Venta</label>
-                      <p className="text-green-600 font-mono text-lg font-bold">${(viewingProduct.price5 || 0).toFixed(2)}</p>
+                      <p className="text-green-600 font-mono text-lg font-bold">${(viewingProduct.price1 || 0).toFixed(2)}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Margen de Ganancia</label>
