@@ -236,13 +236,21 @@ return (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (order.status === 'paid') {
+                          alert('NO PUEDES EDITAR ESTE PEDIDO PORQUE YA HA SIDO PAGADO');
+                          return;
+                        }
                         if (onEditOrder) {
                           onEditOrder(order);
                         } else {
                           onSelectOrder(order);
                         }
                       }}
-                      className="p-0.5 sm:p-1 text-blue-600 hover:text-blue-800"
+                      className={`p-0.5 sm:p-1 ${
+                        order.status === 'paid' 
+                          ? 'text-gray-400 cursor-not-allowed' 
+                          : 'text-blue-600 hover:text-blue-800'
+                      }`}
                       title="Editar pedido"
                     >
                       <Edit size={12} className="sm:w-4 sm:h-4" />
