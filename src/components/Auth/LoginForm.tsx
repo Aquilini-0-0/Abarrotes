@@ -9,6 +9,7 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingUsers, setIsCreatingUsers] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [selectedSystem, setSelectedSystem] = useState<SystemType>('ERS');
@@ -16,56 +17,124 @@ export function LoginForm() {
   const { login, loginPOS } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  e.preventDefault();
+  setIsLoading(true);
+  setError('');
+
+  try {
+    // Guarda el sistema seleccionado
+    localStorage.setItem('loginSystem', selectedSystem); // 👈 Guardamos ERP o POS
+
+    const success = selectedSystem === 'POS' 
+      ? await loginPOS(email, password)
+      : await login(email, password);
+
+    console.log(selectedSystem);
+
+    if (!success) {
+      if (selectedSystem === 'ERS') {
+        setError('Acceso denegado. Solo usuarios con rol de Administrador pueden acceder al ERS. Si es la primera vez que usas el sistema, haz clic en "Crear Usuarios de Prueba" primero.');
+      } else {
+        setError('Email o contraseña incorrectos. Si es la primera vez que usas el sistema, haz clic en "Crear Usuarios de Prueba" primero.');
+      }
+    }
+  } catch (err) {
+    console.error('Login error:', err);
+    if (err instanceof Error && err.message.includes('Invalid login credentials')) {
+      if (selectedSystem === 'ERS') {
+        setError('Credenciales inválidas o acceso denegado. Solo administradores pueden acceder al ERS. Si es la primera vez que usas el sistema, necesitas crear los usuarios de prueba primero.');
+      } else {
+        setError('Credenciales inválidas. Si es la primera vez que usas el sistema, necesitas crear los usuarios de prueba primero.');
+      }
+    } else {
+      setError('Error al iniciar sesión. Verifica tu conexión a internet.');
+    }
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
+
+  const createTestUsers = async () => {
+    setIsCreatingUsers(true);
     setError('');
+    setSuccess('');
 
     try {
-      // Guarda el sistema seleccionado
-      localStorage.setItem('loginSystem', selectedSystem); // 👈 Guardamos ERP o POS
+      // Check if Supabase is configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        setError('Supabase no está configurado. Por favor haz clic en "Connect to Supabase" en la esquina superior derecha.');
+        return;
+      }
 
-      const success = selectedSystem === 'POS' 
-        ? await loginPOS(email, password)
-        : await login(email, password);
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-users`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      console.log(selectedSystem);
-
-      if (!success) {
-        if (selectedSystem === 'ERS') {
-          setError('Acceso denegado. Solo usuarios con rol de Administrador pueden acceder al ERS.');
-        } else {
-          setError('Email o contraseña incorrectos.');
-        }
+      const data = await response.json();
+      
+      if (response.ok) {
+        const successCount = data.results.filter((r: any) => r.success).length;
+        setSuccess(`✅ ${successCount} usuarios creados exitosamente. Ya puedes iniciar sesión.`);
+      } else {
+        setError('Error al crear usuarios: ' + (data.error || 'Error desconocido'));
       }
     } catch (err) {
-      console.error('Login error:', err);
-      if (err instanceof Error && err.message.includes('Invalid login credentials')) {
-        if (selectedSystem === 'ERS') {
-          setError('Credenciales inválidas o acceso denegado. Solo administradores pueden acceder al ERS.');
-        } else {
-          setError('Credenciales inválidas.');
-        }
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setError('No se puede conectar a Supabase. Por favor configura la conexión primero.');
       } else {
-        setError('Error al iniciar sesión. Verifica tu conexión a internet.');
+        setError('Error de conexión al crear usuarios');
       }
     } finally {
-      setIsLoading(false);
+      setIsCreatingUsers(false);
     }
   };
+
+  const testUsers = [
+    {
+      role: 'Administrador',
+      email: 'admin@duran.com',
+      password: 'admin123',
+      icon: Shield,
+      bgColor: 'bg-red-100',
+      iconColor: 'text-red-600',
+    },
+    {
+      role: 'Gerente',
+      email: 'gerente@duran.com',
+      password: 'gerente123',
+      icon: BarChart3,
+      bgColor: 'bg-yellow-100',
+      iconColor: 'text-yellow-600',
+    },
+    {
+      role: 'Empleado',
+      email: 'empleado@duran.com',
+      password: 'empleado123',
+      icon: Users,
+      bgColor: 'bg-green-100',
+      iconColor: 'text-green-600',
+    },
+  ];
 
   const isERS = selectedSystem === 'ERS';
   const isPOS = selectedSystem === 'POS';
 
   // Colores dinámicos basados en el sistema seleccionado
-  const primaryColor = isERS ? 'blue' : 'orange';
-  const gradientFrom = isERS ? 'from-blue-600' : 'from-orange-400';
-  const gradientVia = isERS ? 'via-blue-700' : 'via-red-500';
-  const gradientTo = isERS ? 'to-blue-800' : 'to-red-600';
-  const focusColor = isERS ? 'focus:border-blue-600' : 'focus:border-orange-500';
-  const focusRing = isERS ? 'focus:ring-blue-300' : 'focus:ring-orange-200';
-  const buttonGradient = isERS
-    ? 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'
-    : 'from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600';
+const primaryColor = isERS ? 'blue' : 'orange';
+const gradientFrom = isERS ? 'from-blue-600' : 'from-orange-400';
+const gradientVia = isERS ? 'via-blue-700' : 'via-red-500';
+const gradientTo = isERS ? 'to-blue-800' : 'to-red-600';
+const focusColor = isERS ? 'focus:border-blue-600' : 'focus:border-orange-500';
+const focusRing = isERS ? 'focus:ring-blue-300' : 'focus:ring-orange-200';
+const buttonGradient = isERS
+  ? 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'
+  : 'from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600';
 
 
   return (
@@ -364,19 +433,100 @@ export function LoginForm() {
                     </>
                   ) : (
                     <>
-                      <Lock className="w-4 h-4 sm:w-5 sm:w-5 mr-1 sm:mr-2" />
+                      <Lock className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                       Iniciar Sesión en {selectedSystem}
                     </>
                   )}
                 </button>
+
+                {/* Divider */}
+                <div className="relative my-6 sm:my-8">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 sm:px-6 bg-white text-gray-500 font-medium text-xs sm:text-sm">o configura el sistema</span>
+                  </div>
+                </div>
+
+                {/* Create Test Users Button */}
+                <button
+                  type="button"
+                  onClick={createTestUsers}
+                  disabled={isCreatingUsers}
+                  className={`w-full flex justify-center items-center py-3 sm:py-4 px-4 sm:px-6 border-2 ${isERS ? 'border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 focus:ring-blue-200' : 'border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 hover:border-orange-300 focus:ring-orange-200'} text-sm sm:text-base font-semibold rounded-xl sm:rounded-2xl focus:outline-none focus:ring-4 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md`}
+                >
+                  <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                  {isCreatingUsers ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white mr-1 sm:mr-2"></div>
+                      Creando usuarios...
+                    </>
+                  ) : (
+                    'Crear Usuarios de Prueba'
+                  )}
+                </button>
               </form>
+            </div>
+
+            {/* Test Users Info Section */}
+            <div className={`bg-gradient-to-r ${isERS ? 'from-blue-50 to-slate-50' : 'from-orange-50 to-slate-50'} px-4 sm:px-6 lg:px-8 py-6 sm:py-7 lg:py-8 border-t border-gray-100`}>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-4 sm:mb-6">
+                  <div className="flex items-center bg-white rounded-full px-3 sm:px-4 py-1.5 sm:py-2 shadow-md border border-gray-100">
+                    <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-400 rounded-full mr-2 sm:mr-3 animate-pulse"></div>
+                    <Database className={`w-4 h-4 sm:w-5 sm:h-5 ${isERS ? 'text-blue-600' : 'text-orange-600'} mr-1 sm:mr-2`} />
+                    <div className="text-left">
+                      <p className="text-xs sm:text-sm font-semibold text-gray-800">Sistema Conectado</p>
+                      <p className="text-[10px] sm:text-xs text-gray-600">Base de datos Supabase activa</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+                  <p className="text-sm font-semibold text-gray-800 mb-4 sm:mb-6">
+                    Usuarios de Prueba Disponibles para {selectedSystem}:
+                  </p>
+                  
+                  <div className="space-y-3 sm:space-y-4">
+                    {testUsers.map((user, index) => {
+                      const IconComponent = user.icon;
+                      return (
+                        <div key={index} className="flex items-center justify-between py-2 sm:py-3 px-3 sm:px-4 bg-gray-50 rounded-lg sm:rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                          <div className="flex items-center">
+                            <div className={`w-8 h-8 sm:w-10 sm:h-10 ${user.bgColor} rounded-lg sm:rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-sm`}>
+                              <IconComponent className={`w-4 h-4 sm:w-5 sm:h-5 ${user.iconColor}`} />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-xs sm:text-sm font-semibold text-gray-800">{user.role}</p>
+                              <p className="text-[10px] sm:text-xs text-gray-600">{user.email}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] sm:text-xs font-mono bg-gray-200 px-2 sm:px-3 py-0.5 sm:py-1 rounded-md text-gray-700 font-semibold">
+                              {user.password}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className={`mt-4 sm:mt-6 p-3 sm:p-4 ${isERS ? 'bg-blue-50 border-blue-100' : 'bg-orange-50 border-orange-100'} rounded-lg sm:rounded-xl border`}>
+                    <p className={`text-[10px] sm:text-xs ${isERS ? 'text-blue-700' : 'text-orange-700'} flex items-center justify-center font-medium`}>
+                      <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full mr-1 sm:mr-2 animate-pulse"></span>
+                      ⚠️ IMPORTANTE: Debes crear los usuarios antes del primer uso del sistema
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Footer */}
           <div className="text-center mt-6 sm:mt-8">
             <p className="text-gray-500 text-xs sm:text-sm">
-              © 2025 DURAN ERP - Sistema de Gestión Empresarial
+              © 2024 DURAN ERP - Sistema de Gestión Empresarial
             </p>
             <p className="text-gray-400 text-[10px] sm:text-xs mt-1 sm:mt-2">
               Desarrollado con tecnología moderna y segura

@@ -63,7 +63,6 @@ export function POSCashCutsModal({ onClose }: POSCashCutsModalProps) {
           total_card: register.total_card,
           total_transfer: register.total_transfer,
           total_sales: register.total_sales || 0,
-          total_expenses: 0,
           difference: difference,
           user_name: register.users?.name || 'Usuario',
           created_at: register.opened_at
@@ -98,8 +97,16 @@ MOVIMIENTOS DE EFECTIVO:
 - Apertura de Caja:       $${cut.opening_amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
 - Cierre de Caja:         $${cut.closing_amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
 - Diferencia:             $${cut.difference.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+
+VENTAS POR MÉTODO DE PAGO:
+- Ventas en Efectivo:     $${cut.total_cash.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+- Ventas con Tarjeta:     $${cut.total_card.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+- Ventas Transferencia:   $${cut.total_transfer.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                          _______________
 Total Ventas:            $${cut.total_sales.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+
+GASTOS:
+- Total Gastos:           $${cut.total_expenses.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
 
 RESUMEN:
 - Efectivo Esperado:      $${(cut.opening_amount + cut.total_cash - cut.total_expenses).toLocaleString('es-MX', { minimumFractionDigits: 2 })}

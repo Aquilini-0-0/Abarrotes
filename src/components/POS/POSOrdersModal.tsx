@@ -19,7 +19,6 @@ export function POSOrdersModal({ orders, onClose, onSelectOrder, onEditOrder, on
   const [userFilter, setUserFilter] = useState<'all' | 'mine'>('all');
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrderDetail, setSelectedOrderDetail] = useState<POSOrder | null>(null);
-  const [showEditWarningModal, setShowEditWarningModal] = useState(false);
 
   const handleDeleteOrder = async (orderId: string) => {
     if (!confirm('¿Está seguro de eliminar este pedido? Esta acción no se puede deshacer.')) {
@@ -88,18 +87,6 @@ export function POSOrdersModal({ orders, onClose, onSelectOrder, onEditOrder, on
     setShowDetailModal(true);
   };
 
-  const handleEditAttempt = (order: POSOrder) => {
-    if (order.status === 'paid') {
-      setShowEditWarningModal(true);
-      return;
-    }
-    
-    if (onEditOrder) {
-      onEditOrder(order);
-    } else {
-      onSelectOrder(order);
-    }
-  };
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'text-green-400';
@@ -249,13 +236,13 @@ return (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleEditAttempt(order);
+                        if (onEditOrder) {
+                          onEditOrder(order);
+                        } else {
+                          onSelectOrder(order);
+                        }
                       }}
-                      className={`p-0.5 sm:p-1 ${
-                        order.status === 'paid' 
-                          ? 'text-gray-400 cursor-not-allowed' 
-                          : 'text-blue-600 hover:text-blue-800'
-                      }`}
+                      className="p-0.5 sm:p-1 text-blue-600 hover:text-blue-800"
                       title="Editar pedido"
                     >
                       <Edit size={12} className="sm:w-4 sm:h-4" />
@@ -353,46 +340,6 @@ return (
           </div>
         </div>
       </div>
-
-      {/* Edit Warning Modal */}
-      {showEditWarningModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70]">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="bg-red-600 p-4 border-b border-red-700 rounded-t-lg">
-              <div className="flex items-center justify-between">
-                <h3 className="text-white font-bold">Pedido No Editable</h3>
-                <button
-                  onClick={() => setShowEditWarningModal(false)}
-                  className="text-red-100 hover:text-white"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="text-center mb-6">
-                <div className="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-red-600 text-3xl">🚫</span>
-                </div>
-                <h4 className="text-xl font-bold text-gray-900 mb-3">
-                  NO PUEDES EDITAR ESTE PEDIDO
-                </h4>
-                <p className="text-gray-600 text-lg">
-                  PORQUE YA HA SIDO PAGADO
-                </p>
-              </div>
-              <div className="flex justify-center">
-                <button
-                  onClick={() => setShowEditWarningModal(false)}
-                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-bold"
-                >
-                  Entendido
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
 
     {/* Order Detail Modal */}
