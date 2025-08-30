@@ -191,7 +191,7 @@ export function Catalogos() {
       sortable: true,
       render: (value: number) => (
         <span className="font-semibold text-green-600">
-          ${value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+          ${(value || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
         </span>
       )
     },
