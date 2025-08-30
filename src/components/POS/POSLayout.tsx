@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { POSMenuBar } from './POSMenuBar';
 import { POSOrderTabs } from './POSOrderTabs';
 import { POSOrderPanel } from './POSOrderPanel';
+import { supabase } from '../../lib/supabase';
 import { POSProductPanel } from './POSProductPanel';
 import { POSPaymentModal } from './POSPaymentModal';
 import { POSOrdersModal } from './POSOrdersModal';
@@ -19,7 +20,6 @@ import { POSCollectOrderModal } from './POSCollectOrderModal';
 import { POSWarehouseModal } from './POSWarehouseModal';
 import { usePOS } from '../../hooks/usePOS';
 import { usePOSTabs } from '../../hooks/usePOSTabs';
-import { useOrderLocks } from '../../hooks/useOrderLocks';
 import { useAutoSync } from '../../hooks/useAutoSync';
 import { POSProduct, POSClient } from '../../types/pos';
 
