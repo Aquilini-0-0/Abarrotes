@@ -126,48 +126,6 @@ export function useInventoryMovements() {
 
       if (updateError) throw updateError;
 
-      // ALSO update the main product stock in the products table
-      // This ensures both warehouse stock and general product stock are synchronized
-      if (movementData.warehouse_id) {
-        // Get current product stock
-        const { data: currentProduct, error: currentProductError } = await supabase
-          .from('products')
-          .select('stock')
-          .eq('id', movementData.product_id)
-          .single();
-
-        if (currentProductError) throw currentProductError;
-
-        let newProductStock = currentProduct.stock;
-        if (movementData.type === 'entrada') {
-          newProductStock += movementData.quantity;
-        } else if (movementData.type === 'salida' || movementData.type === 'merma') {
-          newProductStock -= movementData.quantity;
-        } else if (movementData.type === 'ajuste') {
-          // For adjustments from warehouse, add/subtract the difference
-          // Get current warehouse stock to calculate the difference
-          const { data: currentWarehouseStock } = await supabase
-            .from('stock_almacenes')
-            .select('stock')
-            .eq('almacen_id', movementData.warehouse_id)
-            .eq('product_id', movementData.product_id)
-            .maybeSingle();
-
-          const currentWarehouseAmount = currentWarehouseStock?.stock || 0;
-          const difference = movementData.quantity - currentWarehouseAmount;
-          newProductStock += difference;
-        }
-
-        // Update the main product stock
-        const { error: updateProductError } = await supabase
-          .from('products')
-          .update({ stock: Math.max(0, parseFloat(newProductStock.toFixed(3))) })
-          .eq('id', movementData.product_id);
-
-        if (updateProductError) throw updateProductError;
-
-        console.log(`✅ Product stock updated: ${currentProduct.stock} → ${Math.max(0, parseFloat(newProductStock.toFixed(3)))}`);
-      }
       console.log(`✅ Stock updated for product ${movementData.product_name}: ${product.stock} → ${Math.max(0, parseFloat(newStock.toFixed(3)))}`);
       
       // Force refresh of products data
