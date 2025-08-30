@@ -582,35 +582,140 @@ export function usePOS() {
         if (updateError) throw updateError;
 
         // Process inventory movements and update stock for credit sales too
-        for (const item of orderData.sale_items) {
-          // Create inventory movement
-          await supabase
-            .from('inventory_movements')
-            .insert({
-              product_id: item.product_id,
-              product_name: item.product_name,
-              type: 'salida',
-              quantity: item.quantity,
-              date: orderData.date,
-              reference: `POS-CREDIT-${orderId.slice(-6)}`,
-              user_name: user?.name || 'POS User',
-              created_by: user?.id
-            });
+        // Update stock based on warehouse distribution if available
+        if (paymentData.warehouseDistribution) {
+          for (const item of orderData.sale_items) {
+            const distribution = paymentData.warehouseDistribution[item.product_id];
+            
+            if (distribution && distribution.length > 0) {
+              // Create inventory movement for each warehouse
+              for (const dist of distribution) {
+                await supabase
+                  .from('inventory_movements')
+                  .insert({
+                    product_id: item.product_id,
+                    product_name: item.product_name,
+                    type: 'salida',
+                    quantity: dist.quantity,
+                    date: orderData.date,
+                    reference: `POS-CREDIT-${orderId.slice(-6)}-${dist.warehouse_name}`,
+                    user_name: user?.name || 'POS User',
+                    created_by: user?.id
+                  });
+              }
 
-          // Update product stock
-          const { data: product } = await supabase
-            .from('products')
-            .select('stock')
-            .eq('id', item.product_id)
-            .single();
+              // Update warehouse stocks
+              for (const dist of distribution) {
+                const { data: currentStock, error: fetchError } = await supabase
+                  .from('stock_almacenes')
+                  .select('stock')
+                  .eq('almacen_id', dist.warehouse_id)
+                  .eq('product_id', item.product_id)
+                  .maybeSingle();
 
-          if (product) {
+                if (fetchError && fetchError.code !== 'PGRST116') {
+                  throw fetchError;
+                }
+
+                const newStock = (currentStock?.stock || 0) - dist.quantity;
+                
+                if (currentStock) {
+                  // Update existing warehouse stock
+                  await supabase
+                    .from('stock_almacenes')
+                    .update({ stock: Math.max(0, newStock) })
+                    .eq('almacen_id', dist.warehouse_id)
+                    .eq('product_id', item.product_id);
+                } else {
+                  // Create new warehouse stock record if it doesn't exist
+                  await supabase
+                    .from('stock_almacenes')
+                    .insert({
+                      almacen_id: dist.warehouse_id,
+                      product_id: item.product_id,
+                      stock: Math.max(0, newStock)
+                    });
+                }
+              }
+              
+              // Update main product stock with total quantity
+              const totalQuantityToReduce = distribution.reduce((sum, dist) => sum + dist.quantity, 0);
+              const { data: product } = await supabase
+                .from('products')
+                .select('stock')
+                .eq('id', item.product_id)
+                .single();
+
+              if (product) {
+                await supabase
+                  .from('products')
+                  .update({ stock: Math.max(0, product.stock - totalQuantityToReduce) })
+                  .eq('id', item.product_id);
+              }
+            } else {
+              // Fallback to original behavior if no distribution
+              // Create inventory movement
+              await supabase
+                .from('inventory_movements')
+                .insert({
+                  product_id: item.product_id,
+                  product_name: item.product_name,
+                  type: 'salida',
+                  quantity: item.quantity,
+                  date: orderData.date,
+                  reference: `POS-CREDIT-${orderId.slice(-6)}`,
+                  user_name: user?.name || 'POS User',
+                  created_by: user?.id
+                });
+
+              // Update product stock
+              const { data: product } = await supabase
+                .from('products')
+                .select('stock')
+                .eq('id', item.product_id)
+                .single();
+
+              if (product) {
+                await supabase
+                  .from('products')
+                  .update({ stock: product.stock - item.quantity })
+                  .eq('id', item.product_id);
+              }
+            }
+          }
+        } else {
+          // Original stock update logic when no warehouse distribution
+          for (const item of orderData.sale_items) {
+            // Create inventory movement
             await supabase
+              .from('inventory_movements')
+              .insert({
+                product_id: item.product_id,
+                product_name: item.product_name,
+                type: 'salida',
+                quantity: item.quantity,
+                date: orderData.date,
+                reference: `POS-CREDIT-${orderId.slice(-6)}`,
+                user_name: user?.name || 'POS User',
+                created_by: user?.id
+              });
+
+            // Update product stock
+            const { data: product } = await supabase
               .from('products')
-              .update({ stock: product.stock - item.quantity })
-              .eq('id', item.product_id);
+              .select('stock')
+              .eq('id', item.product_id)
+              .single();
+
+            if (product) {
+              await supabase
+                .from('products')
+                .update({ stock: product.stock - item.quantity })
+                .eq('id', item.product_id);
+            }
           }
         }
+        
         // Update client balance for credit sale
         if (orderData.client_id) {
           const { data: client } = await supabase
@@ -749,61 +854,28 @@ export function usePOS() {
           // Check for negative stock and create notification for admin
           const stockIssues = [];
           
-          for (const item of orderData.sale_items) {
-            const { data: product } = await supabase
-              .from('products')
-              .select('stock')
-              .eq('id', item.product_id)
-              .single();
-
-            if (product && item.quantity > product.stock) {
-              stockIssues.push({
-                product_name: item.product_name,
-                required: item.quantity,
-                available: product.stock,
-                deficit: item.quantity - product.stock
-              });
-            }
-          }
-
-          // If there are stock issues and stockOverride was used, create notification for admin
-          if (stockIssues.length > 0 && paymentData.stockOverride) {
-            try {
-              console.warn('ADMIN NOTIFICATION: Venta con stock negativo procesada', {
-                orderId: orderId,
-                user: user?.name,
-                stockIssues: stockIssues,
-                timestamp: new Date().toISOString()
-              });
-              
-              // Create notification for admin in the database
-              try {
-                await supabase.from('admin_notifications').insert({
-                  type: 'negative_stock_sale',
-                  title: 'Venta con Stock Negativo',
-                  message: `Venta procesada con stock insuficiente por ${user?.name}`,
-                  data: { 
-                    orderId, 
-                    stockIssues,
-                    user_name: user?.name,
-                    sale_total: orderData.total
-                  },
-                  created_at: new Date().toISOString()
-                }).select();
-              } catch (notifError) {
-                console.warn('Could not create admin notification (table may not exist):', notifError);
-              }
-            } catch (notificationError) {
-              console.error('Error creating admin notification:', notificationError);
-            }
-          }
-
           // Update stock based on warehouse distribution if available
           if (paymentData.warehouseDistribution) {
             for (const item of orderData.sale_items) {
               const distribution = paymentData.warehouseDistribution[item.product_id];
               
               if (distribution && distribution.length > 0) {
+                // Create inventory movement for each warehouse
+                for (const dist of distribution) {
+                  await supabase
+                    .from('inventory_movements')
+                    .insert({
+                      product_id: item.product_id,
+                      product_name: item.product_name,
+                      type: 'salida',
+                      quantity: dist.quantity,
+                      date: orderData.date,
+                      reference: `POS-${orderId.slice(-6)}-${dist.warehouse_name}`,
+                      user_name: user?.name || 'POS User',
+                      created_by: user?.id
+                    });
+                }
+
                 // Update warehouse stocks
                 for (const dist of distribution) {
                   const { data: currentStock, error: fetchError } = await supabase
@@ -811,7 +883,7 @@ export function usePOS() {
                     .select('stock')
                     .eq('almacen_id', dist.warehouse_id)
                     .eq('product_id', item.product_id)
-                    .single();
+                    .maybeSingle();
 
                   if (fetchError && fetchError.code !== 'PGRST116') {
                     throw fetchError;
@@ -820,11 +892,21 @@ export function usePOS() {
                   const newStock = (currentStock?.stock || 0) - dist.quantity;
                   
                   if (currentStock) {
+                    // Update existing warehouse stock
                     await supabase
                       .from('stock_almacenes')
                       .update({ stock: Math.max(0, newStock) })
                       .eq('almacen_id', dist.warehouse_id)
                       .eq('product_id', item.product_id);
+                  } else {
+                    // Create new warehouse stock record if it doesn't exist
+                    await supabase
+                      .from('stock_almacenes')
+                      .insert({
+                        almacen_id: dist.warehouse_id,
+                        product_id: item.product_id,
+                        stock: Math.max(0, newStock)
+                      });
                   }
                 }
                 

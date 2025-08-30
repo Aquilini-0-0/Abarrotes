@@ -3,12 +3,15 @@ import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
 import { useInventoryMovements } from '../../hooks/useInventoryMovements';
 import { useProducts } from '../../hooks/useProducts';
+import { useWarehouseTransfers } from '../../hooks/useWarehouseTransfers';
 import { useAuth } from '../../context/AuthContext';
+import { AutocompleteInput } from '../../components/Common/AutocompleteInput';
 import { Plus, Package, TrendingUp, TrendingDown, AlertTriangle, Lock, X } from 'lucide-react';
 
 export function AjustesInventario() {
   const { movements, createMovement, loading } = useInventoryMovements();
   const { products } = useProducts();
+  const { warehouses, loading: warehousesLoading } = useWarehouseTransfers();
   const { user } = useAuth();
   
   const [showForm, setShowForm] = useState(false);
@@ -16,6 +19,7 @@ export function AjustesInventario() {
   const [adminPassword, setAdminPassword] = useState('');
   const [pendingMovement, setPendingMovement] = useState<any>(null);
   const [newMovement, setNewMovement] = useState({
+    warehouse_id: '',
     product_id: '',
     type: 'ajuste' as const,
     quantity: 0,
@@ -33,14 +37,21 @@ export function AjustesInventario() {
     const selectedProduct = products.find(p => p.id === newMovement.product_id);
     if (!selectedProduct) return;
 
+    const selectedWarehouse = warehouses.find(w => w.id === newMovement.warehouse_id);
+    if (!selectedWarehouse) {
+      alert('Debe seleccionar un almacén');
+      return;
+    }
+
     const movementData = {
       product_id: newMovement.product_id,
       product_name: selectedProduct.name,
       type: newMovement.type,
       quantity: newMovement.quantity,
       date: new Date().toISOString().split('T')[0],
-      reference: newMovement.reference,
-      user: user?.name || 'Usuario'
+      reference: newMovement.reference || `${newMovement.type.toUpperCase()}-${Date.now().toString().slice(-6)}`,
+      user: user?.name || 'Usuario',
+      warehouse_id: newMovement.warehouse_id
     };
 
     // Si es un ajuste, pedir contraseña de administrador
@@ -62,6 +73,7 @@ export function AjustesInventario() {
       });
       
       setNewMovement({
+        warehouse_id: '',
         warehouse_id: '',
         product_id: '',
         type: 'ajuste',
@@ -221,21 +233,40 @@ export function AjustesInventario() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Producto
+                    Almacén *
                   </label>
                   <select
-                    value={newMovement.product_id}
-                    onChange={(e) => setNewMovement(prev => ({ ...prev, product_id: e.target.value }))}
+                    value={newMovement.warehouse_id}
+                    onChange={(e) => setNewMovement(prev => ({ ...prev, warehouse_id: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
+                    disabled={warehousesLoading}
                   >
-                    <option value="">Seleccionar producto</option>
-                    {products.map(product => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} - Stock: {product.stock}
+                    <option value="">
+                      {warehousesLoading ? 'Cargando almacenes...' : 'Seleccionar almacén'}
+                    </option>
+                    {warehouses.filter(w => w.active).map(warehouse => (
+                      <option key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name} - {warehouse.location}
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Producto
+                  </label>
+                  <AutocompleteInput
+                    options={products.map(product => ({
+                      id: product.id,
+                      label: `${product.name} - Stock: ${product.stock}`,
+                      value: product.id
+                    }))}
+                    value={newMovement.product_id}
+                    onChange={(value) => setNewMovement(prev => ({ ...prev, product_id: value }))}
+                    placeholder="Buscar producto..."
+                  />
                 </div>
 
                 <div>

@@ -324,7 +324,7 @@ export function POSLayout() {
           method: paymentData.method,
           reference: paymentData.reference,
           stockOverride: paymentData.stockOverride,
-          warehouseDistribution: warehouseDistributions[currentOrder.id] || []
+          warehouseDistribution: warehouseDistributions
         };
 
         if (paymentData.method === 'vales' && paymentData.selectedVale) {
@@ -341,17 +341,44 @@ export function POSLayout() {
         const result = await processPayment(savedOrder.id, processPaymentData);
         
         setLastOrder({
-          id: savedOrder.id,
+          // For credit sales with admin authorization, process payment with warehouse distribution
+          if (pendingPaymentData.method === 'credit') {
+            // Save order first if it's a temp order
+            let orderToProcess = orderToSave;
+            if (currentOrder!.id.startsWith('temp-')) {
+              orderToProcess = await saveOrder(orderToSave, false);
+            }
+            
+            // Process credit payment with warehouse distribution
+            const result = await processPayment(orderToProcess.id, {
+              amount: orderToProcess.total,
+              method: 'credit',
+              reference: `CREDIT-AUTH-${Date.now().toString().slice(-6)}`,
+              stockOverride: false,
+              warehouseDistribution: warehouseDistributions
+            });
+            
+            setLastOrder({
+              id: orderToProcess.id,
+              client_name: orderToProcess.client_name,
+              total: orderToProcess.total,
+              items_count: orderToProcess.items.length,
+              date: new Date().toISOString(),
+              status: result.newStatus
+            });
+          } else {
+            const savedOrder = await saveOrder(orderToSave, false);
+            
+            setLastOrder({
+              id: savedOrder.id,
+              client_name: orderToSave.client_name,
+              total: orderToSave.total,
+              items_count: orderToSave.items.length,
+              date: new Date().toISOString(),
+              status: orderToSave.status
+            });
+          }
           client_name: currentOrder.client_name,
-          total: currentOrder.total,
-          items_count: currentOrder.items.length,
-          date: new Date().toISOString(),
-          status: result.newStatus
-        });
-        
-        markTabAsSaved(activeTabId);
-        closeTab(activeTabId);
-        setShowPaymentModal(false);
         
         if (paymentData.method === 'credit') {
           alert('✅ Pedido guardado como CRÉDITO - Estado: PENDIENTE');
@@ -578,10 +605,16 @@ export function POSLayout() {
               }
             }
             
+            // Add warehouse distribution to payment data
+            paymentData.warehouseDistribution = warehouseDistributions;
+            
             // Add selectedVale to payment data if using vales method
             if (paymentData.method === 'vales' && paymentData.selectedVale) {
               paymentData.selectedVale = paymentData.selectedVale;
             }
+            
+            // Add warehouse distribution to payment data
+            paymentData.warehouseDistribution = warehouseDistributions;
             
             handlePayOrder(paymentData);
           }}
