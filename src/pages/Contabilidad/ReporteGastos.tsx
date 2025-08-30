@@ -65,6 +65,8 @@ export function ReporteGastos() {
   const categoriasUnicas = Array.from(new Set(expenses.map(g => g.category)));
   const cuentasUnicas = Array.from(new Set(expenses.map(g => g.bank_account).filter(Boolean)));
 
+  const nombreMesActual = new Date().toLocaleString('es-MX', { month: 'long' });
+
   // Análisis por categoría
   const gastosPorCategoria = categoriasUnicas.map(categoria => {
     const gastosCategoria = gastosFiltrados.filter(g => g.category === categoria);
