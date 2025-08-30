@@ -16,6 +16,7 @@ import { POSRemisionesModal } from './POSRemisionesModal';
 import { POSValesModal } from './POSValesModal';
 import { POSPrintPricesModal } from './POSPrintPricesModal';
 import { POSCollectOrderModal } from './POSCollectOrderModal';
+import { POSWarehouseModal } from './POSWarehouseModal';
 import { usePOS } from '../../hooks/usePOS';
 import { usePOSTabs } from '../../hooks/usePOSTabs';
 import { useOrderLocks } from '../../hooks/useOrderLocks';
@@ -87,6 +88,7 @@ export function POSLayout() {
   const [showOrdersModal, setShowOrdersModal] = useState(false);
   const [showCashModal, setShowCashModal] = useState(false);
   const [showTaraModal, setShowTaraModal] = useState(false);
+  const [showWarehouseModal, setShowWarehouseModal] = useState(false);
   const [showCreditPaymentsModal, setShowCreditPaymentsModal] = useState(false);
   const [showAdvancesModal, setShowAdvancesModal] = useState(false);
   const [showCashCutsModal, setShowCashCutsModal] = useState(false);

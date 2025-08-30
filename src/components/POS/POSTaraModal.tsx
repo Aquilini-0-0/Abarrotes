@@ -80,6 +80,14 @@ export function POSTaraModal({ product, quantity, priceLevel, client, onClose, o
       return;
     }
 
+    // Store the final values to pass to warehouse modal
+    window.tempTaraData = {
+      product,
+      finalQuantity,
+      currentPriceLevel,
+      finalUnitPrice
+    };
+    
     onConfirm(product, finalQuantity, currentPriceLevel, finalUnitPrice);
   };
 

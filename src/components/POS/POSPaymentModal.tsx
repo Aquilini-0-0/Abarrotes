@@ -338,6 +338,14 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       return;
     }
 
+    // Check credit limit for credit sales
+    const creditAmount = paymentMethod === 'credit' ? amountToPay : paymentMethod === 'mixed' ? paymentBreakdown.credit : 0;
+    const creditExceededCondition = client && creditAmount > 0 && (client.balance + creditAmount) > client.credit_limit;
+
+    if (creditExceededCondition) {
+      setShowCreditAuthModal(true);
+      return;
+    }
 
     // Validate stock before processing payment
     validateStockBeforePayment();
