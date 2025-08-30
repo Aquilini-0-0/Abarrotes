@@ -175,7 +175,6 @@ export function POSOrderPanel({
         markTabAsSaved(activeTabId);
         closeTab(activeTabId); // Close the tab after saving
         alert('Pedido guardado');
-      }
     } catch (err) {
       console.error('Error saving order:', err);
       if (err instanceof Error && err.message.includes('stock')) {
@@ -196,6 +195,39 @@ export function POSOrderPanel({
       }
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const onSave = async () => {
+    try {
+      const orderWithFormData = {
+        ...order,
+        observations,
+        driver,
+        route
+      };
+      const savedOrder = await saveOrder({ ...order, status: 'saved' }, false);
+      markTabAsSaved(activeTabId);
+      closeTab(activeTabId); // Close the tab after saving
+      alert('Pedido guardado');
+    } catch (err) {
+      console.error('Error saving order:', err);
+      if (err instanceof Error && err.message.includes('stock')) {
+        // Extract product names from error message or check order items
+        const stockIssues = order?.items.filter(item => {
+          const product = products?.find(p => p.id === item.product_id);
+          return product && item.quantity > product.stock;
+        }) || [];
+        
+        if (stockIssues.length > 0) {
+          const productNames = stockIssues.map(item => item.product_name).join(', ');
+          alert(`No se pudo guardar el pedido porque no hay stock suficiente para: ${productNames}`);
+        } else {
+          alert('No se pudo guardar el pedido por falta de stock');
+        }
+      } else {
+        alert('Error al guardar el pedido');
+      }
     }
   };
 
