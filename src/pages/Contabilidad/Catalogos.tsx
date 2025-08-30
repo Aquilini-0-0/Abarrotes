@@ -185,16 +185,6 @@ export function Catalogos() {
     { key: 'banco', label: 'Banco', sortable: true },
     { key: 'numero_cuenta', label: 'Número de Cuenta', sortable: true },
     { key: 'tipo', label: 'Tipo', sortable: true },
-    { 
-      key: 'saldo', 
-      label: 'Saldo', 
-      sortable: true,
-      render: (value: number) => (
-        <span className="font-semibold text-green-600">
-          ${(value || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-        </span>
-      )
-    },
     {
       key: 'activa',
       label: 'Estado',
