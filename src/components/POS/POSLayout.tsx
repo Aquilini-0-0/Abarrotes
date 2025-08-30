@@ -19,6 +19,7 @@ import { POSPrintPricesModal } from './POSPrintPricesModal';
 import { POSCollectOrderModal } from './POSCollectOrderModal';
 import { POSWarehouseModal } from './POSWarehouseModal';
 import { usePOS } from '../../hooks/usePOS';
+import { usePendingOrders } from '../../hooks/usePendingOrders';
 import { usePOSTabs } from '../../hooks/usePOSTabs';
 import { useAutoSync } from '../../hooks/useAutoSync';
 import { useOrderLocks } from '../../hooks/useOrderLocks';
@@ -60,6 +61,13 @@ export function POSLayout() {
 
   const { isOrderLocked } = useOrderLocks();
   
+  const {
+    savePendingOrder,
+    getPendingOrderDistribution,
+    deletePendingOrder,
+    markPendingOrderAsPaid
+  } = usePendingOrders();
+
   // Get the actual client data based on the active order
   const getActiveClientData = (): POSClient | null => {
     const activeOrder = getActiveOrder();
@@ -106,6 +114,7 @@ export function POSLayout() {
   const [adminPassword, setAdminPassword] = useState('');
   const [pendingAction, setPendingAction] = useState<'save' | 'pay' | null>(null);
   const [pendingPaymentData, setPendingPaymentData] = useState<any>(null);
+  const [warehouseDistributions, setWarehouseDistributions] = useState<Record<string, Array<{warehouse_id: string; warehouse_name: string; quantity: number}>>>({});
 
   // Handle browser back button for POS
   useEffect(() => {
@@ -264,12 +273,16 @@ export function POSLayout() {
           ? paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer + paymentData.breakdown.credit
           : currentOrder.total;
           
+        // Get warehouse distribution for stock updates
+        const distribution = await getPendingOrderDistribution(currentOrder.id);
+        
         // For vale payments, calculate the amounts
         let processPaymentData = {
           amount: paymentAmount,
           method: paymentData.method,
           reference: paymentData.reference,
-          stockOverride: paymentData.stockOverride
+          stockOverride: paymentData.stockOverride,
+          warehouseDistribution: distribution
         };
 
         if (paymentData.method === 'vales' && paymentData.selectedVale) {
@@ -311,6 +324,9 @@ export function POSLayout() {
         // Update the active order with the new database ID
         updateActiveOrder(savedOrder);
         
+        // Get warehouse distribution for stock updates
+        const distribution = await getPendingOrderDistribution(currentOrder.id);
+        
         // Process the payment using the hook
         const paymentAmount = paymentData.method === 'mixed' 
           ? paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer + paymentData.breakdown.credit
@@ -321,8 +337,8 @@ export function POSLayout() {
           amount: paymentAmount,
           method: paymentData.method,
           reference: paymentData.reference,
-          selectedVale: paymentData.selectedVale,
-          stockOverride: paymentData.stockOverride
+          stockOverride: paymentData.stockOverride,
+          warehouseDistribution: distribution
         };
 
         if (paymentData.method === 'vales' && paymentData.selectedVale) {
@@ -337,6 +353,9 @@ export function POSLayout() {
         }
         
         const result = await processPayment(savedOrder.id, processPaymentData);
+        
+        // Mark pending order as paid and clean up
+        await markPendingOrderAsPaid(currentOrder.id, savedOrder.id);
         
         setLastOrder({
           id: savedOrder.id,
@@ -383,6 +402,9 @@ export function POSLayout() {
   const handleSaveOrder = async () => {
     if (currentOrder) {
       try {
+        // Save pending order with warehouse distributions
+        await savePendingOrder(currentOrder, warehouseDistributions);
+        
         const savedOrder = await saveOrder({ ...currentOrder, status: 'pending' }, false);
         // Update the active order with the new database ID
         updateActiveOrder(savedOrder);
@@ -641,47 +663,13 @@ export function POSLayout() {
             setShowWarehouseModal(false);
             window.tempTaraData = null;
           }}
-          onConfirm={async (product, finalQuantity, warehouseDistribution) => {
+          onConfirm={(product, finalQuantity, warehouseDistribution) => {
             try {
-              // Update stock in warehouses
-              for (const dist of warehouseDistribution) {
-                // Update stock_almacenes
-                const { data: currentStock, error: fetchError } = await supabase
-                  .from('stock_almacenes')
-                  .select('stock')
-                  .eq('almacen_id', dist.warehouse_id)
-                  .eq('product_id', product.id)
-                  .single();
-
-                if (fetchError && fetchError.code !== 'PGRST116') {
-                  throw fetchError;
-                }
-
-                const newStock = (currentStock?.stock || 0) - dist.quantity;
-                
-                if (currentStock) {
-                  await supabase
-                    .from('stock_almacenes')
-                    .update({ stock: Math.max(0, newStock) })
-                    .eq('almacen_id', dist.warehouse_id)
-                    .eq('product_id', product.id);
-                }
-              }
-
-              // Update main product stock
-              const totalQuantityToReduce = warehouseDistribution.reduce((sum, dist) => sum + dist.quantity, 0);
-              const { data: productData, error: productError } = await supabase
-                .from('products')
-                .select('stock')
-                .eq('id', product.id)
-                .single();
-
-              if (productError) throw productError;
-
-              await supabase
-                .from('products')
-                .update({ stock: Math.max(0, productData.stock - totalQuantityToReduce) })
-                .eq('id', product.id);
+              // Store warehouse distribution for this product (don't update stock yet)
+              setWarehouseDistributions(prev => ({
+                ...prev,
+                [product.id]: warehouseDistribution
+              }));
 
               // Add item to order
               const updatedOrder = addItemToOrder(
@@ -696,12 +684,9 @@ export function POSLayout() {
               setShowWarehouseModal(false);
               window.tempTaraData = null;
               
-              // Refresh products to show updated stock
-              refetch();
-              
             } catch (err) {
-              console.error('Error updating warehouse stock:', err);
-              alert('Error al actualizar el stock de almacenes');
+              console.error('Error storing warehouse distribution:', err);
+              alert('Error al guardar la distribución de almacenes');
             }
           }}
         />

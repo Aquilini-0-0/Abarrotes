@@ -165,9 +165,6 @@ export function POSOrderPanel({
     
     setIsSaving(true);
     try {
-      // Save with status 'saved' instead of 'pending'
-      if (order) {
-        // Update order with current form values before saving
         const orderWithFormData = {
           ...order,
           observations,
