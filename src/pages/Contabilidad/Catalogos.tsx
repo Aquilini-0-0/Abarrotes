@@ -278,6 +278,10 @@ export function Catalogos() {
         </Card>
 
         <Card title="Cuentas Bancarias">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-green-600">{cuentas.length}</div>
+            <div className="text-sm text-gray-500">Cuentas activas</div>
+          </div>
         </Card>
       </div>
 
@@ -403,5 +407,4 @@ export function Catalogos() {
       )}
     </div>
   );
-}
 }
