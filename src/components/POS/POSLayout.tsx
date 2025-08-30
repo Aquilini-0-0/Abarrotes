@@ -641,7 +641,7 @@ export function POSLayout() {
             setShowWarehouseModal(false);
             window.tempTaraData = null;
           }}
-          onConfirm={async (warehouseDistribution) => {
+          onConfirm={async (product, finalQuantity, warehouseDistribution) => {
             try {
               // Update stock in warehouses
               for (const dist of warehouseDistribution) {
@@ -650,7 +650,7 @@ export function POSLayout() {
                   .from('stock_almacenes')
                   .select('stock')
                   .eq('almacen_id', dist.warehouse_id)
-                  .eq('product_id', window.tempTaraData.product.id)
+                  .eq('product_id', product.id)
                   .single();
 
                 if (fetchError && fetchError.code !== 'PGRST116') {
@@ -664,7 +664,7 @@ export function POSLayout() {
                     .from('stock_almacenes')
                     .update({ stock: Math.max(0, newStock) })
                     .eq('almacen_id', dist.warehouse_id)
-                    .eq('product_id', window.tempTaraData.product.id);
+                    .eq('product_id', product.id);
                 }
               }
 
@@ -673,7 +673,7 @@ export function POSLayout() {
               const { data: productData, error: productError } = await supabase
                 .from('products')
                 .select('stock')
-                .eq('id', window.tempTaraData.product.id)
+                .eq('id', product.id)
                 .single();
 
               if (productError) throw productError;
@@ -681,13 +681,13 @@ export function POSLayout() {
               await supabase
                 .from('products')
                 .update({ stock: Math.max(0, productData.stock - totalQuantityToReduce) })
-                .eq('id', window.tempTaraData.product.id);
+                .eq('id', product.id);
 
               // Add item to order
               const updatedOrder = addItemToOrder(
                 currentOrder!, 
-                window.tempTaraData.product, 
-                window.tempTaraData.finalQuantity, 
+                product, 
+                finalQuantity, 
                 window.tempTaraData.priceLevelFromModal, 
                 window.tempTaraData.finalUnitPrice
               );

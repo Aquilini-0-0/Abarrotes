@@ -19,7 +19,7 @@ interface POSWarehouseModalProps {
   product: POSProduct;
   quantity: number;
   onClose: () => void;
-  onConfirm: (warehouseDistribution: { warehouse_id: string; quantity: number }[]) => void;
+  onConfirm: (product: POSProduct, quantity: number, warehouseDistribution: { warehouse_id: string; quantity: number }[]) => void;
 }
 
 export function POSWarehouseModal({ product, quantity, onClose, onConfirm }: POSWarehouseModalProps) {
@@ -123,7 +123,7 @@ export function POSWarehouseModal({ product, quantity, onClose, onConfirm }: POS
       .filter(([_, qty]) => qty > 0)
       .map(([warehouseId, qty]) => ({ warehouse_id: warehouseId, quantity: qty }));
 
-    onConfirm(warehouseDistribution);
+    onConfirm(product, quantity, warehouseDistribution);
   };
 
   const handleAutoDistribute = () => {
