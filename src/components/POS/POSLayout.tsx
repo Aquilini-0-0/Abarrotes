@@ -19,7 +19,6 @@ import { POSPrintPricesModal } from './POSPrintPricesModal';
 import { POSCollectOrderModal } from './POSCollectOrderModal';
 import { POSWarehouseModal } from './POSWarehouseModal';
 import { usePOS } from '../../hooks/usePOS';
-import { usePendingOrders } from '../../hooks/usePendingOrders';
 import { usePOSTabs } from '../../hooks/usePOSTabs';
 import { useAutoSync } from '../../hooks/useAutoSync';
 import { useOrderLocks } from '../../hooks/useOrderLocks';
@@ -61,13 +60,6 @@ export function POSLayout() {
 
   const { isOrderLocked } = useOrderLocks();
   
-  const {
-    savePendingOrder,
-    getPendingOrderDistribution,
-    deletePendingOrder,
-    markPendingOrderAsPaid
-  } = usePendingOrders();
-
   // Get the actual client data based on the active order
   const getActiveClientData = (): POSClient | null => {
     const activeOrder = getActiveOrder();
@@ -273,16 +265,13 @@ export function POSLayout() {
           ? paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer + paymentData.breakdown.credit
           : currentOrder.total;
           
-        // Get warehouse distribution for stock updates
-        const distribution = await getPendingOrderDistribution(currentOrder.id);
-        
         // For vale payments, calculate the amounts
         let processPaymentData = {
           amount: paymentAmount,
           method: paymentData.method,
           reference: paymentData.reference,
           stockOverride: paymentData.stockOverride,
-          warehouseDistribution: distribution
+          warehouseDistribution: warehouseDistributions[currentOrder.id] || []
         };
 
         if (paymentData.method === 'vales' && paymentData.selectedVale) {
@@ -324,9 +313,6 @@ export function POSLayout() {
         // Update the active order with the new database ID
         updateActiveOrder(savedOrder);
         
-        // Get warehouse distribution for stock updates
-        const distribution = await getPendingOrderDistribution(currentOrder.id);
-        
         // Process the payment using the hook
         const paymentAmount = paymentData.method === 'mixed' 
           ? paymentData.breakdown.cash + paymentData.breakdown.card + paymentData.breakdown.transfer + paymentData.breakdown.credit
@@ -338,7 +324,7 @@ export function POSLayout() {
           method: paymentData.method,
           reference: paymentData.reference,
           stockOverride: paymentData.stockOverride,
-          warehouseDistribution: distribution
+          warehouseDistribution: warehouseDistributions[currentOrder.id] || []
         };
 
         if (paymentData.method === 'vales' && paymentData.selectedVale) {
@@ -353,9 +339,6 @@ export function POSLayout() {
         }
         
         const result = await processPayment(savedOrder.id, processPaymentData);
-        
-        // Mark pending order as paid and clean up
-        await markPendingOrderAsPaid(currentOrder.id, savedOrder.id);
         
         setLastOrder({
           id: savedOrder.id,
@@ -402,10 +385,7 @@ export function POSLayout() {
   const handleSaveOrder = async () => {
     if (currentOrder) {
       try {
-        // Save pending order with warehouse distributions
-        await savePendingOrder(currentOrder, warehouseDistributions);
-        
-        const savedOrder = await saveOrder({ ...currentOrder, status: 'pending' }, false);
+        const savedOrder = await saveOrder({ ...currentOrder, status: 'saved' }, false);
         // Update the active order with the new database ID
         updateActiveOrder(savedOrder);
         markTabAsSaved(activeTabId);
