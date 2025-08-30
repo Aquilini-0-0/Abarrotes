@@ -107,7 +107,7 @@ export function ReporteGastos() {
               <div className="text-2xl font-bold text-orange-600">
                 ${gastosEsteMes.toLocaleString('es-MX')}
               </div>
-              <div className="text-sm text-gray-500">Enero 2025</div>
+              <div className="text-sm text-gray-500">{nombreMesActual}</div>
             </div>
           </div>
         </Card>

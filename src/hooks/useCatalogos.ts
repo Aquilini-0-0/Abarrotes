@@ -169,9 +169,10 @@ export function useCatalogos() {
 
   const updateCuenta = async (id: string, cuentaData: Partial<CuentaBancaria>) => {
     try {
+      const { saldo, ...cuentaDataWithoutSaldo } = cuentaData;
       const { data, error } = await supabase
         .from('bank_accounts')
-        .update(cuentaData)
+        .update(cuentaDataWithoutSaldo)
         .eq('id', id)
         .select()
         .single();
@@ -183,7 +184,7 @@ export function useCatalogos() {
         banco: data.banco,
         numero_cuenta: data.numero_cuenta,
         tipo: data.tipo,
-        saldo: data.saldo,
+        saldo: 0,
         activa: data.activa
       };
 

@@ -56,9 +56,13 @@ export function AjustesInventario() {
 
   const processMovement = async (movementData: any) => {
     try {
-      await createMovement(movementData);
+      await createMovement({
+        ...movementData,
+        warehouse_id: newMovement.warehouse_id
+      });
       
       setNewMovement({
+        warehouse_id: '',
         product_id: '',
         type: 'ajuste',
         quantity: 0,

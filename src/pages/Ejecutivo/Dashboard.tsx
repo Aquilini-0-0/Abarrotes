@@ -4,6 +4,7 @@ import { useProducts } from '../../hooks/useProducts';
 import { useExpenses } from '../../hooks/useExpenses';
 import { useSales } from '../../hooks/useSales';
 import { useClients } from '../../hooks/useClients';
+import { supabase } from '../../lib/supabase';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -21,8 +22,31 @@ export function Dashboard() {
   const { sales, loading: salesLoading } = useSales();
   const { clients, loading: clientsLoading } = useClients();
 
+  const [cashMovements, setCashMovements] = useState<any[]>([]);
+  const [loadingCashMovements, setLoadingCashMovements] = useState(true);
+
   const loading = productsLoading || expensesLoading || salesLoading || clientsLoading;
 
+  // Fetch cash movements
+  React.useEffect(() => {
+    const fetchCashMovements = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('cash_movements')
+          .select('*');
+
+        if (error) throw error;
+        setCashMovements(data || []);
+      } catch (err) {
+        console.error('Error fetching cash movements:', err);
+        setCashMovements([]);
+      } finally {
+        setLoadingCashMovements(false);
+      }
+    };
+
+    fetchCashMovements();
+  }, []);
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -33,7 +57,8 @@ export function Dashboard() {
 
   // Real sales data from database
   const totalVentas = sales.reduce((sum, sale) => sum + sale.total, 0);
-  const totalGastos = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalGastos = expenses.reduce((sum, expense) => sum + expense.amount, 0) + 
+                     cashMovements.reduce((sum, movement) => sum + movement.monto, 0);
   const utilidad = totalVentas - totalGastos;
   const margenUtilidad = totalVentas > 0 ? (utilidad / totalVentas) * 100 : 0;
 

@@ -36,7 +36,7 @@ export function useInventoryMovements() {
     }
   };
 
-  const createMovement = async (movementData: Omit<InventoryMovement, 'id'>) => {
+  const createMovement = async (movementData: Omit<InventoryMovement, 'id'> & { warehouse_id?: string }) => {
     try {
       // Insert the movement
       const { data, error } = await supabase
@@ -54,6 +54,50 @@ export function useInventoryMovements() {
         .single();
 
       if (error) throw error;
+
+      // Update warehouse stock if warehouse_id is provided
+      if (movementData.warehouse_id) {
+        const { data: warehouseStock, error: warehouseError } = await supabase
+          .from('stock_almacenes')
+          .select('stock')
+          .eq('almacen_id', movementData.warehouse_id)
+          .eq('product_id', movementData.product_id)
+          .maybeSingle();
+
+        if (warehouseError && warehouseError.code !== 'PGRST116') {
+          throw warehouseError;
+        }
+
+        let newWarehouseStock = warehouseStock?.stock || 0;
+        if (movementData.type === 'entrada') {
+          newWarehouseStock += movementData.quantity;
+        } else if (movementData.type === 'salida' || movementData.type === 'merma') {
+          newWarehouseStock -= movementData.quantity;
+        } else if (movementData.type === 'ajuste') {
+          newWarehouseStock = movementData.quantity;
+        }
+
+        // Update or create warehouse stock
+        if (warehouseStock) {
+          const { error: updateWarehouseError } = await supabase
+            .from('stock_almacenes')
+            .update({ stock: Math.max(0, parseFloat(newWarehouseStock.toFixed(3))) })
+            .eq('almacen_id', movementData.warehouse_id)
+            .eq('product_id', movementData.product_id);
+
+          if (updateWarehouseError) throw updateWarehouseError;
+        } else {
+          const { error: insertWarehouseError } = await supabase
+            .from('stock_almacenes')
+            .insert({
+              almacen_id: movementData.warehouse_id,
+              product_id: movementData.product_id,
+              stock: Math.max(0, parseFloat(newWarehouseStock.toFixed(3)))
+            });
+
+          if (insertWarehouseError) throw insertWarehouseError;
+        }
+      }
 
       // Update product stock based on movement type
       const { data: product, error: productError } = await supabase

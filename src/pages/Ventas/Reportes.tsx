@@ -52,7 +52,7 @@ export function ReportesVentas() {
       razon_social: sale.client_name, // En un sistema real vendría de la tabla de clientes
       producto: item.product_name,
       um: 'PZA', // Unidad de medida - vendría del producto
-      num_precio: 'Precio 1', // Número de precio utilizado
+      num_precio: `Precio ${item.price_level || 1}`, // Número de precio utilizado
       cantidad: item.quantity,
       precio_unit: item.price,
       precio_total: item.total,

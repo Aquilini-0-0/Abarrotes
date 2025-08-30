@@ -618,10 +618,90 @@ export function POSLayout() {
             setSelectedProduct(null);
           }}
           onConfirm={(product, finalQuantity, priceLevelFromModal, finalUnitPrice) => {
-            const updatedOrder = addItemToOrder(currentOrder!, product, finalQuantity, priceLevelFromModal, finalUnitPrice);
-            updateActiveOrder(updatedOrder);
             setShowTaraModal(false);
             setSelectedProduct(null);
+            // Store data for warehouse modal
+            window.tempTaraData = {
+              product,
+              finalQuantity,
+              priceLevelFromModal,
+              finalUnitPrice
+            };
+            setShowWarehouseModal(true);
+          }}
+        />
+      )}
+
+      {showWarehouseModal && window.tempTaraData && (
+        <POSWarehouseModal
+          product={window.tempTaraData.product}
+          quantity={window.tempTaraData.finalQuantity}
+          onClose={() => {
+            setShowWarehouseModal(false);
+            window.tempTaraData = null;
+          }}
+          onConfirm={async (warehouseDistribution) => {
+            try {
+              // Update stock in warehouses
+              for (const dist of warehouseDistribution) {
+                // Update stock_almacenes
+                const { data: currentStock, error: fetchError } = await supabase
+                  .from('stock_almacenes')
+                  .select('stock')
+                  .eq('almacen_id', dist.warehouse_id)
+                  .eq('product_id', window.tempTaraData.product.id)
+                  .single();
+
+                if (fetchError && fetchError.code !== 'PGRST116') {
+                  throw fetchError;
+                }
+
+                const newStock = (currentStock?.stock || 0) - dist.quantity;
+                
+                if (currentStock) {
+                  await supabase
+                    .from('stock_almacenes')
+                    .update({ stock: Math.max(0, newStock) })
+                    .eq('almacen_id', dist.warehouse_id)
+                    .eq('product_id', window.tempTaraData.product.id);
+                }
+              }
+
+              // Update main product stock
+              const totalQuantityToReduce = warehouseDistribution.reduce((sum, dist) => sum + dist.quantity, 0);
+              const { data: productData, error: productError } = await supabase
+                .from('products')
+                .select('stock')
+                .eq('id', window.tempTaraData.product.id)
+                .single();
+
+              if (productError) throw productError;
+
+              await supabase
+                .from('products')
+                .update({ stock: Math.max(0, productData.stock - totalQuantityToReduce) })
+                .eq('id', window.tempTaraData.product.id);
+
+              // Add item to order
+              const updatedOrder = addItemToOrder(
+                currentOrder!, 
+                window.tempTaraData.product, 
+                window.tempTaraData.finalQuantity, 
+                window.tempTaraData.priceLevelFromModal, 
+                window.tempTaraData.finalUnitPrice
+              );
+              updateActiveOrder(updatedOrder);
+              
+              setShowWarehouseModal(false);
+              window.tempTaraData = null;
+              
+              // Refresh products to show updated stock
+              refetch();
+              
+            } catch (err) {
+              console.error('Error updating warehouse stock:', err);
+              alert('Error al actualizar el stock de almacenes');
+            }
           }}
         />
       )}

@@ -123,6 +123,11 @@ export function Usuarios() {
   };
 
   const handlePermissions = (usuario: UsuarioSistema) => {
+    if (user?.role !== 'Admin') {
+      alert('Solo los administradores pueden asignar permisos a otros usuarios');
+      return;
+    }
+    
     setEditingUsuario(usuario);
     setNewUsuario({
       name: usuario.name,
