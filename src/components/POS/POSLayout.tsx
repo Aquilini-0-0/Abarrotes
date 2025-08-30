@@ -21,6 +21,7 @@ import { POSWarehouseModal } from './POSWarehouseModal';
 import { usePOS } from '../../hooks/usePOS';
 import { usePOSTabs } from '../../hooks/usePOSTabs';
 import { useAutoSync } from '../../hooks/useAutoSync';
+import { useOrderLocks } from '../../hooks/useOrderLocks';
 import { POSProduct, POSClient } from '../../types/pos';
 
 export function POSLayout() {
