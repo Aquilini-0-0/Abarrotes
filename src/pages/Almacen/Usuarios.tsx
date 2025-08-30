@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Card } from '../../components/Common/Card';
 import { DataTable } from '../../components/Common/DataTable';
+import { useAuth } from '../../context/AuthContext';
 import { useUsuarios, UsuarioSistema } from '../../hooks/useUsuarios';
 import { useWarehouseTransfers } from '../../hooks/useWarehouseTransfers';
 import { Plus, Edit, Trash2, Eye, Search, User, Shield, Settings, X } from 'lucide-react';
 
 export function Usuarios() {
+  const { user } = useAuth();
   const { usuarios, loading, error, createUsuario, updateUsuario, deleteUsuario } = useUsuarios();
   const { warehouses, loading: warehousesLoading } = useWarehouseTransfers();
   const [showForm, setShowForm] = useState(false);
