@@ -341,44 +341,17 @@ export function POSLayout() {
         const result = await processPayment(savedOrder.id, processPaymentData);
         
         setLastOrder({
-          // For credit sales with admin authorization, process payment with warehouse distribution
-          if (pendingPaymentData.method === 'credit') {
-            // Save order first if it's a temp order
-            let orderToProcess = orderToSave;
-            if (currentOrder!.id.startsWith('temp-')) {
-              orderToProcess = await saveOrder(orderToSave, false);
-            }
-            
-            // Process credit payment with warehouse distribution
-            const result = await processPayment(orderToProcess.id, {
-              amount: orderToProcess.total,
-              method: 'credit',
-              reference: `CREDIT-AUTH-${Date.now().toString().slice(-6)}`,
-              stockOverride: false,
-              warehouseDistribution: warehouseDistributions
-            });
-            
-            setLastOrder({
-              id: orderToProcess.id,
-              client_name: orderToProcess.client_name,
-              total: orderToProcess.total,
-              items_count: orderToProcess.items.length,
-              date: new Date().toISOString(),
-              status: result.newStatus
-            });
-          } else {
-            const savedOrder = await saveOrder(orderToSave, false);
-            
-            setLastOrder({
-              id: savedOrder.id,
-              client_name: orderToSave.client_name,
-              total: orderToSave.total,
-              items_count: orderToSave.items.length,
-              date: new Date().toISOString(),
-              status: orderToSave.status
-            });
-          }
+          id: savedOrder.id,
           client_name: currentOrder.client_name,
+          total: currentOrder.total,
+          items_count: currentOrder.items.length,
+          date: new Date().toISOString(),
+          status: result.newStatus
+        });
+        
+        markTabAsSaved(activeTabId);
+        closeTab(activeTabId); // Close the tab after payment
+        setShowPaymentModal(false);
         
         if (paymentData.method === 'credit') {
           alert('✅ Pedido guardado como CRÉDITO - Estado: PENDIENTE');
@@ -464,16 +437,43 @@ export function POSLayout() {
           status: pendingPaymentData.method === 'credit' ? 'pending' : 'paid'
         } as any;
 
-        const savedOrder = await saveOrder(orderToSave, false);
-        
-        setLastOrder({
-          id: savedOrder.id,
-          client_name: orderToSave.client_name,
-          total: orderToSave.total,
-          items_count: orderToSave.items.length,
-          date: new Date().toISOString(),
-          status: orderToSave.status
-        });
+        // For credit sales with admin authorization, process payment with warehouse distribution
+        if (pendingPaymentData.method === 'credit') {
+          // Save order first if it's a temp order
+          let orderToProcess = orderToSave;
+          if (currentOrder!.id.startsWith('temp-')) {
+            orderToProcess = await saveOrder(orderToSave, false);
+          }
+          
+          // Process credit payment with warehouse distribution
+          const result = await processPayment(orderToProcess.id, {
+            amount: orderToProcess.total,
+            method: 'credit',
+            reference: `CREDIT-AUTH-${Date.now().toString().slice(-6)}`,
+            stockOverride: false,
+            warehouseDistribution: warehouseDistributions
+          });
+          
+          setLastOrder({
+            id: orderToProcess.id,
+            client_name: orderToProcess.client_name,
+            total: orderToProcess.total,
+            items_count: orderToProcess.items.length,
+            date: new Date().toISOString(),
+            status: result.newStatus
+          });
+        } else {
+          const savedOrder = await saveOrder(orderToSave, false);
+          
+          setLastOrder({
+            id: savedOrder.id,
+            client_name: orderToSave.client_name,
+            total: orderToSave.total,
+            items_count: orderToSave.items.length,
+            date: new Date().toISOString(),
+            status: orderToSave.status
+          });
+        }
         
         markTabAsSaved(activeTabId);
         closeTab(activeTabId); // Close the tab after payment
