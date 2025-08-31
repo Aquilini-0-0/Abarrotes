@@ -487,7 +487,7 @@ export function usePOS() {
                   type: 'salida',
                   quantity: difference,
                   date: order.date,
-                  reference: `EDIT-${order.id.slice(-6)}`,
+      const distributions = warehouseDistributions || {};
                   user_name: user?.name || 'POS User',
                   created_by: user?.id
                 });

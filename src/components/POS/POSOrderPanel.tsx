@@ -165,12 +165,6 @@ export function POSOrderPanel({
     
     setIsSaving(true);
     try {
-        const orderWithFormData = {
-          ...order,
-          observations,
-          driver,
-          route
-        };
         const savedOrder = await saveOrder({ ...order, status: 'saved' }, false);
         markTabAsSaved(activeTabId);
         closeTab(activeTabId); // Close the tab after saving
@@ -200,12 +194,6 @@ export function POSOrderPanel({
 
   const onSave = async () => {
     try {
-      const orderWithFormData = {
-        ...order,
-        observations,
-        driver,
-        route
-      };
       const savedOrder = await saveOrder({ ...order, status: 'saved' }, false);
       markTabAsSaved(activeTabId);
       closeTab(activeTabId); // Close the tab after saving
