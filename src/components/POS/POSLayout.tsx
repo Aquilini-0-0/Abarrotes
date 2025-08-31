@@ -270,8 +270,7 @@ export function POSLayout() {
           amount: paymentAmount,
           method: paymentData.method,
           reference: paymentData.reference,
-          stockOverride: paymentData.stockOverride,
-          warehouseDistribution: warehouseDistributions[currentOrder.id] || []
+          stockOverride: paymentData.stockOverride
         };
 
         if (paymentData.method === 'vales' && paymentData.selectedVale) {
@@ -323,8 +322,7 @@ export function POSLayout() {
           amount: paymentAmount,
           method: paymentData.method,
           reference: paymentData.reference,
-          stockOverride: paymentData.stockOverride,
-          warehouseDistribution: warehouseDistributions
+          stockOverride: paymentData.stockOverride
         };
 
         if (paymentData.method === 'vales' && paymentData.selectedVale) {
@@ -385,6 +383,9 @@ export function POSLayout() {
   const handleSaveOrder = async () => {
     if (currentOrder) {
       try {
+        // Store warehouse distributions globally before saving
+        (window as any).currentWarehouseDistributions = warehouseDistributions;
+        
         const savedOrder = await saveOrder({ ...currentOrder, status: 'saved' }, false);
         // Update the active order with the new database ID
         updateActiveOrder(savedOrder);
@@ -606,15 +607,6 @@ export function POSLayout() {
             }
             
             // Add warehouse distribution to payment data
-            paymentData.warehouseDistribution = warehouseDistributions;
-            
-            // Add selectedVale to payment data if using vales method
-            if (paymentData.method === 'vales' && paymentData.selectedVale) {
-              paymentData.selectedVale = paymentData.selectedVale;
-            }
-            
-            // Add warehouse distribution to payment data
-            paymentData.warehouseDistribution = warehouseDistributions;
             
             handlePayOrder(paymentData);
           }}
@@ -678,11 +670,17 @@ export function POSLayout() {
           }}
           onConfirm={(product, finalQuantity, warehouseDistribution) => {
             try {
-              // Store warehouse distribution for this product (don't update stock yet)
+              // Store warehouse distribution for this product and globally
               setWarehouseDistributions(prev => ({
                 ...prev,
                 [product.id]: warehouseDistribution
               }));
+              
+              // Also store globally for access during save
+              (window as any).currentWarehouseDistributions = {
+                ...(window as any).currentWarehouseDistributions,
+                [product.id]: warehouseDistribution
+              };
 
               // Add item to order
               const updatedOrder = addItemToOrder(

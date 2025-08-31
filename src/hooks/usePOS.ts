@@ -280,6 +280,9 @@ export function usePOS() {
   // Save order to database
   const saveOrder = async (order: POSOrder, stockOverride: boolean = false): Promise<POSOrder> => {
     try {
+      // Get warehouse distributions from POSLayout state
+      const currentWarehouseDistributions = (window as any).currentWarehouseDistributions || {};
+      
       // Validate stock before saving (unless overridden)
       if (!stockOverride) {
         for (const item of order.items) {
@@ -395,6 +398,35 @@ export function usePOS() {
 
       if (itemsError) throw itemsError;
 
+      // Save warehouse distribution if available
+      if (Object.keys(currentWarehouseDistributions).length > 0) {
+        const distributionRecords = [];
+        
+        for (const [productId, distributions] of Object.entries(currentWarehouseDistributions)) {
+          const distributionArray = distributions as Array<{warehouse_id: string; warehouse_name: string; quantity: number}>;
+          for (const dist of distributionArray) {
+            distributionRecords.push({
+              order_id: saleData.id,
+              product_id: productId,
+              warehouse_id: dist.warehouse_id,
+              warehouse_name: dist.warehouse_name,
+              quantity: dist.quantity
+            });
+          }
+        }
+        
+        if (distributionRecords.length > 0) {
+          const { error: distributionError } = await supabase
+            .from('order_warehouse_distribution')
+            .insert(distributionRecords);
+
+          if (distributionError) {
+            console.error('Error saving warehouse distribution:', distributionError);
+            // Don't throw error, just log it as this is not critical for order saving
+          }
+        }
+      }
+
       await fetchOrders();
       
       // Trigger automatic sync
@@ -430,7 +462,6 @@ export function usePOS() {
     stockOverride?: boolean;
     valeAmount?: number;
     cashAmount?: number;
-    warehouseDistribution?: Record<string, Array<{warehouse_id: string; warehouse_name: string; quantity: number}>> | null;
     breakdown?: {
       cash: number;
       card: number;
@@ -439,6 +470,31 @@ export function usePOS() {
     };
   }) => {
     try {
+      // Get warehouse distribution from database for this order
+      const { data: savedDistribution, error: distributionError } = await supabase
+        .from('order_warehouse_distribution')
+        .select('*')
+        .eq('order_id', orderId);
+
+      if (distributionError) {
+        console.error('Error fetching warehouse distribution:', distributionError);
+      }
+
+      // Convert to the expected format
+      const warehouseDistribution: Record<string, Array<{warehouse_id: string; warehouse_name: string; quantity: number}>> = {};
+      if (savedDistribution && savedDistribution.length > 0) {
+        savedDistribution.forEach(dist => {
+          if (!warehouseDistribution[dist.product_id]) {
+            warehouseDistribution[dist.product_id] = [];
+          }
+          warehouseDistribution[dist.product_id].push({
+            warehouse_id: dist.warehouse_id,
+            warehouse_name: dist.warehouse_name,
+            quantity: dist.quantity
+          });
+        });
+      }
+
       // Get current order data
       const { data: orderData, error: orderError } = await supabase
         .from('sales')
@@ -582,10 +638,9 @@ export function usePOS() {
         if (updateError) throw updateError;
 
         // Process inventory movements and update stock for credit sales too
-        // Update stock based on warehouse distribution if available
-        if (paymentData.warehouseDistribution) {
+        if (Object.keys(warehouseDistribution).length > 0) {
           for (const item of orderData.sale_items) {
-            const distribution = paymentData.warehouseDistribution[item.product_id];
+            const distribution = warehouseDistribution[item.product_id];
             
             if (distribution && distribution.length > 0) {
               // Create inventory movement for each warehouse
@@ -854,10 +909,10 @@ export function usePOS() {
           // Check for negative stock and create notification for admin
           const stockIssues = [];
           
-          // Update stock based on warehouse distribution if available
-          if (paymentData.warehouseDistribution) {
+          // Update stock based on saved warehouse distribution
+          if (Object.keys(warehouseDistribution).length > 0) {
             for (const item of orderData.sale_items) {
-              const distribution = paymentData.warehouseDistribution[item.product_id];
+              const distribution = warehouseDistribution[item.product_id];
               
               if (distribution && distribution.length > 0) {
                 // Create inventory movement for each warehouse
