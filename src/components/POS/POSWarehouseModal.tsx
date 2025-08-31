@@ -182,7 +182,7 @@ export function POSWarehouseModal({ product, quantity, onClose, onConfirm }: POS
         {/* Header */}
         <div className="p-4 border-b border-gray-200 rounded-t-xl flex items-center justify-between sticky top-0 bg-white z-10">
           <div className="flex items-center space-x-2">
-            <Warehouse className="text-blue-500" size={24} />
+            <Warehouse className="text-orange-500" size={24} />
             <h2 className="text-gray-800 font-bold text-xl">Selección de Almacén</h2>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
