@@ -321,17 +321,17 @@ export function POSWarehouseModal({ product, quantity, onClose, onConfirm }: POS
             </h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-blue-800">Cantidad del pedido:</span>
+                <span className="text-black-800">Cantidad del pedido:</span>
                 <span className="font-bold text-blue-900">{quantity} unidades</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-blue-800">Total distribuido:</span>
+                <span className="text-black-800">Total distribuido:</span>
                 <span className={`font-bold ${totalDistributed === quantity ? 'text-green-600' : 'text-red-600'}`}>
                   {totalDistributed} unidades
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-blue-800">Restante por distribuir:</span>
+                <span className="text-black-800">Restante por distribuir:</span>
                 <span className={`font-bold ${remainingQuantity === 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {remainingQuantity} unidades
                 </span>
