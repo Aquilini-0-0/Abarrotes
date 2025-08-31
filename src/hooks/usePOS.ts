@@ -278,129 +278,376 @@ export function usePOS() {
   }
 
   // Save order to database
-  const saveOrder = async (
-    order: POSOrder, 
-    stockOverride = false, 
-    warehouseDistributions?: Record<string, Array<{warehouse_id: string; warehouse_name: string; quantity: number}>>
-  ): Promise<POSOrder> => {
+  const saveOrder = async (order: POSOrder, stockOverride: boolean = false): Promise<POSOrder> => {
     try {
-      const isNewOrder = order.id.startsWith('temp-');
-      const distributions = warehouseDistributions || (window as any).currentWarehouseDistributions || {};
-
-      if (isNewOrder) {
-        // For new orders, create the sale first to get a real UUID
-        const { data: saleData, error: saleError } = await supabase
-          .from('sales')
-          .insert([{
-            client_id: order.client_id,
-            client_name: order.client_name,
-            date: order.date,
-            total: order.total,
-            status: order.status || 'draft',
-            amount_paid: 0,
-            remaining_balance: order.total,
-            created_by: user?.id
-          }])
-          .select()
-          .single();
-
-        if (saleError) throw saleError;
-
-        const realOrderId = saleData.id;
-
-        // Create sale items
-        const saleItems = order.items.map(item => ({
-          sale_id: realOrderId,
-          product_id: item.product_id,
-          product_name: item.product_name,
-          quantity: item.quantity,
-          price: item.unit_price,
-          total: item.total
-        }));
-
-        const { error: itemsError } = await supabase
-          .from('sale_items')
-          .insert(saleItems);
-
-        if (itemsError) throw itemsError;
-
-        // Create warehouse distributions using the real UUID
-        if (Object.keys(distributions).length > 0) {
-          const distributionRecords = [];
-          
-          for (const [productId, productDistributions] of Object.entries(distributions)) {
-            for (const dist of productDistributions) {
-              distributionRecords.push({
-                order_id: realOrderId,
-                product_id: productId,
-                warehouse_id: dist.warehouse_id,
-                warehouse_name: dist.warehouse_name,
-                quantity: dist.quantity
-              });
-            }
-          }
-          
-          if (distributionRecords.length > 0) {
-            const { error: distError } = await supabase
-              .from('order_warehouse_distribution')
-              .insert(distributionRecords);
-            
-            if (distError) throw distError;
-          }
-        }
-
-        // Update stock for new orders
+      // Get warehouse distributions from POSLayout state
+      const currentWarehouseDistributions = (window as any).currentWarehouseDistributions || {};
+      
+      // Validate stock before saving (unless overridden)
+      if (!stockOverride) {
         for (const item of order.items) {
           const product = products.find(p => p.id === item.product_id);
-          if (product) {
-            const newStock = Math.max(0, product.stock - item.quantity);
-            const { error: stockError } = await supabase
-              .from('products')
-              .update({ stock: newStock })
-              .eq('id', item.product_id);
-
-            if (stockError) throw stockError;
-
-            // Create inventory movement
-            await supabase
-              .from('inventory_movements')
-              .insert({
-                product_id: item.product_id,
-                product_name: item.product_name,
-                type: 'salida',
-                quantity: item.quantity,
-                date: order.date,
-                reference: `SAVE-${realOrderId.slice(-6)}`,
-                user_name: user?.name || 'POS User',
-                created_by: user?.id
-              });
+          if (product && item.quantity > product.stock) {
+            throw new Error(`No se puede guardar el pedido porque no hay stock suficiente para ${item.product_name}. Disponible: ${product.stock} unidades, Solicitado: ${item.quantity} unidades`);
           }
         }
+      }
 
-        return {
-          ...order,
-          id: realOrderId,
-          status: order.status || 'draft'
-        };
-      } else {
-        // For existing orders, just update without changing stock
-        // Stock was already adjusted when the order was first saved
-        const { error: updateError } = await supabase
+      // Map POS order status to valid database status
+      const mapStatusToDatabase = (posStatus: string): 'pending' | 'paid' | 'overdue' | 'saved' => {
+        switch (posStatus) {
+          case 'draft':
+            return 'pending';
+          case 'cancelled':
+            return 'overdue';
+          case 'saved':
+            return 'saved';
+          case 'paid':
+            return 'paid';
+          case 'pending':
+            return 'pending';
+          default:
+            return 'pending';
+        }
+      };
+
+      // Helper function to check if ID is a valid UUID
+      const isValidUUID = (id: string): boolean => {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(id);
+      };
+
+      let saleData;
+      let isNewOrder = order.id.startsWith('temp-') || !isValidUUID(order.id);
+      
+      // Check if this is an existing order (not temp)
+      if (!isNewOrder) {
+        // For existing orders, get the previous items to calculate stock differences
+        const { data: previousOrder, error: fetchPreviousError } = await supabase
+          .from('sales')
+          .select(`
+            *,
+            sale_items (
+              product_id,
+              quantity
+            ),
+            order_warehouse_distribution (
+              product_id,
+              warehouse_id,
+              quantity
+            )
+          `)
+          .eq('id', order.id)
+          .single();
+
+        if (fetchPreviousError) throw fetchPreviousError;
+
+        // Calculate differences between previous and current items
+        const stockDifferences: Record<string, number> = {};
+        const warehouseDifferences: Record<string, Record<string, number>> = {};
+
+        // Calculate current totals by product
+        const currentTotals: Record<string, number> = {};
+        order.items.forEach(item => {
+          currentTotals[item.product_id] = (currentTotals[item.product_id] || 0) + item.quantity;
+        });
+
+        // Calculate previous totals by product
+        const previousTotals: Record<string, number> = {};
+        previousOrder.sale_items.forEach((item: any) => {
+          previousTotals[item.product_id] = (previousTotals[item.product_id] || 0) + item.quantity;
+        });
+
+        // Calculate differences
+        Object.keys(currentTotals).forEach(productId => {
+          const currentQty = currentTotals[productId] || 0;
+          const previousQty = previousTotals[productId] || 0;
+          const difference = currentQty - previousQty;
+          if (difference !== 0) {
+            stockDifferences[productId] = difference;
+          }
+        });
+
+        // Handle products that were completely removed
+        Object.keys(previousTotals).forEach(productId => {
+          if (!currentTotals[productId]) {
+            stockDifferences[productId] = -previousTotals[productId];
+          }
+        });
+
+        // For existing orders, always save as pending when using save button
+        // Payment processing should be done through the payment modal
+        const { data: currentOrderData, error: fetchError } = await supabase
+          .from('sales')
+          .select('amount_paid')
+          .eq('id', order.id)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        const amountPaid = currentOrderData.amount_paid || 0;
+        const newRemainingBalance = order.total - amountPaid;
+        const newStatus = newRemainingBalance <= 0.01 ? 'paid' : 'pending';
+
+        // Update existing order
+        const { data: updatedSale, error: updateError } = await supabase
           .from('sales')
           .update({
             client_id: order.client_id,
             client_name: order.client_name,
+            date: order.date,
             total: order.total,
-            status: order.status || 'draft'
+            remaining_balance: newRemainingBalance,
+            status: newStatus
           })
-          .eq('id', order.id);
+          .eq('id', order.id)
+          .select()
+          .single();
 
         if (updateError) throw updateError;
+        saleData = updatedSale;
 
-        return order;
+        // Delete existing sale items
+        const { error: deleteItemsError } = await supabase
+          .from('sale_items')
+          .delete()
+          .eq('sale_id', order.id);
+
+        if (deleteItemsError) throw deleteItemsError;
+      } else {
+        // Delete existing warehouse distribution
+        const { error: deleteDistributionError } = await supabase
+          .from('order_warehouse_distribution')
+          .delete()
+          .eq('order_id', order.id);
+
+        if (deleteDistributionError) throw deleteDistributionError;
+
+        // Update stock for differences only
+        for (const [productId, difference] of Object.entries(stockDifferences)) {
+          if (difference !== 0) {
+            // Update general product stock
+            const { data: product } = await supabase
+              .from('products')
+              .select('stock')
+              .eq('id', productId)
+              .single();
+
+            if (product) {
+              await supabase
+                .from('products')
+                .update({ stock: Math.max(0, product.stock - difference) })
+                .eq('id', productId);
+            }
+
+            // Update warehouse stock based on new distribution
+            const productDistribution = currentWarehouseDistributions[productId];
+            if (productDistribution && productDistribution.length > 0) {
+              for (const dist of productDistribution) {
+                const { data: warehouseStock, error: warehouseError } = await supabase
+                  .from('stock_almacenes')
+                  .select('stock')
+                  .eq('almacen_id', dist.warehouse_id)
+                  .eq('product_id', productId)
+                  .maybeSingle();
+
+                if (warehouseError && warehouseError.code !== 'PGRST116') {
+                  throw warehouseError;
+                }
+
+                const currentWarehouseStock = warehouseStock?.stock || 0;
+                const newWarehouseStock = currentWarehouseStock - dist.quantity;
+
+                if (warehouseStock) {
+                  await supabase
+                    .from('stock_almacenes')
+                    .update({ stock: Math.max(0, newWarehouseStock) })
+                    .eq('almacen_id', dist.warehouse_id)
+                    .eq('product_id', productId);
+                } else {
+                  await supabase
+                    .from('stock_almacenes')
+                    .insert({
+                      almacen_id: dist.warehouse_id,
+                      product_id: productId,
+                      stock: Math.max(0, newWarehouseStock)
+                    });
+                }
+              }
+            }
+
+            // Create inventory movement for the difference
+            if (difference > 0) {
+              const product = products.find(p => p.id === productId);
+              await supabase
+                .from('inventory_movements')
+                .insert({
+                  product_id: productId,
+                  product_name: product?.name || 'Producto',
+                  type: 'salida',
+                  quantity: difference,
+                  date: order.date,
+                  reference: `EDIT-${order.id.slice(-6)}`,
+                  user_name: user?.name || 'POS User',
+                  created_by: user?.id
+                });
+            }
+          }
+        }
+        // Create new sale record
+        const { data: newSale, error: saleError } = await supabase
+          .from('sales')
+          .insert({
+            client_id: order.client_id,
+            client_name: order.client_name,
+            date: order.date,
+            total: order.total,
+            status: mapStatusToDatabase(order.status || 'pending'),
+            amount_paid: 0,
+            remaining_balance: order.total,
+            created_by: order.created_by
+          })
+          .select()
+          .single();
+
+        if (saleError) throw saleError;
+        saleData = newSale;
+
+        // For new orders, update stock immediately when saving
+        for (const item of order.items) {
+          // Update general product stock
+          const { data: product } = await supabase
+            .from('products')
+            .select('stock')
+            .eq('id', item.product_id)
+            .single();
+
+          if (product) {
+            await supabase
+              .from('products')
+              .update({ stock: Math.max(0, product.stock - item.quantity) })
+              .eq('id', item.product_id);
+          }
+
+          // Update warehouse stock based on distribution
+          const productDistribution = currentWarehouseDistributions[item.product_id];
+          if (productDistribution && productDistribution.length > 0) {
+            for (const dist of productDistribution) {
+              const { data: warehouseStock, error: warehouseError } = await supabase
+                .from('stock_almacenes')
+                .select('stock')
+                .eq('almacen_id', dist.warehouse_id)
+                .eq('product_id', item.product_id)
+                .maybeSingle();
+
+              if (warehouseError && warehouseError.code !== 'PGRST116') {
+                throw warehouseError;
+              }
+
+              const currentWarehouseStock = warehouseStock?.stock || 0;
+              const newWarehouseStock = currentWarehouseStock - dist.quantity;
+
+              if (warehouseStock) {
+                await supabase
+                  .from('stock_almacenes')
+                  .update({ stock: Math.max(0, newWarehouseStock) })
+                  .eq('almacen_id', dist.warehouse_id)
+                  .eq('product_id', item.product_id);
+              } else {
+                await supabase
+                  .from('stock_almacenes')
+                  .insert({
+                    almacen_id: dist.warehouse_id,
+                    product_id: item.product_id,
+                    stock: Math.max(0, newWarehouseStock)
+                  });
+              }
+            }
+          }
+
+          // Create inventory movement
+          await supabase
+            .from('inventory_movements')
+            .insert({
+              product_id: item.product_id,
+              product_name: item.product_name,
+              type: 'salida',
+              quantity: item.quantity,
+              date: order.date,
+              reference: `SAVE-${saleData.id.slice(-6)}`,
+              user_name: user?.name || 'POS User',
+              created_by: user?.id
+            });
+        }
       }
+
+      // Create sale items
+      const saleItems = order.items.map(item => ({
+        sale_id: saleData.id,
+        product_id: item.product_id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        price: item.unit_price,
+        total: item.total
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('sale_items')
+        .insert(saleItems);
+
+      if (itemsError) throw itemsError;
+
+      // Save warehouse distribution if available
+      if (Object.keys(currentWarehouseDistributions).length > 0) {
+        const distributionRecords = [];
+        
+        for (const [productId, distributions] of Object.entries(currentWarehouseDistributions)) {
+          const distributionArray = distributions as Array<{warehouse_id: string; warehouse_name: string; quantity: number}>;
+          for (const dist of distributionArray) {
+            distributionRecords.push({
+              order_id: saleData.id,
+              product_id: productId,
+              warehouse_id: dist.warehouse_id,
+              warehouse_name: dist.warehouse_name,
+              quantity: dist.quantity
+            });
+          }
+        }
+        
+        if (distributionRecords.length > 0) {
+          const { error: distributionError } = await supabase
+            .from('order_warehouse_distribution')
+            .insert(distributionRecords);
+
+          if (distributionError) {
+            console.error('Error saving warehouse distribution:', distributionError);
+            // Don't throw error, just log it as this is not critical for order saving
+          }
+        }
+      }
+
+      await fetchOrders();
+      
+      // Trigger automatic sync
+      if (window.triggerSync) {
+        window.triggerSync();
+      }
+      
+      // Trigger ERS sales sync
+      window.dispatchEvent(new CustomEvent('posDataUpdate'));
+      
+      // Return a complete POSOrder object with the database ID
+      const savedOrder: POSOrder = {
+        ...order,
+        id: saleData.id,
+        status: saleData.status,
+        created_at: saleData.created_at,
+        amount_paid: saleData.amount_paid || 0,
+        remaining_balance: saleData.remaining_balance || saleData.total
+      };
+      
+      return savedOrder;
     } catch (err) {
-      console.error('Error in saveOrder:', err);
       throw new Error(err instanceof Error ? err.message : 'Error saving order');
     }
   };

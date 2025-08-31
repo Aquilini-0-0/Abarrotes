@@ -383,19 +383,12 @@ export function POSLayout() {
   const handleSaveOrder = async () => {
     if (currentOrder) {
       try {
-        const savedOrder = await saveOrder({ ...currentOrder, status: 'saved' }, false, warehouseDistributions);
+        // Store warehouse distributions globally before saving
+        (window as any).currentWarehouseDistributions = warehouseDistributions;
+        
+        const savedOrder = await saveOrder({ ...currentOrder, status: 'saved' }, false);
         // Update the active order with the new database ID
         updateActiveOrder(savedOrder);
-        
-        // Clear warehouse distributions for the temp ID after successful save
-        if (currentOrder.id.startsWith('temp-')) {
-          setWarehouseDistributions(prev => {
-            const updated = { ...prev };
-            delete updated[currentOrder.id];
-            return updated;
-          });
-        }
-        
         markTabAsSaved(activeTabId);
         closeTab(activeTabId); // Close the tab after saving
         alert('Pedido guardado');
