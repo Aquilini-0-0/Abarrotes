@@ -192,7 +192,7 @@ export function POSWarehouseModal({ product, quantity, onClose, onConfirm }: POS
 
         <div className="p-6">
           {/* Product Info */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-6 border border-blue-200">
+          <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 mb-6 border border-blue-200">
             <div className="text-gray-800 font-semibold mb-2 text-lg">{product.name}</div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
