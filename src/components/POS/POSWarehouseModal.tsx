@@ -262,7 +262,7 @@ export function POSWarehouseModal({ product, quantity, onClose, onConfirm }: POS
               <h3 className="font-semibold text-gray-900">Distribución del Pedido</h3>
               <button
                 onClick={handleAutoDistribute}
-                className="px-3 py-1 bg-gradient-to-br from-orange-400 via-red-500 to-red-600 rounded-lg text-sm text-white hover:bg-blue-200"
+                className="px-3 py-1 bg-gradient-to-br from-orange-400 via-red-500 to-red-600 rounded-lg text-sm text-white"
               >
                 Auto-distribuir
               </button>
