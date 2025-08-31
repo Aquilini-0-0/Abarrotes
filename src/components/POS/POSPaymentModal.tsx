@@ -89,6 +89,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const [stockOverride, setStockOverride] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [permissionMessage, setPermissionMessage] = useState('');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Calculate remaining balance for paid orders - fetch from database
   const [orderData, setOrderData] = useState<any>(() => ({
@@ -441,7 +442,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   };
 
   const processPayment = async (overrideStock = false) => {
-    setIsProcessing(true);
+    setIsProcessingPayment(true);
     
     try {
     // Generate and download .txt ticket automatically before processing payment
@@ -464,10 +465,12 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       // Close modal after successful payment
       setTimeout(() => {
         onClose();
-      }, 500);
+        setIsProcessingPayment(false);
+      }, 1000);
     } catch (err) {
       console.error('Error processing payment:', err);
-      setIsProcessing(false);
+      setIsProcessingPayment(false);
+      alert('Error al procesar el pago: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     }
   };
 
@@ -1178,7 +1181,7 @@ SISTEMA ERP DURAN
 
               disabled={
 
-                isProcessing ||
+                isProcessingPayment ||
 
                 (paymentMethod === 'cash' && change < 0) ||
 
@@ -1192,7 +1195,7 @@ SISTEMA ERP DURAN
 
               className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-bold shadow disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-all ${
 
-                isProcessing 
+                isProcessingPayment 
 
                   ? 'bg-gray-400 cursor-not-allowed text-white' 
 
@@ -1202,7 +1205,7 @@ SISTEMA ERP DURAN
 
             >
 
-              {isProcessing ? (
+              {isProcessingPayment ? (
 
                 <div className="flex items-center justify-center">
 
@@ -1462,6 +1465,27 @@ SISTEMA ERP DURAN
         )}
 
       </div>
+
+      {/* Full Screen Loading Overlay */}
+      {isProcessingPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm mx-4">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-500 border-t-transparent mx-auto mb-6"></div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Procesando Pago</h3>
+            <p className="text-gray-600 mb-4">
+              Por favor espere mientras se procesa su pago...
+            </p>
+            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            </div>
+            <p className="text-xs text-gray-400 mt-4">
+              No cierre esta ventana
+            </p>
+          </div>
+        </div>
+      )}
 
     </div>
 
