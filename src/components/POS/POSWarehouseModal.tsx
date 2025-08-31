@@ -361,7 +361,7 @@ export function POSWarehouseModal({ product, quantity, onClose, onConfirm }: POS
             <button
               onClick={handleConfirm}
               disabled={totalDistributed !== quantity || quantity > totalAvailableStock}
-              className="px-6 py-3  bg-gradient-to-br from-orange-400 via-red-500 to-red-600 hover:from-blue-600 hover:to-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-colors shadow-lg"
+              className="px-6 py-3  bg-gradient-to-br from-orange-400 via-red-500 to-red-600 hover:from-orange-600 hover:to-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-colors shadow-lg"
             >
               Confirmar Distribución
             </button>
