@@ -316,7 +316,7 @@ export function POSWarehouseModal({ product, quantity, onClose, onConfirm }: POS
           {/* Summary */}
           <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 mt-6 border border-orange-200">
             <h4 className="font-semibold text-black mb-3 flex items-center">
-              <Calculator className="w-4 h-4 mr-2" />
+              <Calculator className="text-orange-500 w-4 h-4 mr-2" />
               Resumen de Distribución
             </h4>
             <div className="space-y-2 text-sm">
