@@ -201,7 +201,7 @@ export function POSWarehouseModal({ product, quantity, onClose, onConfirm }: POS
               </div>
               <div>
                 <span className="text-gray-600">Cantidad del pedido:</span>
-                <span className="ml-2 font-bold text-blue-600">{quantity} {product.unit}</span>
+                <span className="ml-2 font-bold text-orange-600">{quantity} {product.unit}</span>
               </div>
             </div>
           </div>
