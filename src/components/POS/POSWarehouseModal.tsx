@@ -232,7 +232,7 @@ export function POSWarehouseModal({ product, quantity, onClose, onConfirm }: POS
                 </div>
               </div>
 
-              <div className="mt-4 bg-gradient-to-r from-orange-50 to-red-50 border border-blue-200 rounded-lg p-3">
+              <div className="mt-4 bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-3">
                 <div className="flex items-center justify-between">
                   <span className="text-blue-800 font-medium">Stock Total Disponible:</span>
                   <span className="text-blue-600 font-bold text-lg">{totalAvailableStock} unidades</span>
