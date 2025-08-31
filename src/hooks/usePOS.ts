@@ -322,9 +322,62 @@ export function usePOS() {
       
       // Check if this is an existing order (not temp)
       if (!isNewOrder) {
+        // For existing orders, get the previous items to calculate stock differences
+        const { data: previousOrder, error: fetchPreviousError } = await supabase
+          .from('sales')
+          .select(`
+            *,
+            sale_items (
+              product_id,
+              quantity
+            ),
+            order_warehouse_distribution (
+              product_id,
+              warehouse_id,
+              quantity
+            )
+          `)
+          .eq('id', order.id)
+          .single();
+
+        if (fetchPreviousError) throw fetchPreviousError;
+
+        // Calculate differences between previous and current items
+        const stockDifferences: Record<string, number> = {};
+        const warehouseDifferences: Record<string, Record<string, number>> = {};
+
+        // Calculate current totals by product
+        const currentTotals: Record<string, number> = {};
+        order.items.forEach(item => {
+          currentTotals[item.product_id] = (currentTotals[item.product_id] || 0) + item.quantity;
+        });
+
+        // Calculate previous totals by product
+        const previousTotals: Record<string, number> = {};
+        previousOrder.sale_items.forEach((item: any) => {
+          previousTotals[item.product_id] = (previousTotals[item.product_id] || 0) + item.quantity;
+        });
+
+        // Calculate differences
+        Object.keys(currentTotals).forEach(productId => {
+          const currentQty = currentTotals[productId] || 0;
+          const previousQty = previousTotals[productId] || 0;
+          const difference = currentQty - previousQty;
+          if (difference !== 0) {
+            stockDifferences[productId] = difference;
+          }
+        });
+
+        // Handle products that were completely removed
+        Object.keys(previousTotals).forEach(productId => {
+          if (!currentTotals[productId]) {
+            stockDifferences[productId] = -previousTotals[productId];
+          }
+        });
+
         // For existing orders, always save as pending when using save button
         // Payment processing should be done through the payment modal
-        const { data: currentOrder, error: fetchError } = await supabase
+        const { data: currentOrderData, error: fetchError } = await supabase
           .from('sales')
           .select('amount_paid')
           .eq('id', order.id)
@@ -332,7 +385,7 @@ export function usePOS() {
 
         if (fetchError) throw fetchError;
 
-        const amountPaid = currentOrder.amount_paid || 0;
+        const amountPaid = currentOrderData.amount_paid || 0;
         const newRemainingBalance = order.total - amountPaid;
         const newStatus = newRemainingBalance <= 0.01 ? 'paid' : 'pending';
 
@@ -362,6 +415,85 @@ export function usePOS() {
 
         if (deleteItemsError) throw deleteItemsError;
       } else {
+        // Delete existing warehouse distribution
+        const { error: deleteDistributionError } = await supabase
+          .from('order_warehouse_distribution')
+          .delete()
+          .eq('order_id', order.id);
+
+        if (deleteDistributionError) throw deleteDistributionError;
+
+        // Update stock for differences only
+        for (const [productId, difference] of Object.entries(stockDifferences)) {
+          if (difference !== 0) {
+            // Update general product stock
+            const { data: product } = await supabase
+              .from('products')
+              .select('stock')
+              .eq('id', productId)
+              .single();
+
+            if (product) {
+              await supabase
+                .from('products')
+                .update({ stock: Math.max(0, product.stock - difference) })
+                .eq('id', productId);
+            }
+
+            // Update warehouse stock based on new distribution
+            const productDistribution = currentWarehouseDistributions[productId];
+            if (productDistribution && productDistribution.length > 0) {
+              for (const dist of productDistribution) {
+                const { data: warehouseStock, error: warehouseError } = await supabase
+                  .from('stock_almacenes')
+                  .select('stock')
+                  .eq('almacen_id', dist.warehouse_id)
+                  .eq('product_id', productId)
+                  .maybeSingle();
+
+                if (warehouseError && warehouseError.code !== 'PGRST116') {
+                  throw warehouseError;
+                }
+
+                const currentWarehouseStock = warehouseStock?.stock || 0;
+                const newWarehouseStock = currentWarehouseStock - dist.quantity;
+
+                if (warehouseStock) {
+                  await supabase
+                    .from('stock_almacenes')
+                    .update({ stock: Math.max(0, newWarehouseStock) })
+                    .eq('almacen_id', dist.warehouse_id)
+                    .eq('product_id', productId);
+                } else {
+                  await supabase
+                    .from('stock_almacenes')
+                    .insert({
+                      almacen_id: dist.warehouse_id,
+                      product_id: productId,
+                      stock: Math.max(0, newWarehouseStock)
+                    });
+                }
+              }
+            }
+
+            // Create inventory movement for the difference
+            if (difference > 0) {
+              const product = products.find(p => p.id === productId);
+              await supabase
+                .from('inventory_movements')
+                .insert({
+                  product_id: productId,
+                  product_name: product?.name || 'Producto',
+                  type: 'salida',
+                  quantity: difference,
+                  date: order.date,
+                  reference: `EDIT-${order.id.slice(-6)}`,
+                  user_name: user?.name || 'POS User',
+                  created_by: user?.id
+                });
+            }
+          }
+        }
         // Create new sale record
         const { data: newSale, error: saleError } = await supabase
           .from('sales')
@@ -380,6 +512,73 @@ export function usePOS() {
 
         if (saleError) throw saleError;
         saleData = newSale;
+
+        // For new orders, update stock immediately when saving
+        for (const item of order.items) {
+          // Update general product stock
+          const { data: product } = await supabase
+            .from('products')
+            .select('stock')
+            .eq('id', item.product_id)
+            .single();
+
+          if (product) {
+            await supabase
+              .from('products')
+              .update({ stock: Math.max(0, product.stock - item.quantity) })
+              .eq('id', item.product_id);
+          }
+
+          // Update warehouse stock based on distribution
+          const productDistribution = currentWarehouseDistributions[item.product_id];
+          if (productDistribution && productDistribution.length > 0) {
+            for (const dist of productDistribution) {
+              const { data: warehouseStock, error: warehouseError } = await supabase
+                .from('stock_almacenes')
+                .select('stock')
+                .eq('almacen_id', dist.warehouse_id)
+                .eq('product_id', item.product_id)
+                .maybeSingle();
+
+              if (warehouseError && warehouseError.code !== 'PGRST116') {
+                throw warehouseError;
+              }
+
+              const currentWarehouseStock = warehouseStock?.stock || 0;
+              const newWarehouseStock = currentWarehouseStock - dist.quantity;
+
+              if (warehouseStock) {
+                await supabase
+                  .from('stock_almacenes')
+                  .update({ stock: Math.max(0, newWarehouseStock) })
+                  .eq('almacen_id', dist.warehouse_id)
+                  .eq('product_id', item.product_id);
+              } else {
+                await supabase
+                  .from('stock_almacenes')
+                  .insert({
+                    almacen_id: dist.warehouse_id,
+                    product_id: item.product_id,
+                    stock: Math.max(0, newWarehouseStock)
+                  });
+              }
+            }
+          }
+
+          // Create inventory movement
+          await supabase
+            .from('inventory_movements')
+            .insert({
+              product_id: item.product_id,
+              product_name: item.product_name,
+              type: 'salida',
+              quantity: item.quantity,
+              date: order.date,
+              reference: `SAVE-${saleData.id.slice(-6)}`,
+              user_name: user?.name || 'POS User',
+              created_by: user?.id
+            });
+        }
       }
 
       // Create sale items

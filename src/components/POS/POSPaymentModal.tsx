@@ -321,12 +321,15 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
   const handleConfirm = () => {
 
     if (isProcessing) return; // Prevent double submission
+    setIsProcessingPayment(true);
+    
 
     
 
     if (!paymentComplete && paymentMethod === 'mixed') {
 
       alert('El total de pagos debe coincidir con el importe del pedido');
+      setIsProcessingPayment(false);
 
       return;
 
@@ -336,6 +339,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
     if (paymentMethod === 'credit' && !hasPermission('permiso_ventas_credito')) {
       setPermissionMessage('No tienes el permiso para realizar ventas a crédito. El administrador debe asignártelo desde el ERS.');
       setShowPermissionModal(true);
+      setIsProcessingPayment(false);
       return;
     }
 
@@ -345,6 +349,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
 
     if (creditExceededCondition) {
       setShowCreditAuthModal(true);
+      setIsProcessingPayment(false);
       return;
     }
 
@@ -380,6 +385,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
           printA4
         });
         setShowStockValidation(true);
+        setIsProcessingPayment(false);
         return;
       }
       
@@ -387,6 +393,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       proceedWithPayment();
     } catch (err) {
       console.error('Error validating stock:', err);
+      setIsProcessingPayment(false);
       // If validation fails, proceed anyway
       proceedWithPayment();
     }
@@ -428,6 +435,7 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
         setPermissionMessage('No tienes el permiso para realizar ventas sin existencia. El administrador debe asignártelo desde el ERS.');
         setShowPermissionModal(true);
         setPendingPaymentData(null);
+        setIsProcessingPayment(false);
         return;
       }
       
@@ -438,12 +446,11 @@ export function POSPaymentModal({ order, client, onClose, onConfirm, onProcessPa
       }
     } else {
       setPendingPaymentData(null);
+      setIsProcessingPayment(false);
     }
   };
 
   const processPayment = async (overrideStock = false) => {
-    setIsProcessingPayment(true);
-    
     try {
     // Generate and download .txt ticket automatically before processing payment
     generateAndDownloadTicket();
